@@ -1,5 +1,6 @@
 var blockchainTransactionModel = {
     version: '',
+    previousBlockHash: '',
     transHash: '',
     timeStamp: '',
     transFrom: '',
@@ -7,6 +8,7 @@ var blockchainTransactionModel = {
     tokenValue: '',
     gasValue: '',
     
+
 
 
 }
