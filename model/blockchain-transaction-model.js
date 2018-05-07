@@ -1,6 +1,7 @@
 var blockchainTransactionModel = {
     version: '',
     previousBlockHash: '',
+    height: '',
     transHash: '',
     timeStamp: '',
     transFrom: '',
@@ -8,9 +9,6 @@ var blockchainTransactionModel = {
     tokenValue: '',
     gasValue: '',
     
-
-
-
 }
 
 module.export = blockchainTransactionModel;

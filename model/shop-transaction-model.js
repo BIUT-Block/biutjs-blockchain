@@ -1,17 +1,23 @@
 var transactionModel = {
     transHash: '',
     transtimeStamp: '',
-    productName: '',
-    productCategory: '',
-    productDealer: '',
-    shopName: '',
-    productBuyer: '',
-    productCode: '',
-    price: '',
-    currency: '',
-    productDetail: '',
+    dealerAddress: '',
+    buyerAddress: '',
+    shareActionId: '',
+    shareTimeStamp: '',
+    productInfo: {
+        productName: '',
+        productCategory: '',
+        productDealer: '',
+        shopName: '',
+        productBuyer: '',
+        productCode: '',
+        price: '',
+        currency: '',
+        productDetail: '',
+    },  
     sharedTimes: 0,
-    commentar: ''
+    status: ''
 }
 
 
