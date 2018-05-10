@@ -1,14 +1,18 @@
-var blockchainTransactionModel = {
-    version: '',
-    previousBlockHash: '',
-    height: '',
-    transHash: '',
-    timeStamp: '',
-    transFrom: '',
-    transTo: '',
-    tokenValue: '',
-    gasValue: '',
-    
+let tokenchainTransModel = {
+    TxHash: "",
+    TxReceiptStatus: "",
+    Version: "",
+    BlockHeight:"",
+    TimeStamp: "",
+    TxFrom: "",
+    TxTo: "",
+    Value: "",
+    GasLimit: "", // Do we need actually?
+    GasUsedByTxn: "", // Do we need actually?
+    GasPrice: "", // Do we need actually?
+    TxFee: "", // Do we need actually?
+    Nonce: "",
+    InputData: ""
 }
 
-module.export = blockchainTransactionModel;
+module.export = tokenchainTransModel;

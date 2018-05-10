@@ -1,26 +1,43 @@
-var transactionModel = {
-    transHash: '',
-    transtimeStamp: '',
-    dealerAddress: '',
-    buyerAddress: '',
-    shareActionId: '',
-    shareTimeStamp: '',
-    productInfo: {
-        productName: '',
-        productCategory: '',
-        productDealer: '',
-        shopName: '',
-        productBuyer: '',
-        productCode: '',
-        price: '',
-        currency: '',
-        productDetail: '',
+let transactionchainTransModel = {
+    // TxHash: "",
+    // TxReceiptStatus: "",
+    // Version: "",
+    // BlockHeight:"",
+    // TimeStamp: "",
+    // TxFrom: "",
+    // TxTo: "",
+    // Value: "",
+    // GasLimit: "", // Do we need actually?
+    // GasUsedByTxn: "", // Do we need actually?
+    // GasPrice: "", // Do we need actually?
+    // TxFee: "", // Do we need actually?
+    // Nonce: "",
+    // inputData: ""
+    TxHash: '',
+    TxReceiptStatus: '',
+    Version: '',
+    BlockHeight: '',
+    TimeStamp: '',
+    SellerAddress: '',
+    BuyerAddress: '',
+    ShareHash: '',
+    ShareTimeStamp: '',
+    ProductInfo: {
+        Name: '',
+        Category: '',
+        Brand: '',
+        Manifactory: '',
+        Seller: '',
+        Buyer: '',
+        SKU: '',
+        EAN: '',
+        Price: '',
+        Currency: '',
+        Description: '',
     },  
-    sharedTimes: 0,
-    status: ''
+    SharedTimes: 0,
+    Status: '',
+    InputData: ""
 }
 
-
-
-
-module.export = transactionModel;
+module.export = transactionchainTransModel;
