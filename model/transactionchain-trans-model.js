@@ -27,7 +27,7 @@ let transactionchainTransModel = {
     },  
     SharedTimes: 0,
     Status: '',
-    InputData: ""
+    InputData: ''
 }
 
 module.export = transactionchainTransModel;
