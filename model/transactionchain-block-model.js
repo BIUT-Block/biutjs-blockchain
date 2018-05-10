@@ -1,20 +1,23 @@
-var tokenchainBlockModel = {
-    Height: "",
-    TimeStamp: "",
-    Transactions: "",
-    Hash: "",
-    Parent_Hash: "",
+/**
+ * define of 
+ */
+var transactionChainBlockModel = {
+    Height: '',
+    TimeStamp: '',
+    Transactions: '',
+    Hash: '',
+    Parent_Hash: '',
     // Sha3Uncles: "",
-    Mined_By: "",
+    Mined_By: '',
     // Difficulty: "",
     // Total_Difficulty: "",
-    Size: "",
+    Size: '',
     // Gas_Used: "",
     // Gas_Limit: "",
-    Nonce: "",
-    Block_Reward: "", // do we need reward in transactionchain??
+    Nonce: '',
+    Block_Reward: '', // do we need reward in transactionchain??
     // Uncles_Reward: "",
-    Extra_Data: "",
+    Extra_Data: '',
 }
 
-module.export = tokenchainBlockModel;
+module.export = transactionChainBlockModel;

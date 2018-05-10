@@ -1,5 +1,5 @@
-/*
- * 
+/**
+ * define of token chain model
  */
 let tokenchainBlockModel = {
     Height: "",

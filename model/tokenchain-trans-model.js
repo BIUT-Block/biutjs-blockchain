@@ -1,3 +1,6 @@
+/**
+ * define of token transaction model
+ */
 let tokenchainTransModel = {
     TxHash: "",
     TxReceiptStatus: "",
@@ -10,7 +13,7 @@ let tokenchainTransModel = {
     GasLimit: "", // Do we need actually?
     GasUsedByTxn: "", // Do we need actually?
     GasPrice: "", // Do we need actually?
-    TxFee: "", // Do we need actually?
+    TxFee: "", // Do we need actually? TxFee = GasUsedByTxn x GasPrice
     Nonce: "",
     InputData: ""
 }
