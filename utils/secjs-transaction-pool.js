@@ -1,5 +1,5 @@
 const txPoolModel = require('../model/transaction-pool-model');
-
+const blockChain = require('../model/secjs-blockchain');
 
 class TransactionPool {
     /**
@@ -10,6 +10,12 @@ class TransactionPool {
     constructor(config){
         this.config = config;
         this.txBuffer = [];
+        this.blockChainBuffer = {
+            blockHashes: [],
+            firstTimeUpdate: true,
+            updateTime: ''
+        };
+        this.blockChain = new blockChain();
     }
 
     /**
@@ -21,6 +27,33 @@ class TransactionPool {
         this.txBuffer.add(transaction);
     }
 
+    /**
+     * upate the block hash array
+     * this blockChainBuffer is for checking the transaction in transaction pool, just compare the TxHash
+     * @param {*} blockChain 
+     */
+    updateBlockHashArray(blockChain){
+        let timeStampOfLastBlock = this.blockChain.getLastTimeStampOfBlocks();
+
+        if(this.blockChainBuffer.firstTimeUpdate){
+            blockChain.foreach((block) => {
+                blockChainBuffer.blockHashes.add(block.TxHash);
+                blockChainBuffer.firstTimeUpdate = false;
+                blockChainBuffer.updateTime = new Date().getTime();
+            });
+        } else {
+            if(this.blockChainBuffer.updateTime < timeStampOfLastBlock){
+                let partBlockChain = blockChain.filter((block) => {
+                    return block.TimeStamp >= timeStampOfLastBlock
+                });
+                this.blockChainBuffer.blockHashes.concat(partBlockChain.TxHash);
+                updateTime = new Date().getTime();
+            } else {
+                //do nothing
+            }
+        }
+    }
+    
     /**
      * to update the local transaction pool with transactions from other peers
      * @param {*} txFromOtherPeer 
@@ -36,7 +69,7 @@ class TransactionPool {
             });
         });
     }
-
+    
     removeTxFromPool(transaction){
         this.txBuffer = this.txBuffer.filter((transactions) => {
             if (transactions.TxHash !== transaction.TxHash){
@@ -56,12 +89,6 @@ class TransactionPool {
         return this.transaction.TxReceiptStatus;
     }
 
-    /**
-     * broadcast transaction pool to other peers
-     */
-    broadCastTxPool(){
-        //broad cast to other peer transaction pool
-    }
 
     /**
      * return all transaction from pool
