@@ -3,7 +3,7 @@
  */
 let tokenchainTransModel = {
     TxHash: "",
-    TxReceiptStatus: "",
+    TxReceiptStatus: "", // token processing status: pending, success, error
     Version: "",
     BlockHeight:"",
     TimeStamp: "",
