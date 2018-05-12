@@ -1,6 +1,7 @@
 const txBlockModel = require('../model/transactionchain-block-model')
 const powCal = require('pow-calculation')
-const hash = require('./hash.js')
+const SECHash = require('./secjs-hash.js')
+
 
 class SECTransactionBlock{
     constructor(config){
@@ -26,6 +27,9 @@ class SECTransactionBlock{
 	}
 	
 	fillInBlockInfo(txBlockChain){
+		hashAlgo = "sha256"
+		var secjs_hash = new SECHash(hashalgo)
+		
 		this.block.Height = txBlockChain.currentHeight + 1
 		this.block.TimeStamp = new Date().getTime();
 		this.block.Transactions = this.transactions
@@ -34,8 +38,8 @@ class SECTransactionBlock{
 		this.block.Block_Reward = 10 		//TBD
 		this.block.Extra_Data = ""			//Empty?
 		
-		this.block.Size = size(this.block) + 2*hash_length
-		this.block.Hash = hash.hash("sha256", this.block)
+		this.block.Size = size(this.block) + 2 * secjs_hash.getHashLength()
+		this.block.Hash = secjs_hash.hash(this.block)
 		this.block.Nonce = powCal.getNonce(this.block)
 	}
 
@@ -43,6 +47,8 @@ class SECTransactionBlock{
 		//do nothing, will be implemented in the future
 		return true
 	}
+	
+	
 }
 
 module.exports = SECTransactionBlock;
