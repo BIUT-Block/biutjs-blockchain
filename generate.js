@@ -1,7 +1,6 @@
 const txPool = require('./utils/secjs-transaction-pool')
 const txBlock = require('./utils/secjs-transaction-block')
 const txTransModel = require('./model/transactionchain-trans-model')
-const txBlockModel = require('./model/transactionchain-block-model')
 
 blockHeight = randomGenerate("number", 10000)
 txBlockChain = {
@@ -28,7 +27,7 @@ function addTxToPool(num) {
 }
 
 function generateTransaction() {
-	var transactionBlock = new txBlock()
+	var transactionBlock = new txTransModel()
 	
 	transactionBlock.txHash= randomGenerate("string", 32)
 	transactionBlock.TxReceiptStatus = 'pending'
@@ -88,7 +87,5 @@ function verifyRandomStringLength(string, length){
 	if(string.length < length){
 		diff = length - string.length
 		return getRandomString(diff)
-	} else(
-		//do nothing
-	)
+	}
 }
