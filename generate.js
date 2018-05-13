@@ -3,10 +3,59 @@ const txBlock = require('./utils/secjs-transaction-block')
 const txTransModel = require('./model/transactionchain-trans-model')
 const txBlockModel = require('./model/transactionchain-block-model')
 
+blockHeight = randomGenerate("number", 10000)
+txBlockChain = {
+	currentHeight: blockHeight,
+	lastBlockHash: randomGenerate("string", 32)
+}
+
+var tranPool = new txPool()
+var tranBlock = new txBlock()
+
+tranPool.addTxToPool(10)
+tranBlock.generateBlock(txBlock, txBlockChain)
+
+console.log(tranBlock.block)
 
 
-function addTxToPool(input) {
-	return 1
+
+function addTxToPool(num) {
+	var numTxBlocks = 10
+
+	for(var i = 0; i < numTxBlocks; i++){
+		tranPool.addTxIntoPool(generateTransaction)
+	}
+}
+
+function generateTransaction() {
+	var transactionBlock = new txBlock()
+	
+	transactionBlock.txHash= randomGenerate("string", 32)
+	transactionBlock.TxReceiptStatus = 'pending'
+	transactionBlock.BlockHeight = blockHeight
+	transactionBlock.TimeStamp = new Date().getTime();
+	transactionBlock.SellerAddress = randomGenerate("string", 32)
+	transactionBlock.BuyerAddress = randomGenerate("string", 32)
+	//transactionBlock.ShareHash = randomGenerate("string", 32)
+	//transactionBlock.ShareTimeStamp = randomGenerate("string", 32)
+	
+	transactionBlock.ProductInfo.Name = randomGenerate("string", 6)
+	transactionBlock.ProductInfo.Category = randomGenerate("number", 10)
+	transactionBlock.ProductInfo.Brand = randomGenerate("string", 6)
+	transactionBlock.ProductInfo.Manifactory = randomGenerate("string", 6)
+	transactionBlock.ProductInfo.Seller = randomGenerate("string", 6)
+	transactionBlock.ProductInfo.Buyer = randomGenerate("string", 6)
+	//transactionBlock.ProductInfo.SKU = randomGenerate("string", 6)
+	//transactionBlock.ProductInfo.EAN = randomGenerate("string", 6)
+	transactionBlock.ProductInfo.Price = randomGenerate("number", 6)
+	transactionBlock.ProductInfo.Currency = randomGenerate("number", 6)
+	transactionBlock.ProductInfo.Description = randomGenerate("string", 20)
+	
+	//transactionBlock.SharedTimes = new Date().getTime();
+	transactionBlock.Status = "pending"
+	transactionBlock.InputData = randomGenerate("string", 20)
+
+	return JSON.stringify(transactionBlock)
 }
 
 function randomGenerate(type, length){
