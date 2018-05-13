@@ -4,17 +4,32 @@ const SECHash = require('./secjs-hash.js')
 
 
 class SECTransactionBlock{
+	/**
+     * create a transaction chain block with config
+     * @param {*} config
+     * 
+     */
     constructor(config){
 		this.config = config
 		this.transactions = []
 		this.block = new txBlockModel();
     }
 
+	/**
+     * generate a transaction chain block
+     * @param {*} txPool, txBlockChain
+     *  
+     */
 	generateBlock(txPool, txBlockChain){
 		collectTxFromPool(txPool)
 		fillInBlockInfo(txBlockChain)
 	}
 
+	/**
+     * collect transactions from transaction pool
+     * @param {*} txPool
+     *  
+     */
 	collectTxFromPool(txPool){
 		txBuffer = txPool.getAllTxFromPool()
 		txBuffer.foreach((currTx) => {
@@ -26,6 +41,11 @@ class SECTransactionBlock{
 		});
 	}
 	
+	/**
+     * assign value to block header
+     * @param {*} txBlockChain
+     *  
+     */
 	fillInBlockInfo(txBlockChain){
 		hashAlgo = "sha256"
 		var secjs_hash = new SECHash(hashalgo)
@@ -43,7 +63,12 @@ class SECTransactionBlock{
 		this.block.Nonce = powCal.getNonce(this.block)
 	}
 
-	verifyTransaction(){
+	/**
+     * verify that the transaction is legal 
+     * @param {*} transaction
+     *  
+     */
+	verifyTransaction(transaction){
 		//do nothing, will be implemented in the future
 		return true
 	}
