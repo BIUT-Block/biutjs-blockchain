@@ -11,23 +11,22 @@ txBlockChain = {
 var tranPool = new txPool()
 var tranBlock = new txBlock()
 
-tranPool.addTxToPool(10)
-tranBlock.generateBlock(txBlock, txBlockChain)
+
+addTxToPool(10)
+tranBlock.generateBlock(tranPool, txBlockChain)
 
 console.log(tranBlock.block)
 
 
 
 function addTxToPool(num) {
-	var numTxBlocks = 10
-
-	for(var i = 0; i < numTxBlocks; i++){
-		tranPool.addTxIntoPool(generateTransaction)
+	for(let i = 0; i < num; i++){
+		tranPool.addTxIntoPool(generateTransaction())
 	}
 }
 
 function generateTransaction() {
-	var transactionBlock = new txTransModel()
+	let transactionBlock = txTransModel
 	
 	transactionBlock.txHash= randomGenerate("string", 32)
 	transactionBlock.TxReceiptStatus = 'pending'
@@ -38,6 +37,7 @@ function generateTransaction() {
 	//transactionBlock.ShareHash = randomGenerate("string", 32)
 	//transactionBlock.ShareTimeStamp = randomGenerate("string", 32)
 	
+	transactionBlock.ProductInfo = {}
 	transactionBlock.ProductInfo.Name = randomGenerate("string", 6)
 	transactionBlock.ProductInfo.Category = randomGenerate("number", 10)
 	transactionBlock.ProductInfo.Brand = randomGenerate("string", 6)
@@ -54,7 +54,7 @@ function generateTransaction() {
 	transactionBlock.Status = "pending"
 	transactionBlock.InputData = randomGenerate("string", 20)
 
-	return JSON.stringify(transactionBlock)
+	return transactionBlock
 }
 
 function randomGenerate(type, length){

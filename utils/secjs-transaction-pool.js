@@ -1,4 +1,4 @@
-const blockChain = require('../model/secjs-blockchain');
+//const blockChain = require('../model/secjs-blockchain');
 
 class TransactionPool {
     /**
@@ -14,7 +14,7 @@ class TransactionPool {
             firstTimeUpdate: true,
             updateTime: ''
         };
-        this.blockChain = new blockChain();
+        //this.blockChain = new blockChain();
     }
 
     /**
@@ -23,7 +23,7 @@ class TransactionPool {
      *  
      */
     addTxIntoPool(transaction){
-        this.txBuffer.add(transaction);
+        this.txBuffer.push(JSON.stringify(transaction));
     }
 
     /**
@@ -31,7 +31,7 @@ class TransactionPool {
      * this blockChainHashBuffer is for checking the transaction in transaction pool, just compare the TxHash
      * @param {*} blockChain 
      */
-    updateBlockHashArray(blockChain){
+    /*updateBlockHashArray(blockChain){
         let timeStampOfLastBlock = this.blockChain.getLastTimeStampOfBlocks();
 
         if(this.blockChainHashBuffer.firstTimeUpdate){
@@ -51,7 +51,7 @@ class TransactionPool {
                 //do nothing
             }
         }
-    }
+    }*/
 
     /**
      * remove transactions in transaction pool, if they are already upload to blockchain
@@ -98,7 +98,7 @@ class TransactionPool {
      * return all transaction from pool
      */
     getAllTxFromPool(){
-        return JSON.stringify(this.txBuffer);
+        return this.txBuffer;
     }
     
 }
