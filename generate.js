@@ -17,13 +17,14 @@ txBlock_Chain = {
 }
 
 
-
-
 addTxToPool(10)
 transBlockChain.addBlockToChain(tranBlock.generateBlock(tranPool, txBlock_Chain))
 
 
-fs.writeFile("./blockchain-example.json", JSON.stringify(transBlockChain.txBlock_Chain))
+fs.writeFile("./blockchain-example.json", JSON.stringify(transBlockChain.txBlock_Chain), (err) => {
+	if (err) 
+		throw err 
+})
 
 
 

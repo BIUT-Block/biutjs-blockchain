@@ -12,14 +12,16 @@ class SECTransactionBlockChain{
 		this.lastBlock = txTransModel
 		
 		if(file){
-			fs.readFile(file, 'utf8', function (err,data) {
+			fs.readFile(file, 'utf8', (err,data) => {
 				if (err) {
-					return console.log(err);
+					throw err
 				}
 				this.txBlockChain.push(data)
 			})
 			
-			this.lastBlock = this.txBlockChain[this.txBlockChain.length - 1]
+			if(this.txBlockChain.length > 0){
+				this.lastBlock = this.txBlockChain[this.txBlockChain.length - 1]
+			}
 		}
     }
 
@@ -38,7 +40,7 @@ class SECTransactionBlockChain{
      *  
      */
 	writeBlockChainToFile(file){
-		fs.writeFile(file, JSON.stringify(this.txBlockChain))
+		fs.writeFile(file, JSON.stringify(this.txBlockChain), (err) => { throw err })
 	}
 	
 	/**
