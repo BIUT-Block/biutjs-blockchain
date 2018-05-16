@@ -12,11 +12,11 @@ const supported_hash_algo = [
 ]
 
 class SECHash{
-	constructor(hashAlgo){
-		if (supported_hash_algo.indexOf(hashAlgo) < 0) 
+	constructor(hashalgo){
+		if (supported_hash_algo.indexOf(hashalgo) < 0) 
 			throw TypeError('Expected a supported hash algorithm') 
 		
-		this.hashAlgo = hashAlgo
+		this.hashalgo = hashalgo
     }
 	
 	
@@ -24,13 +24,13 @@ class SECHash{
 	* hash 
 	* @desc Returns hash result 
 	* @param {String} data - Data for hash calculation 
-	* @param {String} hashAlgo - Hash algorithm, must match "supported_hash_algo" 
+	* @param {String} hashalgo - Hash algorithm, must match "supported_hash_algo" 
 	* @return {String} 
 	* @example 
 	* const hash = digest("sha256", 'a') 
 	*/ 
 	hash(data) { 
-		return crypto.createHash(this.hashAlgo).update(data).digest() 
+		return crypto.createHash(this.hashalgo).update(data).digest('hex') 
 	}
 	
 	getHashLength(){

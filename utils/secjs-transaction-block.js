@@ -1,6 +1,7 @@
 const txBlockModel = require('../model/transactionchain-block-model')
-const powCal = require('pow-calculation')
+//const powCal = require('pow-calculation')
 const SECHash = require('./secjs-hash.js')
+const randomGen = require('./secjs-random-generate')
 
 
 class SECTransactionBlock{
@@ -12,7 +13,7 @@ class SECTransactionBlock{
     constructor(config){
 		this.config = config
 		this.transactions = []
-		this.block = new txBlockModel();
+		this.block = txBlockModel;
     }
 
 	/**
@@ -21,8 +22,8 @@ class SECTransactionBlock{
      *  
      */
 	generateBlock(txPool, txBlockChain){
-		collectTxFromPool(txPool)
-		fillInBlockInfo(txBlockChain)
+		this.collectTxFromPool(txPool)
+		this.fillInBlockInfo(txBlockChain)
 	}
 
 	/**
@@ -31,13 +32,13 @@ class SECTransactionBlock{
      *  
      */
 	collectTxFromPool(txPool){
-		txBuffer = txPool.getAllTxFromPool()
-		txBuffer.foreach((currTx) => {
-			if(verifyTransaction(currTx)) {
-				this.transactions.add(currTx)
-			} else{
+		let txBuffer = txPool.getAllTxFromPool()
+		txBuffer.forEach((currTx) => {
+			if(this.verifyTransaction(currTx)) {
+				this.transactions.push(currTx)
+			} //else{
 				//report???
-			}
+			//}
 		});
 	}
 	
@@ -47,21 +48,22 @@ class SECTransactionBlock{
      *  
      */
 	fillInBlockInfo(txBlockChain){
-		hashAlgo = "sha256"
-		var secjs_hash = new SECHash(hashalgo)
+		let hashalgo = "sha256"
+		let secjs_hash = new SECHash(hashalgo)
 		
-		this.block.Height = txBlockChain.currentHeight + 1
+		this.block.Height = randomGen.randomGenerate("number", 10000)					//txBlockChain.currentHeight + 1
 		this.block.TimeStamp = new Date().getTime();
 		this.block.Transactions = this.transactions
-		this.block.Parent_Hash = txBlockChain.lastBlockHash
-		this.block.Mined_By = this.config.userAddr
+		this.block.Parent_Hash = randomGen.randomGenerate("string", 32)				//txBlockChain.lastBlockHash
+		this.block.Mined_By = randomGen.randomGenerate("string", 32)					//this.config.userAddr
 		this.block.Block_Reward = 10 		//TBD
 		this.block.Extra_Data = ""			//Empty?
 		
-		this.block.Size = size(this.block) + 2 * secjs_hash.getHashLength()
-		this.block.Hash = secjs_hash.hash(this.block)
-		this.block.Nonce = powCal.getNonce(this.block)
+		this.block.Size = JSON.stringify(this.block).length + 2 * secjs_hash.getHashLength()
+		this.block.Hash = secjs_hash.hash(JSON.stringify(this.block))
+		this.block.Nonce = randomGen.randomGenerate("string", 32)						//powCal.getNonce(this.block)
 	}
+	
 
 	/**
      * verify that the transaction is legal 
