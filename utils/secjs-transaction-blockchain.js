@@ -1,5 +1,5 @@
 const fs = require('fs')
-const txTransModel = require('./model/transactionchain-trans-model')
+const txTransModel = require('../model/transactionchain-trans-model')
 
 class SECTransactionBlockChain{
 	/**
@@ -8,18 +8,18 @@ class SECTransactionBlockChain{
      * 
      */
     constructor(file, config){
-		if(!file){
-			this.txBlockChain = []
-			this.lastBlock = new txTransModel()
-		} else{
+		this.txBlockChain = []
+		this.lastBlock = txTransModel
+		
+		if(file){
 			fs.readFile(file, 'utf8', function (err,data) {
 				if (err) {
 					return console.log(err);
 				}
-				this.txBlockChain = data
+				this.txBlockChain.push(data)
 			})
 			
-			this.lastBlock = data[lastBlock.length - 1]
+			this.lastBlock = this.txBlockChain[this.txBlockChain.length - 1]
 		}
     }
 
@@ -29,7 +29,7 @@ class SECTransactionBlockChain{
      *  
      */
 	addBlockToChain(block){
-		this.txBlockChian.push(JSON.stringify(block))
+		this.txBlockChain.push(JSON.stringify(block))
 	}
 	
 	/**
@@ -64,10 +64,9 @@ class SECTransactionBlockChain{
      * @param {*} None
      *  
      */
-	getLastBlockTimeStamp{
+	getLastBlockTimeStamp(){
 		return this.lastBlock.TimeStamp
 	}
-	
 
 }
 

@@ -1,8 +1,9 @@
-const txBlockChain = txBlockChain('./utils/secjs-transaction-blockchain')
+const txBlockChain = require('./utils/secjs-transaction-blockchain')
 const txPool = require('./utils/secjs-transaction-pool')
 const txBlock = require('./utils/secjs-transaction-block')
 const txTransModel = require('./model/transactionchain-trans-model')
 const randomGen = require('./utils/secjs-random-generate')
+const fs = require('fs')
 
 let transBlockChain = new txBlockChain("./blockchain-example.json")
 let tranPool = new txPool()
@@ -10,7 +11,7 @@ let tranBlock = new txBlock()
 
 
 blockHeight = randomGen.randomGenerate("number", 10000)
-txBlockChain = {
+txBlock_Chain = {
 	currentHeight: blockHeight,
 	lastBlockHash: randomGen.randomGenerate("string", 32)
 }
@@ -19,11 +20,10 @@ txBlockChain = {
 
 
 addTxToPool(10)
-tranBlock.generateBlock(tranPool, txBlockChain)
+transBlockChain.addBlockToChain(tranBlock.generateBlock(tranPool, txBlock_Chain))
 
 
-fs.writeFile("./blockchain-example.json", JSON.stringify(tranBlock.block))
-console.log(tranBlock.block)
+fs.writeFile("./blockchain-example.json", JSON.stringify(transBlockChain.txBlock_Chain))
 
 
 
