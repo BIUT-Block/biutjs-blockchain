@@ -5,8 +5,7 @@ const txTransModel = require('./model/transactionchain-trans-model')
 const randomGen = require('./utils/secjs-random-generate')
 const fs = require('fs')
 
-let transBlockChain = new txBlockChain("./blockchain-example.json")
-
+let chain_file = "./blockchain-example.json"
 
 let tranPool = new txPool()
 let tranBlock = new txBlock()
@@ -21,16 +20,24 @@ txBlock_Chain = {
 
 addTxToPool(10)
 tranBlock.generateBlock(tranPool, txBlock_Chain)
-transBlockChain.addBlockToChain(tranBlock.block)
 
-fs.writeFile("./blockchain-example.json", JSON.stringify(transBlockChain.txBlockChain), (err) => {
-	if (err) 
-		throw err 
+
+readBlock(chain_file, (err, data) => {
+	let transBlockChain = new txBlockChain(data)
+	transBlockChain.addBlockToChain(tranBlock.block)
+	
+	fs.writeFile(chain_file, JSON.stringify(transBlockChain.txBlockChain), (err) => {
+		if (err) 
+			throw err 
+	})
+	
+	console.log(transBlockChain.getLastBlockHash())
 })
 
 
-
-
+function readBlock(file, callback){
+	fs.readFile(file, callback)
+}
 
 
 

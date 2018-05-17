@@ -4,27 +4,15 @@ const txTransModel = require('../model/transactionchain-trans-model')
 class SECTransactionBlockChain{
 	/**
      * create a transaction chain block chain with config
-     * @param {*} file, config
+     * @param {*} blockchain, config
      * 
      */
-    constructor(file, config){
-		this.txBlockChain = []
-		this.lastBlock = txTransModel
-		
-		if(file){
-			fs.readFile(file, 'utf8', (err,data) => {
-				if (err) {
-					throw err
-				}
-				this.txBlockChain.push(data)
-			})
-
-			if(this.txBlockChain.length > 0){
-				this.lastBlock = this.txBlockChain[this.txBlockChain.length - 1]
-			}
+    constructor(blockchain, config){
+		this.txBlockChain = {}
+		if(blockchain != ""){
+			this.txBlockChain = JSON.parse(blockchain)
 		}
-		
-		
+		this.config = config
     }
 
 	/**
@@ -33,15 +21,14 @@ class SECTransactionBlockChain{
      *  
      */
 	addBlockToChain(block){
-		//console.log("1----------------")
-		//console.log(this.txBlockChain)
-		//console.log("2----------------")
-		this.txBlockChain.push(JSON.stringify(block))
-		//console.log("2----------------")
-		//console.log(JSON.stringify(block))
-		//console.log("3----------------")
-		//console.log(this.txBlockChain)
-		//console.log("4----------------")
+		let blockHeight = this.getCurrentHeight()
+		
+		//if(blockHeight = block.Height + 1){
+			this.txBlockChain[block.Height] = block
+		//}
+		//else{
+			//do something
+		//}
 	}
 	
 	/**
@@ -59,7 +46,14 @@ class SECTransactionBlockChain{
      *  
      */
 	getCurrentHeight(){
-		return this.lastBlock.Height
+		let blockHeight = 0
+		Object.keys(this.txBlockChain).forEach(function(key){
+			if(key > parseInt(blockHeight)){
+				blockHeight = key
+			}
+		})
+
+		return blockHeight
 	}
 	
 	/**
@@ -68,7 +62,8 @@ class SECTransactionBlockChain{
      *  
      */
 	getLastBlockHash(){
-		return this.lastBlock.Hash
+		let blockHeight = this.getCurrentHeight()
+		return this.txBlockChain[blockHeight].Hash
 	}
 	
 	/**
@@ -77,7 +72,8 @@ class SECTransactionBlockChain{
      *  
      */
 	getLastBlockTimeStamp(){
-		return this.lastBlock.TimeStamp
+		let blockHeight = this.getCurrentHeight()
+		return this.txBlockChain[blockHeight].TimeStamp
 	}
 
 }
