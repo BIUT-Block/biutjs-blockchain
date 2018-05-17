@@ -18,11 +18,13 @@ class SECTransactionBlockChain{
 				}
 				this.txBlockChain.push(data)
 			})
-			
+
 			if(this.txBlockChain.length > 0){
 				this.lastBlock = this.txBlockChain[this.txBlockChain.length - 1]
 			}
 		}
+		
+		
     }
 
 	/**
@@ -31,7 +33,15 @@ class SECTransactionBlockChain{
      *  
      */
 	addBlockToChain(block){
+		//console.log("1----------------")
+		//console.log(this.txBlockChain)
+		//console.log("2----------------")
 		this.txBlockChain.push(JSON.stringify(block))
+		//console.log("2----------------")
+		//console.log(JSON.stringify(block))
+		//console.log("3----------------")
+		//console.log(this.txBlockChain)
+		//console.log("4----------------")
 	}
 	
 	/**

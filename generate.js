@@ -6,6 +6,8 @@ const randomGen = require('./utils/secjs-random-generate')
 const fs = require('fs')
 
 let transBlockChain = new txBlockChain("./blockchain-example.json")
+
+
 let tranPool = new txPool()
 let tranBlock = new txBlock()
 
@@ -18,13 +20,17 @@ txBlock_Chain = {
 
 
 addTxToPool(10)
-transBlockChain.addBlockToChain(tranBlock.generateBlock(tranPool, txBlock_Chain))
+tranBlock.generateBlock(tranPool, txBlock_Chain)
+transBlockChain.addBlockToChain(tranBlock.block)
 
-
-fs.writeFile("./blockchain-example.json", JSON.stringify(transBlockChain.txBlock_Chain), (err) => {
+fs.writeFile("./blockchain-example.json", JSON.stringify(transBlockChain.txBlockChain), (err) => {
 	if (err) 
 		throw err 
 })
+
+
+
+
 
 
 
