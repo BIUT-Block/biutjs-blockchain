@@ -9,7 +9,7 @@ class SECTokenBlockChain{
      */
     constructor(blockchain, config){
 		this.tokenBlockChain = {}
-		if(blockchain != ""){
+		if((typeof blockchain !== 'undefined') && (blockchain != "")){
 			this.tokenBlockChain = JSON.parse(blockchain)
 		}
 		this.config = config

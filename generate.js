@@ -11,8 +11,8 @@ const fs = require('fs')
 let txchain_file = "./txblockchain.json"
 let tokenchain_file = "./tokenblockchain.json"
 
-let tranPool = new txPool()
-let tokenPool = new txPool()
+let tranPool = new txPool(null, true)
+let tokenPool = new txPool(null, false)
 let tranBlock = new txBlock()
 let tokenBlock = new tkBlock()
 
