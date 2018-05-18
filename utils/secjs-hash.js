@@ -30,7 +30,7 @@ class SECHash{
 	* const hash = digest("sha256", 'a') 
 	*/ 
 	hash(data) { 
-		return crypto.createHash(this.hashAlgo).update(data).digest() 
+		return crypto.createHash(this.hashAlgo).update(data).digest('hex'); 
 	}
 	
 	getHashLength(){

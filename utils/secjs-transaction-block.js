@@ -1,5 +1,5 @@
 const txBlockModel = require('../model/transactionchain-block-model')
-const powCal = require('pow-calculation')
+//const powCal = require('pow-calculation')
 const SECHash = require('./secjs-hash.js')
 
 
@@ -12,7 +12,7 @@ class SECTransactionBlock{
     constructor(config){
 		this.config = config
 		this.transactions = []
-		this.block = new txBlockModel();
+		this.block = txBlockModel;
     }
 
 	/**
@@ -60,7 +60,7 @@ class SECTransactionBlock{
 		
 		this.block.Size = size(this.block) + 2 * secjs_hash.getHashLength()
 		this.block.Hash = secjs_hash.hash(this.block)
-		this.block.Nonce = powCal.getNonce(this.block)
+	//	this.block.Nonce = powCal.getNonce(this.block)
 	}
 
 	/**
