@@ -76,7 +76,6 @@ class SECTransactionBlock{
 		return true
 	}
 	
-	
 }
 
 module.exports = SECTransactionBlock;
