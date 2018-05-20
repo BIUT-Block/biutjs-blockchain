@@ -1,37 +1,50 @@
-const txBlockChain = require('./utils/secjs-transaction-blockchain')
 const txPool = require('./utils/secjs-transaction-pool')
 const txBlock = require('./utils/secjs-transaction-block')
+const txBlockChain = require('./utils/secjs-transaction-blockchain')
+const tkBlock = require('./utils/secjs-token-block')
+const tkBlockChain = require('./utils/secjs-token-blockchain')
 const txTransModel = require('./model/transactionchain-trans-model')
+const tkTransModel = require('./model/tokenchain-trans-model')
 const randomGen = require('./utils/secjs-random-generate')
 const fs = require('fs')
 
-let chain_file = "./blockchain-example.json"
+let txchain_file = "./txblockchain.json"
+let tokenchain_file = "./tokenblockchain.json"
 
-let tranPool = new txPool()
+let tranPool = new txPool(null, true)
+let tokenPool = new txPool(null, false)
 let tranBlock = new txBlock()
-
-
-blockHeight = randomGen.randomGenerate("number", 10000)
-txBlock_Chain = {
-	currentHeight: blockHeight,
-	lastBlockHash: randomGen.randomGenerate("string", 32)
-}
+let tokenBlock = new tkBlock()
 
 
 addTxToPool(10)
-tranBlock.generateBlock(tranPool, txBlock_Chain)
+tranBlock.generateBlock(tranPool)
+tokenBlock.generateBlock(tokenPool)
 
 
-readBlock(chain_file, (err, data) => {
+readBlock(txchain_file, (err, data) => {
 	let transBlockChain = new txBlockChain(data)
 	transBlockChain.addBlockToChain(tranBlock.block)
 	
-	fs.writeFile(chain_file, JSON.stringify(transBlockChain.txBlockChain), (err) => {
+	fs.writeFile(txchain_file, JSON.stringify(transBlockChain.txBlockChain), (err) => {
 		if (err) 
 			throw err 
 	})
 	
 	console.log(transBlockChain.getLastBlockHash())
+})
+
+
+readBlock(tokenchain_file, (err, data) => {
+	let tokenBlockChain = new tkBlockChain(data)
+	tokenBlockChain.addBlockToChain(tokenBlock.block)
+	
+	fs.writeFile(tokenchain_file, JSON.stringify(tokenBlockChain.tokenBlockChain), (err) => {
+		if (err) 
+			throw err 
+	})
+	
+	console.log(tokenBlockChain.getLastBlockHash())
 })
 
 
@@ -43,16 +56,17 @@ function readBlock(file, callback){
 
 function addTxToPool(num) {
 	for(let i = 0; i < num; i++){
-		tranPool.addTxIntoPool(generateTransaction())
+		tranPool.addTxIntoPool(generateTxTransaction())
+		tokenPool.addTxIntoPool(generateTokenTransaction())
 	}
 }
 
-function generateTransaction() {
+function generateTxTransaction() {
 	let transactionBlock = txTransModel
 	
 	transactionBlock.txHash= randomGen.randomGenerate("string", 32)
 	transactionBlock.TxReceiptStatus = 'pending'
-	transactionBlock.BlockHeight = blockHeight
+	transactionBlock.BlockHeight = randomGen.randomGenerate("number", 1000)
 	transactionBlock.TimeStamp = new Date().getTime();
 	transactionBlock.SellerAddress = randomGen.randomGenerate("string", 32)
 	transactionBlock.BuyerAddress = randomGen.randomGenerate("string", 32)
@@ -77,4 +91,21 @@ function generateTransaction() {
 	transactionBlock.InputData = randomGen.randomGenerate("string", 20)
 
 	return transactionBlock
+}
+
+function generateTokenTransaction() {
+	let tokenlock = tkTransModel
+	
+	tokenlock.txHash= randomGen.randomGenerate("string", 32)
+	tokenlock.TxReceiptStatus = 'pending'
+	tokenlock.Version = "1.0"
+	tokenlock.BlockHeight = randomGen.randomGenerate("number", 1000)
+	tokenlock.TimeStamp = new Date().getTime();
+	tokenlock.TxFrom = randomGen.randomGenerate("string", 32)
+	tokenlock.TxTo = randomGen.randomGenerate("string", 32)
+	tokenlock.Value = randomGen.randomGenerate("number", 100000)
+    tokenlock.Nonce = randomGen.randomGenerate("string", 32)						//powCal.getNonce(this.block)
+	tokenlock.InputData = randomGen.randomGenerate("string", 20)
+
+	return tokenlock
 }
