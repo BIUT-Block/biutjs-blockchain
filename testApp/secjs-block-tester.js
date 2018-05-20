@@ -1,4 +1,5 @@
 const secjs_block = require('../utils/secjs-transaction-block');
+const secjs_blockchain = require('../utils/secjs-transaction-blockchain');
 //const secjs_tx_pool = require('../utils/secjs-transaction-blockchain');
 const secjs_tx_pool = require('../utils/secjs-transaction-pool');
 const generate = require('../utils/secjs-random-generate');
@@ -10,8 +11,15 @@ let txTransModel = require('../model/transactionchain-trans-model');
 let txpool_config = {
     poolname: 'transactionpool'
 }
-let block = new secjs_block();
-let txpool = new secjs_tx_pool();
+let block_config = {
+    blockversion: '0.0.1_201805'
+}
+let blockchain_config = {
+    blockchain_version: '0.0.1_201805'
+}
+let block = new secjs_block(block_config);
+let blockchain = new secjs_blockchain('',blockchain_config);
+let txpool = new secjs_tx_pool(txpool_config);
 let hash = new hash_generate('sha256');
 
 
@@ -33,8 +41,9 @@ txTransModel.Version = `0.0.1`;
 //add transaction into transaction pool
 txpool.addTxIntoPool(txTransModel);
 
-//
-
+//gernate a transaction chain block
+block.generateBlock(txpool, blockchain);
+blockchain.addBlockToChain(block);
 
 
 

@@ -7,7 +7,7 @@ class TransactionPool {
      * @param {*} config
      * 
      */
-    constructor(config, isTxBlockChain){
+    constructor(config){
         this.config = config;
         this.txBuffer = [];
         this.blockChainHashBuffer = {
@@ -15,11 +15,11 @@ class TransactionPool {
             firstTimeUpdate: true,
             updateTime: ''
         };
-		if(isTxBlockChain){
-			this.blockChain = new txBlockChain();
-		} else{
-			this.blockChain = new tokenBlockChain();
-		}
+		// if(isTxBlockChain){
+		// 	this.blockChain = new txBlockChain();
+		// } else{
+		// 	this.blockChain = new tokenBlockChain();
+		// }
         
     }
 
