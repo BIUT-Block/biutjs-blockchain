@@ -20,4 +20,4 @@ var transactionChainBlockModel = {
     Extra_Data: '',
 }
 
-module.export = transactionChainBlockModel;
+module.exports = transactionChainBlockModel;

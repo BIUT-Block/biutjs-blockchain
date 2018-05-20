@@ -18,4 +18,4 @@ let tokenchainTransModel = {
     InputData: ""
 }
 
-module.export = tokenchainTransModel;
+module.exports = tokenchainTransModel;

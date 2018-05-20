@@ -20,4 +20,4 @@ let tokenchainBlockModel = {
     Extra_Data: "",
 }
 
-module.export = tokenchainBlockModel;
+module.exports = tokenchainBlockModel;

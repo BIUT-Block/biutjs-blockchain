@@ -30,4 +30,4 @@ let transactionchainTransModel = {
     InputData: ''
 }
 
-module.export = transactionchainTransModel;
+module.exports = transactionchainTransModel;
