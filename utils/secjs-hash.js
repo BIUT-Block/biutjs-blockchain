@@ -13,9 +13,9 @@ const supported_hash_algo = [
 
 class SECHash{
 	constructor(hashalgo){
-		if (supported_hash_algo.indexOf(hashalgo) < 0) 
-			throw TypeError('Expected a supported hash algorithm') 
-		
+		if (supported_hash_algo.indexOf(hashalgo) < 0){
+			throw new TypeError('Expected a supported hash algorithm');
+		} 	
 		this.hashalgo = hashalgo
     }
 	
