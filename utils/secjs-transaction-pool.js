@@ -84,8 +84,8 @@ class TransactionPool {
         txFromOtherPeer.foreach((tx)=>{
             this.txBuffer.foreach((localTx)=> {
                 if(tx.TxHash !== localTx.TxHash){
-                    this.txBuffer.add(tx);
-                    break;
+                    this.txBuffer.add(tx)
+                    break
                 }
             });
         });

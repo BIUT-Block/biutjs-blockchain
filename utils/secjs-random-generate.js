@@ -5,11 +5,11 @@
  * 
  */
 exports.randomGenerate = function (type, length){
-	if(type == "number") {
-		return Math.floor(Math.random() * Math.floor(length));
-	} else if(type == "string") {
-		return getRandomString(length)
-	}
+    if(type === 'mber') {
+        return Math.floor(Math.random() * Math.floor(length))
+    } else if(type == 'string') {
+        return getRandomString(length)
+    }
 }
 
 /**
@@ -18,21 +18,21 @@ exports.randomGenerate = function (type, length){
  * 
  */
 function getRandomString(length){
-	var quotient = Math.floor(length/11);
-	var remainder = length % 11;
-	var result = []
+    let quotient = Math.floor(length/11)
+    let remainder = length % 11
+    let result = []
 
-	for(var i = 0; i < quotient; i++){
-		result.push(Math.random().toString(36).substring(2, 13))
-	}
+    for(let i = 0; i < quotient; i++){
+        result.push(Math.random().toString(36).substring(2, 13))
+    }
 	
-	result.push(Math.random().toString(36).substring(2, remainder + 2))
+    result.push(Math.random().toString(36).substring(2, remainder + 2))
 	
-	while(result.join("").length < length){
-		result.push(verifyRandomStringLength(result.join(""), length))
-	}
+    while(result.join('').length < length){
+        result.push(verifyRandomStringLength(result.join(''), length))
+    }
 	
-	return result.join("")
+    return result.join('')
 }
 
 /**
@@ -42,8 +42,8 @@ function getRandomString(length){
  * 
  */
 function verifyRandomStringLength(string, length){
-	if(string.length < length){
-		diff = length - string.length
-		return getRandomString(diff)
-	}
+    if(string.length < length){
+        let diff = length - string.length
+        return getRandomString(diff)
+    }
 }
