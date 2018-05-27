@@ -34,16 +34,16 @@ class SECHash{
     }
     
     getHashLength(){
-        if(this.hashalgo == 'd5'){
-            return 16		//byte
-        } else if(this.hashalgo == 'sha1'){
-            return 20		//byte
-        } else if(this.hashalgo == 'sha256'){
+        if(this.hashalgo == 'md5'){
             return 32		//byte
-        } else if(this.hashalgo == 'sha512'){
+        } else if(this.hashalgo == 'sha1'){
+            return 40		//byte
+        } else if(this.hashalgo == 'sha256'){
             return 64		//byte
+        } else if(this.hashalgo == 'sha512'){
+            return 128		//byte
         } else if(this.hashalgo == 'ripemd160'){
-            return 20		//byte
+            return 40		//byte
         } else{
             throw TypeError('Wrong hash algorithm') 
         }
