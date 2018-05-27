@@ -4,19 +4,19 @@ let expect = require('chai').expect
 describe('secjs_hash', () => {
     describe('supported hash algorithm test', () => {
         it('should not throw an error if input is supported hash algorighms', () => {
-            expect(() => {let object = new secjs_hash('md5')}).to.not.throw('Expected "md5" hash algorithm is supported ')
-            expect(() => {let object = new secjs_hash('sha1')}).to.not.throw('Expected "sha1" hash algorithm is supported ')
-            expect(() => {let object = new secjs_hash('sha256')}).to.not.throw('Expected "sha256" hash algorithm is supported ')
-            expect(() => {let object = new secjs_hash('sha512')}).to.not.throw('Expected "sha512" hash algorithm is supported ')
-            expect(() => {let object = new secjs_hash('ripemd160')}).to.not.throw('Expected "ripemd160" hash algorithm is supported ')
+            expect(() => {new secjs_hash('md5')}).to.not.throw('Expected "md5" hash algorithm is supported ')
+            expect(() => {new secjs_hash('sha1')}).to.not.throw('Expected "sha1" hash algorithm is supported ')
+            expect(() => {new secjs_hash('sha256')}).to.not.throw('Expected "sha256" hash algorithm is supported ')
+            expect(() => {new secjs_hash('sha512')}).to.not.throw('Expected "sha512" hash algorithm is supported ')
+            expect(() => {new secjs_hash('ripemd160')}).to.not.throw('Expected "ripemd160" hash algorithm is supported ')
         })
 
         it('should throw an error if input is unsupported/unexpected', () => {
-            expect(() => {let object = new secjs_hash('')}).to.throw('Expected a supported hash algorithm')
-            expect(() => {let object = new secjs_hash('123')}).to.throw('Expected a supported hash algorithm')
-            expect(() => {let object = new secjs_hash(1)}).to.throw('Expected a supported hash algorithm')
-            expect(() => {let object = new secjs_hash(['md5'])}).to.throw('Expected a supported hash algorithm')
-            expect(() => {let object = new secjs_hash(['abc'])}).to.throw('Expected a supported hash algorithm')
+            expect(() => { new secjs_hash('')}).to.throw('Expected a supported hash algorithm')
+            expect(() => {new secjs_hash('123')}).to.throw('Expected a supported hash algorithm')
+            expect(() => {new secjs_hash(1)}).to.throw('Expected a supported hash algorithm')
+            expect(() => {new secjs_hash(['md5'])}).to.throw('Expected a supported hash algorithm')
+            expect(() => {new secjs_hash(['abc'])}).to.throw('Expected a supported hash algorithm')
         })
     })
 
