@@ -5,10 +5,16 @@
  * 
  */
 exports.randomGenerate = function (type, length){
-    if(type === 'mber') {
+    if(length < 0) {
+        throw TypeError('Input length is invalid') 
+    }
+    
+    if(type === 'number') {
         return Math.floor(Math.random() * Math.floor(length))
     } else if(type == 'string') {
         return getRandomString(length)
+    } else {
+        throw TypeError('Wrong random generate data type') 
     }
 }
 
