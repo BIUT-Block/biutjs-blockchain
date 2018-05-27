@@ -7,7 +7,7 @@
     "test": "mocha --reporter spec"
   },
   "name": "secjs-block",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "sec blockchain block lib",
   "main": "generate.js",
   "directories": {
