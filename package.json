@@ -4,6 +4,28 @@
     "mocha": "^5.2.0"
   },
   "scripts": {
-    "test": "./node_modules/.bin/mocha --reporter spec"
-  }
+    "test": "mocha --reporter spec"
+  },
+  "name": "secjs-block",
+  "version": "1.0.0",
+  "description": "sec blockchain block lib",
+  "main": "generate.js",
+  "directories": {
+    "test": "test"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/MongoX-SEC/secjs-block.git"
+  },
+  "keywords": [
+    "secjs",
+    "block"
+  ],
+  "author": "Minghao Weihan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/MongoX-SEC/secjs-block/issues"
+  },
+  "homepage": "https://gitlab.com/MongoX-SEC/secjs-block#README"
 }
