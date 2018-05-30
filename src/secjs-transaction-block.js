@@ -33,8 +33,9 @@ class SECTransactionBlock {
   collectTxFromPool (txPool) {
     let txBuffer = txPool.getAllTxFromPool()
     txBuffer.forEach((currTx) => {
-      if (this.verifyTransaction(currTx)) {
-        this.transactions.push(currTx)
+      let tx = JSON.parse(currTx)
+      if (this.verifyTransaction(tx)) {
+        this.transactions.push(tx)
       } // else{
       // report???
       // }

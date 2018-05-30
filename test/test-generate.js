@@ -20,6 +20,7 @@ addTxToPool(10)
 tranBlock.generateBlock(tranPool)
 tokenBlock.generateBlock(tokenPool)
 
+
 readBlock(txchainFile, (err, data) => {
   let transBlockChain = new txBlockChain(data)
   transBlockChain.addBlockToChain(tranBlock.block)
