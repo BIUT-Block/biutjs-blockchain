@@ -1,11 +1,11 @@
 const fs = require('fs')
-//const txTransModel = require('../model/transactionchain-trans-model')
+// const txTransModel = require('../model/transactionchain-trans-model')
 
 class SECTransactionBlockChain {
   /**
    * create a transaction chain block chain with config
    * @param {*} blockchain, config
-   * 
+   *
    */
   constructor (blockchain, config) {
     this.txBlockChain = {}
@@ -20,20 +20,20 @@ class SECTransactionBlockChain {
    * @param {*} block
    */
   addBlockToChain (block) {
-    //let blockHeight = this.getCurrentHeight()
+    // let blockHeight = this.getCurrentHeight()
 
-    //if(blockHeight = block.Height + 1){
+    // if(blockHeight = block.Height + 1){
     this.txBlockChain[block.Height] = block
-    //}
-    //else{
-    //do something
-    //}
+    // }
+    // else{
+    // do something
+    // }
   }
 
   /**
    * store the blockchain to a local file
    * @param {*} file
-   *  
+   *
    */
   writeBlockChainToFile (file) {
     fs.writeFile(file, JSON.stringify(this.txBlockChain), (err) => {
@@ -44,7 +44,7 @@ class SECTransactionBlockChain {
   /**
    * return last block's height
    * @param {*} None
-   *  
+   *
    */
   getCurrentHeight () {
     let blockHeight = 0
@@ -59,7 +59,7 @@ class SECTransactionBlockChain {
   /**
    * return last block's hash value
    * @param {*} None
-   *  
+   *
    */
   getLastBlockHash () {
     let blockHeight = this.getCurrentHeight()
@@ -69,7 +69,7 @@ class SECTransactionBlockChain {
   /**
    * return last block's timestamp
    * @param {*} None
-   *  
+   *
    */
   getLastBlockTimeStamp () {
     let blockHeight = this.getCurrentHeight()

@@ -1,11 +1,8 @@
-const txBlockChain = require('./secjs-transaction-blockchain');
-const tokenBlockChain = require('./secjs-token-blockchain');
-
 class TransactionPool {
   /**
    * create a transaction pool with config, such as transaction pool of token chain or transaction chain
    * @param {*} config
-   * 
+   *
    */
   constructor (config) {
     this.config = config
@@ -14,13 +11,12 @@ class TransactionPool {
       blockHashes: [],
       firstTimeUpdate: true,
       updateTime: ''
-    };
+    }
     // if(isTxBlockChain){
-    // 	this.blockChain = new txBlockChain();
+    //   this.blockChain = new txBlockChain();
     // } else{
-    // 	this.blockChain = new tokenBlockChain();
+    //   this.blockChain = new tokenBlockChain();
     // }
-
   }
 
   /**
@@ -46,7 +42,7 @@ class TransactionPool {
         this.blockChainHashBuffer.updateTime = new Date().getTime()
       })
     } else {
-      /*比较长度*/
+      /* 比较长度 */
       if (this.blockChainHashBuffer.updateTime < timeStampOfLastBlock) {
         let partBlockChain = blockChain.filter((block) => {
           return block.TimeStamp >= timeStampOfLastBlock
@@ -54,7 +50,7 @@ class TransactionPool {
         this.blockChainHashBuffer.blockHashes.concat(partBlockChain.TxHash)
         this.blockChainHashBuffer.updateTime = new Date().getTime()
       } else {
-        //do nothing
+        // do nothing
       }
     }
   }
@@ -83,7 +79,6 @@ class TransactionPool {
       this.txBuffer.foreach((localTx) => {
         if (tx.TxHash !== localTx.TxHash) {
           this.txBuffer.add(tx)
-          return
         }
       })
     })
