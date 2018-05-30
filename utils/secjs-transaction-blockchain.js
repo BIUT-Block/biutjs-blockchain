@@ -9,7 +9,7 @@ class SECTransactionBlockChain {
    */
   constructor (blockchain, config) {
     this.txBlockChain = {}
-    if ((typeof blockchain !== 'undefined') && (blockchain != '')) {
+    if ((typeof blockchain !== 'undefined') && (blockchain !== '')) {
       this.txBlockChain = JSON.parse(blockchain)
     }
     this.config = config
@@ -18,7 +18,6 @@ class SECTransactionBlockChain {
   /**
    * push a block at the bottom of the blockchain
    * @param {*} block
-   *  
    */
   addBlockToChain (block) {
     //let blockHeight = this.getCurrentHeight()

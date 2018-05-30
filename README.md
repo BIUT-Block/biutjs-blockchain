@@ -1,3 +1,153 @@
+<a name="SECTransactionBlock"></a>
+
+## SECTransactionBlock 
+
+Class of transaction block. Generate block and block header
+Get transaction information from transaction pool.
+
+* [SECTransactionBlock](#SECTransactionBlock)
+    * [new SECTransactionBlock(config)](#new_SECTransactionBlock_new)
+    * [.generateBlock(txPool,)](#SECTransactionBlock+generateBlock)
+    * [.collectTxFromPool(txPool)](#SECTransactionBlock+collectTxFromPool)
+    * [.fillInBlockInfo(txBlockChain)](#SECTransactionBlock+fillInBlockInfo)
+    * [.verifyTransaction(transaction)](#SECTransactionBlock+verifyTransaction)
+
+<a name="new_SECTransactionBlock_new"></a>
+
+### new SECTransactionBlock(config)
+create a transaction chain block with config
+
+
+| Param | Type |
+| --- | --- |
+| config | object of config | 
+
+<a name="SECTransactionBlock+generateBlock"></a>
+
+### secTransactionBlock.generateBlock(txPool,)
+generate a transaction chain block
+
+**Kind**: instance method of [<code>SECTransactionBlock</code>](#SECTransactionBlock)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| txPool |  | 
+| txBlockChain | instance of transaction block chain |
+
+<a name="SECTransactionBlock+collectTxFromPool"></a>
+
+### secTransactionBlock.collectTxFromPool(txPool)
+collect transactions from transaction pool
+
+**Kind**: instance method of [<code>SECTransactionBlock</code>](#SECTransactionBlock)  
+
+| Param | Type |
+| --- | --- |
+| txPool | <code>\*</code> | 
+
+<a name="SECTransactionBlock+fillInBlockInfo"></a>
+
+### secTransactionBlock.fillInBlockInfo(txBlockChain)
+assign value to block header
+
+**Kind**: instance method of [<code>SECTransactionBlock</code>](#SECTransactionBlock)  
+
+| Param | Type |
+| --- | --- |
+| txBlockChain | <code>\*</code> | 
+
+<a name="SECTransactionBlock+verifyTransaction"></a>
+
+### secTransactionBlock.verifyTransaction(transaction)
+verify that the transaction is legal
+
+**Kind**: instance method of [<code>SECTransactionBlock</code>](#SECTransactionBlock)  
+
+| Param | Type |
+| --- | --- |
+| transaction | <code>\*</code> | 
+
+<a name="SECTransactionBlockChain"></a>
+
+## SECTransactionBlockChain
+
+Class of transaction chain block chain 
+
+* [SECTransactionBlockChain](#SECTransactionBlockChain)
+    * [new SECTransactionBlockChain(blockchain,)](#new_SECTransactionBlockChain_new)
+    * [.addBlockToChain(block)](#SECTransactionBlockChain+addBlockToChain)
+    * [.writeBlockChainToFile(file)](#SECTransactionBlockChain+writeBlockChainToFile)
+    * [.getCurrentHeight(None)](#SECTransactionBlockChain+getCurrentHeight)
+    * [.getLastBlockHash(None)](#SECTransactionBlockChain+getLastBlockHash)
+    * [.getLastBlockTimeStamp(None)](#SECTransactionBlockChain+getLastBlockTimeStamp)
+
+<a name="new_SECTransactionBlockChain_new"></a>
+
+### new SECTransactionBlockChain(blockchain,)
+create a transaction chain block chain with config
+
+
+| Param | Type |
+| --- | --- | --- |
+| blockchain| instance of blockchain | 
+| config | config object |
+
+<a name="SECTransactionBlockChain+addBlockToChain"></a>
+
+### secTransactionBlockChain.addBlockToChain(block)
+push a block at the bottom of the blockchain
+
+**Kind**: instance method of [<code>SECTransactionBlockChain</code>](#SECTransactionBlockChain)  
+
+| Param | Type |
+| --- | --- |
+| block | instance of block | 
+
+<a name="SECTransactionBlockChain+writeBlockChainToFile"></a>
+
+### secTransactionBlockChain.writeBlockChainToFile(file)
+store the blockchain to a local file
+
+**Kind**: instance method of [<code>SECTransactionBlockChain</code>](#SECTransactionBlockChain)  
+
+| Param | Type |
+| --- | --- |
+| file | save file path | 
+
+<a name="SECTransactionBlockChain+getCurrentHeight"></a>
+
+### secTransactionBlockChain.getCurrentHeight(None)
+return last block's height
+
+**Kind**: instance method of [<code>SECTransactionBlockChain</code>](#SECTransactionBlockChain)  
+
+| Param | Type |
+| --- | --- |
+| None | <code>\*</code> | 
+
+<a name="SECTransactionBlockChain+getLastBlockHash"></a>
+
+### secTransactionBlockChain.getLastBlockHash(None)
+return last block's hash value
+
+**Kind**: instance method of [<code>SECTransactionBlockChain</code>](#SECTransactionBlockChain)  
+
+| Param | Type |
+| --- | --- |
+| None | <code>\*</code> | 
+
+<a name="SECTransactionBlockChain+getLastBlockTimeStamp"></a>
+
+### secTransactionBlockChain.getLastBlockTimeStamp(None)
+return last block's timestamp
+
+**Kind**: instance method of [<code>SECTransactionBlockChain</code>](#SECTransactionBlockChain)  
+
+| Param | Type |
+| --- | --- |
+| None | <code>\*</code> | 
+
+
 <a name="TransactionPool"></a>
 
 ## TransactionPool
