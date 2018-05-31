@@ -1,43 +1,47 @@
-const txPool = require('../src/secjs-transaction-pool')
-const txBlock = require('../src/secjs-transaction-block')
-const txBlockChain = require('../src/secjs-transaction-blockchain')
-const tkBlock = require('../src/secjs-token-block')
-const tkBlockChain = require('../src/secjs-token-blockchain')
-const txTransModel = require('../model/transactionchain-trans-model')
-const tkTransModel = require('../model/tokenchain-trans-model')
+const TxPool = require('../src/secjs-transaction-pool')
+const TxBlock = require('../src/secjs-transaction-block')
+const TxBlockChain = require('../src/secjs-transaction-blockchain')
+const TkBlock = require('../src/secjs-token-block')
+const TkBlockChain = require('../src/secjs-token-blockchain')
+const TxTransModel = require('../model/transactionchain-trans-model')
+const TkTransModel = require('../model/tokenchain-trans-model')
 const randomGen = require('../src/secjs-random-generate')
 const fs = require('fs')
 
 let txchainFile = './txblockchain.json'
 let tokenchainFile = './tokenblockchain.json'
 
-let tranPool = new txPool(null, true)
-let tokenPool = new txPool(null, false)
-let tranBlock = new txBlock()
-let tokenBlock = new tkBlock()
+let tranPool = new TxPool(null, true)
+let tokenPool = new TxPool(null, false)
+let tranBlock = new TxBlock()
+let tokenBlock = new TkBlock()
 
 addTxToPool(10)
 tranBlock.generateBlock(tranPool)
 tokenBlock.generateBlock(tokenPool)
 
 readBlock(txchainFile, (err, data) => {
-  let transBlockChain = new txBlockChain(data)
+  let transBlockChain = new TxBlockChain(data)
   transBlockChain.addBlockToChain(tranBlock.block)
 
-  fs.writeFile(txchainFile, JSON.stringify(transBlockChain.txBlockChain), (err) => {
-    if (err) { throw err }
-  })
+  try {
+    fs.writeFile(txchainFile, JSON.stringify(transBlockChain.txBlockChain), err)
+  } catch (err) {
+    throw new Error(err)
+  }
 
   console.log(transBlockChain.getLastBlockHash())
 })
 
 readBlock(tokenchainFile, (err, data) => {
-  let tokenBlockChain = new tkBlockChain(data)
+  let tokenBlockChain = new TkBlockChain(data)
   tokenBlockChain.addBlockToChain(tokenBlock.block)
 
-  fs.writeFile(tokenchainFile, JSON.stringify(tokenBlockChain.tokenBlockChain), (err) => {
-    if (err) { throw err }
-  })
+  try {
+    fs.writeFile(tokenchainFile, JSON.stringify(tokenBlockChain.tokenBlockChain), err)
+  } catch (err) {
+    throw new Error(err)
+  }
 
   console.log(tokenBlockChain.getLastBlockHash())
 })
@@ -54,7 +58,7 @@ function addTxToPool (num) {
 }
 
 function generateTxTransaction () {
-  let transactionBlock = txTransModel
+  let transactionBlock = TxTransModel
 
   transactionBlock.txHash = randomGen.randomGenerate('string', 32)
   transactionBlock.TxReceiptStatus = 'pending'
@@ -86,7 +90,7 @@ function generateTxTransaction () {
 }
 
 function generateTokenTransaction () {
-  let tokenlock = tkTransModel
+  let tokenlock = TkTransModel
 
   tokenlock.txHash = randomGen.randomGenerate('string', 32)
   tokenlock.TxReceiptStatus = 'pending'
