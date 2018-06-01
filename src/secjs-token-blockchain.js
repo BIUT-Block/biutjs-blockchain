@@ -9,7 +9,7 @@ class SECTokenBlockChain {
      */
   constructor (blockchain, config) {
     this.tokenBlockChain = {}
-    if ((typeof blockchain !== 'undefined') && (blockchain != '')) {
+    if ((typeof blockchain !== 'undefined') && (blockchain !== '')) {
       this.tokenBlockChain = JSON.parse(blockchain)
     }
     this.config = config
@@ -21,7 +21,7 @@ class SECTokenBlockChain {
      *
      */
   addBlockToChain (block) {
-    let blockHeight = this.getCurrentHeight()
+    // let blockHeight = this.getCurrentHeight()
 
     // if(blockHeight = block.Height + 1){
     this.tokenBlockChain[block.Height] = block

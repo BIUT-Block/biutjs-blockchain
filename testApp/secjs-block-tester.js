@@ -9,21 +9,20 @@ let txTransModel = require('../model/transactionchain-trans-model');
 
 
 let txpool_config = {
-    poolname: 'transactionpool'
+  poolname: 'transactionpool'
 }
 let block_config = {
-    blockversion: '0.0.1_201805'
+  blockversion: '0.0.1_201805'
 }
 let blockchain_config = {
-    blockchain_version: '0.0.1_201805'
+  blockchain_version: '0.0.1_201805'
 }
 let block = new secjs_block(block_config);
-let blockchain = new secjs_blockchain('',blockchain_config);
+let blockchain = new secjs_blockchain('', blockchain_config);
 let txpool = new secjs_tx_pool(txpool_config);
 let hash = new hash_generate('sha256');
 
-
-//create a simulation of transaction
+// create a simulation of transaction
 txTransModel.TxHash = hash.hash('transaction 1');
 console.log(`generate hash of transaction ${txTransModel.TxHash}`);
 txTransModel.BlockHeight = generate.randomGenerate('number', 5);
@@ -44,7 +43,3 @@ txpool.addTxIntoPool(txTransModel);
 //gernate a transaction chain block
 block.generateBlock(txpool, blockchain);
 blockchain.addBlockToChain(block);
-
-
-
-

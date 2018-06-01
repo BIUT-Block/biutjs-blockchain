@@ -1,4 +1,5 @@
-const tokenBlockModel = require('../model/tokenchain-block-model')
+// const tokenBlockModel = require('../model/tokenchain-block-model')
+const SECjsTx = require('secjs-tx')
 // const powCal = require('pow-calculation')
 const SECHash = require('./secjs-hash.js')
 const randomGen = require('./secjs-random-generate')
@@ -10,9 +11,12 @@ class SECTokenBlock {
      *
      */
   constructor (config) {
+    this.tokenChainBlockHandler = new SECjsTx({
+      type: 'tokenchain-block'
+    }).getInstance()
     this.config = config
     this.transactions = []
-    this.block = tokenBlockModel
+    this.block = this.tokenChainBlockHandler.getModel()
   }
 
   /**
