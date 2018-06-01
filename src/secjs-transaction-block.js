@@ -1,4 +1,4 @@
-const txBlockModel = require('../model/transactionchain-block-model')
+const SECjsTx = require('secjs-tx')
 // const powCal = require('pow-calculation')
 const SECHash = require('./secjs-hash.js')
 const randomGen = require('./secjs-random-generate')
@@ -12,7 +12,10 @@ class SECTransactionBlock {
   constructor (config) {
     this.config = config
     this.transactions = []
-    this.block = txBlockModel
+    this.blockModelHandler = new SECjsTx({
+      type: 'transactionchain-block'
+    }).getInstance()
+    this.block = this.blockModelHandler.getModel()
 
     let hashalgo = 'sha256'
     this.secjsHash = new SECHash(hashalgo)
