@@ -1,7 +1,7 @@
 let transactionPoolModel = {
-    TxHash: '',
-    TxFee: '',
-    TimeStamp: ''  
+  TxHash: '',
+  TxFee: '',
+  TimeStamp: ''
 }
 
-module.exports = transactionPoolModel;
+module.exports = transactionPoolModel

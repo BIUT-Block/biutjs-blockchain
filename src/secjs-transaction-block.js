@@ -13,6 +13,9 @@ class SECTransactionBlock {
     this.config = config
     this.transactions = []
     this.block = txBlockModel
+
+    let hashalgo = 'sha256'
+    this.secjsHash = new SECHash(hashalgo)
   }
 
   /**
@@ -42,15 +45,16 @@ class SECTransactionBlock {
     })
   }
 
+  calculateBlockHash () {
+    return this.secjsHash.hash(JSON.stringify(this.block))
+  }
+
   /**
      * assign value to block header
      * @param {*} txBlockChain
      *
      */
   fillInBlockInfo (txBlockChain) {
-    let hashalgo = 'sha256'
-    let secjsHash = new SECHash(hashalgo)
-
     this.block.Height = randomGen.randomGenerate('number', 10000) // txBlockChain.currentHeight + 1
     this.block.TimeStamp = new Date().getTime()
     this.block.Transactions = this.transactions
@@ -59,8 +63,8 @@ class SECTransactionBlock {
     this.block.Block_Reward = 10 // TBD
     this.block.Extra_Data = '' // Empty?
 
-    this.block.Size = JSON.stringify(this.block).length + 2 * secjsHash.getHashLength()
-    this.block.Hash = secjsHash.hash(JSON.stringify(this.block))
+    this.block.Size = JSON.stringify(this.block).length + 2 * this.secjsHash.getHashLength()
+    this.block.Hash = this.calculateBlockHash()
     this.block.Nonce = randomGen.randomGenerate('string', 32) // powCal.getNonce(this.block)
   }
 
