@@ -1,7 +1,9 @@
 {
   "dependencies": {
     "chai": "^4.1.2",
+    "describe": "^1.2.0",
     "mocha": "^5.2.0",
+    "secjs": "^1.0.0",
     "secjs-tx": "^0.1.4"
   },
   "scripts": {
