@@ -10,7 +10,7 @@
   "name": "@sec-block/secjs-block",
   "version": "1.0.3",
   "description": "sec blockchain block lib",
-  "main": "generate.js",
+  "main": "src/index.js",
   "directories": {
     "test": "test"
   },
