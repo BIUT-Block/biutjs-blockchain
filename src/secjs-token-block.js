@@ -1,6 +1,6 @@
-const SECjsTx = require('@sec-block/secjs-tx')
+const SECTX = require('@sec-block/secjs-tx')
+const SECUtil = require('@sec-block/secjs-util')
 const SECHash = require('./secjs-hash.js')
-const randomGen = require('./secjs-random-generate')
 
 class SECTokenBlock {
   /**
@@ -9,12 +9,13 @@ class SECTokenBlock {
      *
      */
   constructor (config) {
-    this.tokenChainBlockHandler = new SECjsTx({
+    this.tokenChainBlockHandler = new SECTX({
       type: 'tokenchain-block'
     }).getInstance()
     this.config = config
     this.transactions = []
     this.block = this.tokenChainBlockHandler.getModel()
+    this.util = new SECUtil()
   }
 
   /**
@@ -53,21 +54,21 @@ class SECTokenBlock {
     let hashalgo = 'sha256'
     let secjsHash = new SECHash(hashalgo)
 
-    this.block.Height = randomGen.randomGenerate('number', 10000) // tokenBlockChain.currentHeight + 1
-    this.block.TimeStamp = new Date().getTime()
+    this.block.Height = tokenBlockChain.currentHeight + 1
+    this.block.TimeStamp = this.util.currentUnixtime()
     this.block.Transactions = this.transactions
-    this.block.Parent_Hash = randomGen.randomGenerate('string', 32) // tokenBlockChain.lastBlockHash
-    this.block.Mined_By = randomGen.randomGenerate('string', 32) // this.config.userAddr
-    this.block.Difficulty = randomGen.randomGenerate('number', 10000)
-    this.block.Total_Difficulty = randomGen.randomGenerate('number', 100000)
-    this.block.Gas_Used = randomGen.randomGenerate('number', 10000)
-    this.block.Gas_Limit = randomGen.randomGenerate('number', 100000)
-    this.block.Block_Reward = 10 // TBD
-    this.block.Extra_Data = '' // Empty?
+    this.block.Parent_Hash = tokenBlockChain.lastBlockHash
+    this.block.Mined_By = this.config.userAddr
+    this.block.Difficulty = this.config.Difficulty // randomGen.randomGenerate('number', 10000)
+    this.block.Total_Difficulty = this.config.Total_Difficulty // randomGen.randomGenerate('number', 100000)
+    this.block.Gas_Used = this.config.Gas_Used // randomGen.randomGenerate('number', 10000)
+    this.block.Gas_Limit = this.config.Gas_Limit // randomGen.randomGenerate('number', 100000)
+    this.block.Block_Reward = this.config.Block_Reward // 10 // TBD
+    this.block.Extra_Data = this.config.Extra_Data // Empty?
 
     this.block.Size = JSON.stringify(this.block).length + 2 * secjsHash.getHashLength()
+    this.block.Nonce = this.config.Nonce // powCal.getNonce(this.block)
     this.block.Hash = secjsHash.hash(JSON.stringify(this.block))
-    this.block.Nonce = randomGen.randomGenerate('string', 32) // powCal.getNonce(this.block)
   }
 
   /**
@@ -76,7 +77,7 @@ class SECTokenBlock {
      *
      */
   verifyTransaction (transaction) {
-    // do nothing, will be implemented in the future
+    // TODO: will be implemented in the future
     return true
   }
 }
