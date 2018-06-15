@@ -8,7 +8,7 @@ const TransactionPool = require('./secjs-transaction-pool')
 
 module.exports = {
   SECHash: SECHash,
-  randomGenerate: randomGenerate,
+  RandomGenerate: randomGenerate,
   SECTokenBlock: SECTokenBlock,
   SECTokenBlockChain: SECTokenBlockChain,
   SECTransactionBlock: SECTransactionBlock,

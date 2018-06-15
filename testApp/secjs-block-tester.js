@@ -1,6 +1,5 @@
 const secjs_block = require('../src/secjs-transaction-block')
 const secjs_blockchain = require('../src/secjs-transaction-blockchain')
-// const secjs_tx_pool = require('../src/secjs-transaction-blockchain');
 const secjs_tx_pool = require('../src/secjs-transaction-pool')
 const generate = require('../src/secjs-random-generate')
 const hash_generate = require('../src/secjs-hash')
