@@ -1,5 +1,4 @@
-const SECjsTx = require('secjs-tx')
-// const powCal = require('pow-calculation')
+const SECjsTx = require('@sec-block/secjs-tx')
 const SECHash = require('./secjs-hash.js')
 const randomGen = require('./secjs-random-generate')
 

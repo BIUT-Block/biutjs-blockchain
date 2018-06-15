@@ -1,5 +1,4 @@
 const fs = require('fs')
-// const tokenTransModel = require('../model/tokenchain-trans-model')
 
 class SECTokenBlockChain {
   /**
