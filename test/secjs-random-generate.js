@@ -1,5 +1,6 @@
 let randomGen = require('../src/secjs-random-generate')
 let expect = require('chai').expect
+let describe = require('describe')
 
 describe('secjs-random-generate', () => {
   describe('random generation correctness test', () => {

@@ -1,9 +1,9 @@
-const secjs_block = require('../utils/secjs-transaction-block')
-const secjs_blockchain = require('../utils/secjs-transaction-blockchain')
-// const secjs_tx_pool = require('../utils/secjs-transaction-blockchain');
-const secjs_tx_pool = require('../utils/secjs-transaction-pool')
-const generate = require('../utils/secjs-random-generate')
-const hash_generate = require('../utils/secjs-hash')
+const secjs_block = require('../src/secjs-transaction-block')
+const secjs_blockchain = require('../src/secjs-transaction-blockchain')
+// const secjs_tx_pool = require('../src/secjs-transaction-blockchain');
+const secjs_tx_pool = require('../src/secjs-transaction-pool')
+const generate = require('../src/secjs-random-generate')
+const hash_generate = require('../src/secjs-hash')
 let txTransModel = require('../model/transactionchain-trans-model')
 
 let txpool_config = {
