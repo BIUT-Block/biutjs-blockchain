@@ -33,7 +33,7 @@ class TransactionPool {
    * @param {*} blockChain
    */
   updateBlockHashArray (blockChain) {
-    let timeStampOfLastBlock = this.blockChain.getLastBlockTimeStamp()
+    let timeStampOfLastBlock = blockChain.getLastBlockTimeStamp()
 
     if (this.blockChainHashBuffer.firstTimeUpdate) {
       blockChain.foreach((block) => {
