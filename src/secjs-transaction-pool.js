@@ -1,3 +1,5 @@
+const SECUtil = require('@sec-block/secjs-util')
+
 class TransactionPool {
   /**
    * create a transaction pool with config, such as transaction pool of token chain or transaction chain
@@ -12,11 +14,7 @@ class TransactionPool {
       firstTimeUpdate: true,
       updateTime: ''
     }
-    // if(isTxBlockChain){
-    //   this.blockChain = new txBlockChain();
-    // } else{
-    //   this.blockChain = new tokenBlockChain();
-    // }
+    this.SECUtil = new SECUtil()
   }
 
   /**
@@ -39,7 +37,7 @@ class TransactionPool {
       blockChain.foreach((block) => {
         this.blockChainHashBuffer.blockHashes.add(block.TxHash)
         this.blockChainHashBuffer.firstTimeUpdate = false
-        this.blockChainHashBuffer.updateTime = new Date().getTime()
+        this.blockChainHashBuffer.updateTime = this.SECUtil.currentUnixtime()
       })
     } else {
       /* 比较长度 */
@@ -48,7 +46,7 @@ class TransactionPool {
           return block.TimeStamp >= timeStampOfLastBlock
         })
         this.blockChainHashBuffer.blockHashes.concat(partBlockChain.TxHash)
-        this.blockChainHashBuffer.updateTime = new Date().getTime()
+        this.blockChainHashBuffer.updateTime = this.SECUtil.currentUnixtime()
       } else {
         // do nothing
       }
@@ -71,7 +69,7 @@ class TransactionPool {
   }
 
   /**
-   *to update the local transaction pool with transactions from other peers
+   * to update the local transaction pool with transactions from other peers
    * @param {*} txFromOtherPeer
    */
   addTxFromOtherPeerIntoPool (txFromOtherPeer) {

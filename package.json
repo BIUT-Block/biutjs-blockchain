@@ -1,23 +1,26 @@
 {
   "dependencies": {
+    "@sec-block/secjs-tx": "^0.1.4",
+    "@sec-block/secjs-util": "^1.0.4",
     "chai": "^4.1.2",
+    "describe": "^1.2.0",
     "mocha": "^5.2.0",
-    "secjs-tx": "^0.1.4"
+    "standard": "^11.0.1"
   },
   "scripts": {
     "test": "mocha --reporter spec"
   },
   "name": "@sec-block/secjs-block",
-  "version": "1.0.3",
+  "version": "1.0.12",
   "description": "sec blockchain block lib",
-  "main": "generate.js",
+  "main": "src/index.js",
   "directories": {
     "test": "test"
   },
   "devDependencies": {},
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@gitlab.com/MongoX-SEC/secjs-block.git"
+    "url": "https://github.com/SEC-block/secjs-block.git"
   },
   "keywords": [
     "secjs",
@@ -26,7 +29,7 @@
   "author": "Minghao Weihan",
   "license": "ISC",
   "bugs": {
-    "url": "https://gitlab.com/MongoX-SEC/secjs-block/issues"
+    "url": "https://github.com/SEC-block/secjs-block/issues"
   },
-  "homepage": "https://gitlab.com/MongoX-SEC/secjs-block#README"
+  "homepage": "https://github.com/SEC-block/secjs-block#README"
 }

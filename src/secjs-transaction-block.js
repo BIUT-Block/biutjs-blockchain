@@ -1,24 +1,24 @@
-const SECjsTx = require('secjs-tx')
-// const powCal = require('pow-calculation')
+const SECTX = require('@sec-block/secjs-tx')
+const SECUtil = require('@sec-block/secjs-util')
 const SECHash = require('./secjs-hash.js')
-const randomGen = require('./secjs-random-generate')
 
 class SECTransactionBlock {
   /**
-     * create a transaction chain block with config
-     * @param {*} config
-     *
-     */
+    * create a transaction chain block with config
+    * @param {*} config
+    *
+    */
   constructor (config) {
     this.config = config
     this.transactions = []
-    this.blockModelHandler = new SECjsTx({
+    this.blockModelHandler = new SECTX({
       type: 'transactionchain-block'
     }).getInstance()
     this.block = this.blockModelHandler.getModel()
 
     let hashalgo = 'sha256'
-    this.secjsHash = new SECHash(hashalgo)
+    this.secHash = new SECHash(hashalgo)
+    this.util = new SECUtil()
   }
 
   /**
@@ -42,14 +42,15 @@ class SECTransactionBlock {
       let tx = JSON.parse(currTx)
       if (this.verifyTransaction(tx)) {
         this.transactions.push(tx)
-      } // else{
-      // report???
+      }
+      // TODO: must write in future
+      // else{
       // }
     })
   }
 
   calculateBlockHash () {
-    return this.secjsHash.hash(JSON.stringify(this.block))
+    return this.secHash.hash(JSON.stringify(this.block))
   }
 
   /**
@@ -58,17 +59,16 @@ class SECTransactionBlock {
      *
      */
   fillInBlockInfo (txBlockChain) {
-    this.block.Height = randomGen.randomGenerate('number', 10000) // txBlockChain.currentHeight + 1
-    this.block.TimeStamp = new Date().getTime()
+    this.block.Height = txBlockChain.currentHeight // txBlockChain.currentHeight + 1
+    this.block.TimeStamp = this.util.currentUnixtime()
     this.block.Transactions = this.transactions
-    this.block.Parent_Hash = randomGen.randomGenerate('string', 32) // txBlockChain.lastBlockHash
-    this.block.Mined_By = randomGen.randomGenerate('string', 32) // this.config.userAddr
-    this.block.Block_Reward = 10 // TBD
-    this.block.Extra_Data = '' // Empty?
+    this.block.Parent_Hash = txBlockChain.lastBlockHash // randomGen.randomGenerate('string', 32)
+    this.block.Mined_By = this.config.userAddr // randomGen.randomGenerate('string', 32)
+    this.block.Extra_Data = this.config.Extra_Data // Empty?
 
-    this.block.Size = JSON.stringify(this.block).length + 2 * this.secjsHash.getHashLength()
+    this.block.Size = JSON.stringify(this.block).length + 2 * this.secHash.getHashLength()
+    this.block.Nonce = this.config.Nonce // powCal.getNonce(this.block)
     this.block.Hash = this.calculateBlockHash()
-    this.block.Nonce = randomGen.randomGenerate('string', 32) // powCal.getNonce(this.block)
   }
 
   /**

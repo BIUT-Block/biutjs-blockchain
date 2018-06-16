@@ -1,5 +1,4 @@
 const fs = require('fs')
-// const tokenTransModel = require('../model/tokenchain-trans-model')
 
 class SECTokenBlockChain {
   /**
@@ -21,14 +20,13 @@ class SECTokenBlockChain {
      *
      */
   addBlockToChain (block) {
-    // let blockHeight = this.getCurrentHeight()
-
-    // if(blockHeight = block.Height + 1){
-    this.tokenBlockChain[block.Height] = block
-    // }
-    // else{
-    // do something
-    // }
+    let blockHeight = this.getCurrentHeight()
+    if (blockHeight === block.Height + 1) {
+      this.tokenBlockChain[block.Height] = block
+    } else {
+      // TODO: must changed in future
+      this.tokenBlockChain[blockHeight + 1] = block
+    }
   }
 
   /**
@@ -36,8 +34,11 @@ class SECTokenBlockChain {
      * @param {*} file
      *
      */
-  writeBlockChainToFile (file) {
-    fs.writeFile(file, JSON.stringify(this.tokenBlockChain), (err) => { throw err })
+  writeBlockChainToFile (file, callback) {
+    fs.writeFile(file, JSON.stringify(this.tokenBlockChain), (err) => {
+      if (err) throw err
+      callback()
+    })
   }
 
   /**
