@@ -1,4 +1,5 @@
 const fs = require('fs')
+const SECHash = require('./secjs-hash.js')
 
 class SECTokenBlockChain {
   /**
@@ -12,6 +13,54 @@ class SECTokenBlockChain {
       this.tokenBlockChain = JSON.parse(blockchain)
     }
     this.config = config
+    this.currentBlockChain = ''
+  }
+
+  init (callback) {
+    if (fs.existsSync(this.config.filePath)) {
+      this.readBlockChainFile((data) => {
+        this.tokenBlockChain = JSON.parse(data)
+        callback(this.tokenBlockChain)
+      })
+    } else {
+      let genesisBlock = this.generateGenesisBlock()
+      this.addBlockToChain(genesisBlock)
+      this.writeBlockChainToFile(this.config.pathFile, () => {
+        callback(this.tokenBlockChain)
+      })
+    }
+  }
+
+  readBlockChainFile (callback) {
+    fs.readFile(this.config.filePath, (err, data) => {
+      if (err) {
+        throw new Error(`File can not be readed `)
+      } else {
+        callback(data)
+      }
+    })
+  }
+
+  generateGenesisBlock () {
+    let hashalgo = 'sha256'
+    let secjsHash = new SECHash(hashalgo)
+    let block = {}
+    block.Height = 0
+    block.TimeStamp = Math.round((new Date()).getTime() / 1000)
+    block.Transactions = []
+    block.Parent_Hash = 'Genesis'
+    block.Mined_By = 'SEC'
+    block.Difficulty = 1
+    block.Total_Difficulty = 1
+    block.Gas_Used = 0
+    block.Gas_Limit = 0
+    block.Block_Reward = 10
+    block.Extra_Data = 'SEC Hello World'
+
+    block.Size = JSON.stringify(block).length + 2 * secjsHash.getHashLength()
+    block.Nonce = ''
+    block.Hash = secjsHash.hash(JSON.stringify(block))
+    return block
   }
 
   /**
