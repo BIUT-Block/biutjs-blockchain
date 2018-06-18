@@ -99,6 +99,10 @@ class SECTransactionBlockChain {
     return blockHeight
   }
 
+  getGenesisBlockDifficulty () {
+    return this.txBlockChain[0].Difficulty
+  }
+
   getGenesisBlockHash () {
     return this.txBlockChain[0].Hash
   }

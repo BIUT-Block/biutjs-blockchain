@@ -107,6 +107,10 @@ class SECTokenBlockChain {
     return blockHeight
   }
 
+  getGenesisBlockDifficulty () {
+    return this.tokenBlockChain[0].Difficulty
+  }
+
   getGenesisBlockHash () {
     return this.tokenBlockChain[0].Hash
   }
