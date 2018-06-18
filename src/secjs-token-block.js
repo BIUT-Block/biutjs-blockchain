@@ -58,7 +58,7 @@ class SECTokenBlock {
     let hashalgo = 'sha256'
     let secjsHash = new SECHash(hashalgo)
 
-    this.block.Height = tokenBlockChain.currentHeight + 1
+    this.block.Height = parseInt(tokenBlockChain.getCurrentHeight()) + 1
     this.block.TimeStamp = this.util.currentUnixtime()
     this.block.Transactions = this.transactions
     this.block.Parent_Hash = tokenBlockChain.lastBlockHash
