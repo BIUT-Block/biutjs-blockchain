@@ -107,6 +107,10 @@ class SECTokenBlockChain {
     return blockHeight
   }
 
+  getGenesisBlockHash () {
+    return this.tokenBlockChain[0].Hash
+  }
+
   /**
      * return last block's hash value
      * @param {*} None

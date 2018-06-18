@@ -99,6 +99,10 @@ class SECTransactionBlockChain {
     return blockHeight
   }
 
+  getGenesisBlockHash () {
+    return this.txBlockChain[0].Hash
+  }
+
   /**
    * return last block's hash value
    * @param {*} None
