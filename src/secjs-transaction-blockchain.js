@@ -68,7 +68,7 @@ class SECTransactionBlockChain {
       this.txBlockChain[block.Height] = block
     } else {
       // TODO: must changed in future
-      this.txBlockChain[parseInt(blockHeight + 1)] = block
+      this.txBlockChain[parseInt(blockHeight) + 1] = block
     }
   }
 

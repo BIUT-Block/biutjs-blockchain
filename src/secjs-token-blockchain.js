@@ -76,7 +76,7 @@ class SECTokenBlockChain {
       this.tokenBlockChain[block.Height] = block
     } else {
       // TODO: must changed in future
-      this.tokenBlockChain[parseInt(blockHeight + 1)] = block
+      this.tokenBlockChain[parseInt(blockHeight) + 1] = block
     }
   }
 
