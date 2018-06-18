@@ -96,6 +96,10 @@ class TransactionPool {
   getAllTxFromPool () {
     return this.txBuffer
   }
+
+  clear () {
+    this.txBuffer = []
+  }
 }
 
 module.exports = TransactionPool

@@ -7,11 +7,8 @@ class SECTransactionBlockChain {
    * @param {*} blockchain, config
    *
    */
-  constructor (blockchain, config) {
+  constructor (config = { filePath: process.cwd() + '/data/txchain.json' }) {
     this.txBlockChain = {}
-    if ((typeof blockchain !== 'undefined') && (blockchain !== '')) {
-      this.txBlockChain = JSON.parse(blockchain)
-    }
     this.config = config
   }
 
@@ -29,10 +26,14 @@ class SECTransactionBlockChain {
     }
   }
 
+  getBlockChain () {
+    return this.txBlockChain
+  }
+
   readBlockChainFile (callback) {
     fs.readFile(this.config.filePath, (err, data) => {
       if (err) {
-        throw new Error(`File can not be readed `)
+        throw new Error(`Transaction Blockchain can not be loaded`)
       } else {
         callback(data)
       }

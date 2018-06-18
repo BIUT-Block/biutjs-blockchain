@@ -4,10 +4,10 @@ const SECHash = require('./secjs-hash.js')
 
 class SECTokenBlock {
   /**
-     * create a token chain block with config
-     * @param {*} config
-     *
-     */
+    * create a token chain block with config
+    * @param {*} config
+    *
+    */
   constructor (config) {
     this.tokenChainBlockHandler = new SECTX({
       type: 'tokenchain-block'
@@ -18,21 +18,25 @@ class SECTokenBlock {
     this.util = new SECUtil()
   }
 
+  getBlock () {
+    return this.block
+  }
+
   /**
-     * generate a token chain block
-     * @param {*} tokenPool, tokenBlockChain
-     *
-     */
+    * generate a token chain block
+    * @param {*} tokenPool, tokenBlockChain
+    *
+    */
   generateBlock (tokenPool, tokenBlockChain) {
     this.collectTxFromPool(tokenPool)
     this.fillInBlockInfo(tokenBlockChain)
   }
 
   /**
-     * collect transactions from transaction pool
-     * @param {*} tokenPool
-     *
-     */
+    * collect transactions from transaction pool
+    * @param {*} tokenPool
+    *
+    */
   collectTxFromPool (tokenPool) {
     let txBuffer = tokenPool.getAllTxFromPool()
     txBuffer.forEach((currTx) => {
@@ -46,10 +50,10 @@ class SECTokenBlock {
   }
 
   /**
-     * assign value to block header
-     * @param {*} tokenBlockChain
-     *
-     */
+    * assign value to block header
+    * @param {*} tokenBlockChain
+    *
+    */
   fillInBlockInfo (tokenBlockChain) {
     let hashalgo = 'sha256'
     let secjsHash = new SECHash(hashalgo)
@@ -72,10 +76,10 @@ class SECTokenBlock {
   }
 
   /**
-     * verify that the transaction is legal
-     * @param {*} transaction
-     *
-     */
+    * verify that the transaction is legal
+    * @param {*} transaction
+    *
+    */
   verifyTransaction (transaction) {
     // TODO: will be implemented in the future
     return true

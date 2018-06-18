@@ -21,21 +21,25 @@ class SECTransactionBlock {
     this.util = new SECUtil()
   }
 
+  getBlock () {
+    return this.block
+  }
+
   /**
-     * generate a transaction chain block
-     * @param {*} txPool, txBlockChain
-     *
-     */
+    * generate a transaction chain block
+    * @param {*} txPool, txBlockChain
+    *
+    */
   generateBlock (txPool, txBlockChain) {
     this.collectTxFromPool(txPool)
     this.fillInBlockInfo(txBlockChain)
   }
 
   /**
-     * collect transactions from transaction pool
-     * @param {*} txPool
-     *
-     */
+    * collect transactions from transaction pool
+    * @param {*} txPool
+    *
+    */
   collectTxFromPool (txPool) {
     let txBuffer = txPool.getAllTxFromPool()
     txBuffer.forEach((currTx) => {
@@ -54,10 +58,10 @@ class SECTransactionBlock {
   }
 
   /**
-     * assign value to block header
-     * @param {*} txBlockChain
-     *
-     */
+    * assign value to block header
+    * @param {*} txBlockChain
+    *
+    */
   fillInBlockInfo (txBlockChain) {
     this.block.Height = txBlockChain.currentHeight // txBlockChain.currentHeight + 1
     this.block.TimeStamp = this.util.currentUnixtime()
@@ -72,10 +76,10 @@ class SECTransactionBlock {
   }
 
   /**
-     * verify that the transaction is legal
-     * @param {*} transaction
-     *
-     */
+    * verify that the transaction is legal
+    * @param {*} transaction
+    *
+    */
   verifyTransaction (transaction) {
     // do nothing, will be implemented in the future
     return true

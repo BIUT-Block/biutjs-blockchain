@@ -7,13 +7,9 @@ class SECTokenBlockChain {
      * @param {*} blockchain, config
      *
      */
-  constructor (blockchain, config) {
+  constructor (config = { filePath: process.cwd() + '/data/tokenchain.json' }) {
     this.tokenBlockChain = {}
-    if ((typeof blockchain !== 'undefined') && (blockchain !== '')) {
-      this.tokenBlockChain = JSON.parse(blockchain)
-    }
     this.config = config
-    this.currentBlockChain = ''
   }
 
   init (callback) {
@@ -31,10 +27,14 @@ class SECTokenBlockChain {
     }
   }
 
+  getBlockChain () {
+    return this.tokenBlockChain
+  }
+
   readBlockChainFile (callback) {
     fs.readFile(this.config.filePath, (err, data) => {
       if (err) {
-        throw new Error(`File can not be readed `)
+        throw new Error(`Token Blockchain can not be loaded `)
       } else {
         callback(data)
       }
