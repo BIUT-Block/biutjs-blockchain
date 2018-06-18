@@ -1,4 +1,5 @@
 const fs = require('fs')
+const SECUtil = require('@sec-block/secjs-util')
 const SECHash = require('./secjs-hash.js')
 
 class SECTransactionBlockChain {
@@ -10,6 +11,7 @@ class SECTransactionBlockChain {
   constructor (config = { filePath: process.cwd() + '/data/txchain.json' }) {
     this.txBlockChain = {}
     this.config = config
+    this.util = new SECUtil()
   }
 
   init (callback) {
