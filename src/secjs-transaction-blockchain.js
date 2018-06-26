@@ -47,7 +47,7 @@ class SECTransactionBlockChain {
     let secjsHash = new SECHash(hashalgo)
     let block = {}
     block.Height = 0 // txBlockChain.currentHeight + 1
-    block.TimeStamp = this.util.currentUnixtime()
+    block.TimeStamp = this.util.currentUnixTimeSecond()
     block.Transactions = []
     block.Parent_Hash = 'Genesis'
     block.Mined_By = 'SEC'

@@ -59,7 +59,7 @@ class SECTokenBlock {
     let secjsHash = new SECHash(hashalgo)
 
     this.block.Height = parseInt(tokenBlockChain.getCurrentHeight()) + 1
-    this.block.TimeStamp = this.util.currentUnixtime()
+    this.block.TimeStamp = this.util.currentUnixTimeSecond()
     this.block.Transactions = this.transactions
     this.block.Parent_Hash = tokenBlockChain.lastBlockHash
     this.block.Mined_By = this.config.userAddr

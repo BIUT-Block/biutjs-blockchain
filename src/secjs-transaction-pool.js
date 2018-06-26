@@ -37,7 +37,7 @@ class TransactionPool {
       blockChain.foreach((block) => {
         this.blockChainHashBuffer.blockHashes.add(block.TxHash)
         this.blockChainHashBuffer.firstTimeUpdate = false
-        this.blockChainHashBuffer.updateTime = this.SECUtil.currentUnixtime()
+        this.blockChainHashBuffer.updateTime = this.SECUtil.currentUnixTimeSecond()
       })
     } else {
       /* 比较长度 */
@@ -46,7 +46,7 @@ class TransactionPool {
           return block.TimeStamp >= timeStampOfLastBlock
         })
         this.blockChainHashBuffer.blockHashes.concat(partBlockChain.TxHash)
-        this.blockChainHashBuffer.updateTime = this.SECUtil.currentUnixtime()
+        this.blockChainHashBuffer.updateTime = this.SECUtil.currentUnixTimeSecond()
       } else {
         // do nothing
       }
