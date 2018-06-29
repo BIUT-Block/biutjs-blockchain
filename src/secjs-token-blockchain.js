@@ -9,7 +9,7 @@ class SECTokenBlockChain {
      *
      */
   constructor (config = { filePath: process.cwd() + '/data/tokenchain.json' }) {
-    this.tokenBlockChain = {}
+    this.tokenBlockChain = []
     this.config = config
     this.util = new SECUtil()
   }
@@ -71,12 +71,10 @@ class SECTokenBlockChain {
      *
      */
   addBlockToChain (block) {
-    let blockHeight = this.getCurrentHeight()
-    if (blockHeight === block.Height + 1) {
-      this.tokenBlockChain[block.Height] = block
+    if (this.getCurrentHeight() < block.Height) {
+      this.tokenBlockChain.push(block)
     } else {
       // TODO: must changed in future
-      this.tokenBlockChain[parseInt(blockHeight) + 1] = block
     }
   }
 
@@ -98,13 +96,7 @@ class SECTokenBlockChain {
      *
      */
   getCurrentHeight () {
-    let blockHeight = 0
-    Object.keys(this.tokenBlockChain).forEach(function (key) {
-      if (key > parseInt(blockHeight)) {
-        blockHeight = key
-      }
-    })
-    return blockHeight
+    return this.tokenBlockChain.length - 1
   }
 
   getGenesisBlockDifficulty () {
@@ -121,8 +113,7 @@ class SECTokenBlockChain {
      *
      */
   getLastBlockHash () {
-    let blockHeight = this.getCurrentHeight()
-    return this.tokenBlockChain[blockHeight].Hash
+    return this.tokenBlockChain[this.getCurrentHeight()].Hash
   }
 
   /**
@@ -131,8 +122,7 @@ class SECTokenBlockChain {
      *
      */
   getLastBlockTimeStamp () {
-    let blockHeight = this.getCurrentHeight()
-    return this.tokenBlockChain[blockHeight].TimeStamp
+    return this.tokenBlockChain[this.getCurrentHeight()].TimeStamp
   }
 }
 
