@@ -45,7 +45,7 @@ class SECTransactionBlockChain {
    * @param {*} file
    *
    */
-  _writeBlockChainToFile (callback) {
+  writeBlockChainToFile (callback) {
     fs.writeFile(this.config.filePath, JSON.stringify(this.txBlockChain), (err) => {
       if (err) throw err
       callback()
@@ -60,7 +60,7 @@ class SECTransactionBlockChain {
       })
     } else {
       this._generateGenesisBlock()
-      this._writeBlockChainToFile(() => {
+      this.writeBlockChainToFile(() => {
         callback(this.txBlockChain)
       })
     }
