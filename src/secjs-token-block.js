@@ -61,7 +61,7 @@ class SECTokenBlock {
     this.block.Height = parseInt(tokenBlockChain.getCurrentHeight()) + 1
     this.block.TimeStamp = this.util.currentUnixTimeSecond()
     this.block.Transactions = this.transactions
-    this.block.Parent_Hash = tokenBlockChain.lastBlockHash
+    this.block.Parent_Hash = this.config.Parent_Hash
     this.block.Mined_By = this.config.userAddr
     this.block.Difficulty = this.config.Difficulty // randomGen.randomGenerate('number', 10000)
     this.block.Total_Difficulty = this.config.Total_Difficulty // randomGen.randomGenerate('number', 100000)
