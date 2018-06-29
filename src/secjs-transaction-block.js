@@ -66,7 +66,7 @@ class SECTransactionBlock {
     this.block.Height = parseInt(txBlockChain.getCurrentHeight()) + 1 // txBlockChain.currentHeight + 1
     this.block.TimeStamp = this.util.currentUnixTimeSecond()
     this.block.Transactions = this.transactions
-    this.block.Parent_Hash = txBlockChain.lastBlockHash // randomGen.randomGenerate('string', 32)
+    this.block.Parent_Hash = this.config.Parent_Hash // randomGen.randomGenerate('string', 32)
     this.block.Mined_By = this.config.userAddr // randomGen.randomGenerate('string', 32)
     this.block.Extra_Data = this.config.Extra_Data // Empty?
 

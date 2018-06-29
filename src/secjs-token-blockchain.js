@@ -14,36 +14,7 @@ class SECTokenBlockChain {
     this.util = new SECUtil()
   }
 
-  init (callback) {
-    if (fs.existsSync(this.config.filePath)) {
-      this.readBlockChainFile((data) => {
-        this.tokenBlockChain = JSON.parse(data)
-        callback(this.tokenBlockChain)
-      })
-    } else {
-      let genesisBlock = this.generateGenesisBlock()
-      this.addBlockToChain(genesisBlock)
-      this.writeBlockChainToFile(() => {
-        callback(this.tokenBlockChain)
-      })
-    }
-  }
-
-  getBlockChain () {
-    return this.tokenBlockChain
-  }
-
-  readBlockChainFile (callback) {
-    fs.readFile(this.config.filePath, (err, data) => {
-      if (err) {
-        throw new Error(`Token Blockchain can not be loaded `)
-      } else {
-        callback(data)
-      }
-    })
-  }
-
-  generateGenesisBlock () {
+  _generateGenesisBlock () {
     let hashalgo = 'sha256'
     let secjsHash = new SECHash(hashalgo)
     let block = {}
@@ -65,6 +36,47 @@ class SECTokenBlockChain {
     return block
   }
 
+  _readBlockChainFile (callback) {
+    fs.readFile(this.config.filePath, (err, data) => {
+      if (err) {
+        throw new Error(`Token Blockchain can not be loaded `)
+      } else {
+        callback(data)
+      }
+    })
+  }
+
+  /**
+     * store the blockchain to a local file
+     * @param {*} file
+     *
+     */
+  _writeBlockChainToFile (callback) {
+    fs.writeFile(this.config.filePath, JSON.stringify(this.tokenBlockChain), (err) => {
+      if (err) throw err
+      callback()
+    })
+  }
+
+  init (callback) {
+    if (fs.existsSync(this.config.filePath)) {
+      this._readBlockChainFile((data) => {
+        this.tokenBlockChain = JSON.parse(data)
+        callback(this.tokenBlockChain)
+      })
+    } else {
+      let genesisBlock = this._generateGenesisBlock()
+      this.addBlockToChain(genesisBlock)
+      this._writeBlockChainToFile(() => {
+        callback(this.tokenBlockChain)
+      })
+    }
+  }
+
+  getBlockChain () {
+    return this.tokenBlockChain
+  }
+
   /**
      * push a block at the bottom of the blockchain
      * @param {*} block
@@ -76,18 +88,6 @@ class SECTokenBlockChain {
     } else {
       // TODO: must changed in future
     }
-  }
-
-  /**
-     * store the blockchain to a local file
-     * @param {*} file
-     *
-     */
-  writeBlockChainToFile (callback) {
-    fs.writeFile(this.config.filePath, JSON.stringify(this.tokenBlockChain), (err) => {
-      if (err) throw err
-      callback()
-    })
   }
 
   /**

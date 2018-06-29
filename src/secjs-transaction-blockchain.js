@@ -9,40 +9,12 @@ class SECTransactionBlockChain {
    *
    */
   constructor (config = { filePath: process.cwd() + '/data/txchain.json' }) {
-    this.txBlockChain = {}
+    this.txBlockChain = []
     this.config = config
     this.util = new SECUtil()
   }
 
-  init (callback) {
-    if (fs.existsSync(this.config.filePath)) {
-      this.readBlockChainFile((data) => {
-        this.txBlockChain = JSON.parse(data)
-        callback(this.txBlockChain)
-      })
-    } else {
-      this.generateGenesisBlock()
-      this.writeBlockChainToFile(() => {
-        callback(this.txBlockChain)
-      })
-    }
-  }
-
-  getBlockChain () {
-    return this.txBlockChain
-  }
-
-  readBlockChainFile (callback) {
-    fs.readFile(this.config.filePath, (err, data) => {
-      if (err) {
-        throw new Error(`Transaction Blockchain can not be loaded`)
-      } else {
-        callback(data)
-      }
-    })
-  }
-
-  generateGenesisBlock () {
+  _generateGenesisBlock () {
     let hashalgo = 'sha256'
     let secjsHash = new SECHash(hashalgo)
     let block = {}
@@ -58,18 +30,14 @@ class SECTransactionBlockChain {
     return block
   }
 
-  /**
-   * push a block at the bottom of the blockchain
-   * @param {*} block
-   */
-  addBlockToChain (block) {
-    let blockHeight = this.getCurrentHeight()
-    if (blockHeight === block.Height + 1) {
-      this.txBlockChain[block.Height] = block
-    } else {
-      // TODO: must changed in future
-      this.txBlockChain[parseInt(blockHeight) + 1] = block
-    }
+  _readBlockChainFile (callback) {
+    fs.readFile(this.config.filePath, (err, data) => {
+      if (err) {
+        throw new Error(`Transaction Blockchain can not be loaded`)
+      } else {
+        callback(data)
+      }
+    })
   }
 
   /**
@@ -77,11 +45,41 @@ class SECTransactionBlockChain {
    * @param {*} file
    *
    */
-  writeBlockChainToFile (callback) {
+  _writeBlockChainToFile (callback) {
     fs.writeFile(this.config.filePath, JSON.stringify(this.txBlockChain), (err) => {
       if (err) throw err
       callback()
     })
+  }
+
+  init (callback) {
+    if (fs.existsSync(this.config.filePath)) {
+      this._readBlockChainFile((data) => {
+        this.txBlockChain = JSON.parse(data)
+        callback(this.txBlockChain)
+      })
+    } else {
+      this._generateGenesisBlock()
+      this._writeBlockChainToFile(() => {
+        callback(this.txBlockChain)
+      })
+    }
+  }
+
+  getBlockChain () {
+    return this.txBlockChain
+  }
+
+  /**
+   * push a block at the bottom of the blockchain
+   * @param {*} block
+   */
+  addBlockToChain (block) {
+    if (this.getCurrentHeight() < block.Height) {
+      this.txBlockChain.push(block)
+    } else {
+      // TODO: must changed in future
+    }
   }
 
   /**
@@ -90,13 +88,7 @@ class SECTransactionBlockChain {
    *
    */
   getCurrentHeight () {
-    let blockHeight = 0
-    Object.keys(this.txBlockChain).forEach(function (key) {
-      if (key > parseInt(blockHeight)) {
-        blockHeight = key
-      }
-    })
-    return blockHeight
+    return this.txBlockChain.length - 1
   }
 
   getGenesisBlockDifficulty () {
@@ -113,8 +105,7 @@ class SECTransactionBlockChain {
    *
    */
   getLastBlockHash () {
-    let blockHeight = this.getCurrentHeight()
-    return this.txBlockChain[blockHeight].Hash
+    return this.txBlockChain[this.getCurrentHeight()].Hash
   }
 
   /**
@@ -123,8 +114,7 @@ class SECTransactionBlockChain {
    *
    */
   getLastBlockTimeStamp () {
-    let blockHeight = this.getCurrentHeight()
-    return this.txBlockChain[blockHeight].TimeStamp
+    return this.txBlockChain[this.getCurrentHeight()].TimeStamp
   }
 }
 
