@@ -59,7 +59,8 @@ class SECTransactionBlockChain {
         callback(this.txBlockChain)
       })
     } else {
-      this._generateGenesisBlock()
+      let genesisBlock = this._generateGenesisBlock()
+      this.addBlockToChain(genesisBlock)
       this.writeBlockChainToFile(() => {
         callback(this.txBlockChain)
       })
