@@ -1,6 +1,5 @@
-let SecjsHash = require('../src/secjs-hash')
-let expect = require('chai').expect
-let describe = require('describe')
+const SecjsHash = require('../src/secjs-hash')
+const expect = require('chai').expect
 
 describe('SecjsHash', () => {
   describe('supported hash algorithm test', () => {

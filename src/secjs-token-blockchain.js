@@ -14,6 +14,9 @@ class SECTokenBlockChain {
     this.util = new SECUtil()
   }
 
+  /**
+   * generate genesis block
+   */
   _generateGenesisBlock () {
     let hashalgo = 'sha256'
     let secjsHash = new SECHash(hashalgo)
@@ -36,10 +39,14 @@ class SECTokenBlockChain {
     return block
   }
 
+  /**
+   * read saved blockchain file
+   * @param {function} callback 
+   */
   _readBlockChainFile (callback) {
     fs.readFile(this.config.filePath, (err, data) => {
       if (err) {
-        throw new Error(`Token Blockchain can not be loaded `)
+        throw new Error(`Token Blockchain can not be loaded`)
       } else {
         callback(data)
       }
@@ -73,6 +80,9 @@ class SECTokenBlockChain {
     }
   }
 
+  /**
+   * get blockchain model
+   */
   getBlockChain () {
     return this.tokenBlockChain
   }
@@ -99,10 +109,16 @@ class SECTokenBlockChain {
     return this.tokenBlockChain.length - 1
   }
 
+  /**
+   * get the dificulty of blockchain
+   */
   getGenesisBlockDifficulty () {
     return this.tokenBlockChain[0].Difficulty
   }
 
+  /**
+   * get the genesis block hash
+   */
   getGenesisBlockHash () {
     return this.tokenBlockChain[0].Hash
   }
