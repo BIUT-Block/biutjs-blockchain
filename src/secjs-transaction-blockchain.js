@@ -1,6 +1,12 @@
 const fs = require('fs')
 const SECUtil = require('@sec-block/secjs-util')
 const SECHash = require('./secjs-hash.js')
+const SECDataHandler = require('@sec-block/secjs-datahandler')
+const dbconfig = {
+  'DBPath': '../data/'
+}
+
+let secDataHandler = new SECDataHandler(dbconfig)
 
 class SECTransactionBlockChain {
   /**
@@ -28,6 +34,33 @@ class SECTransactionBlockChain {
     block.Nonce = '' // powCal.getNonce(this.block)
     block.Hash = secjsHash.hash(JSON.stringify(block))
     return block
+  }
+
+  putGenesis (genesis, cb){
+    secDataHandler.writeTxChainToDB(genesis, (err) => {
+      if (err) {
+        throw new Error('Something wrong with writeTokenChainToDB function')
+      }
+      cb()
+    })
+  }
+
+  /**
+   * get block from db
+   */
+  getBlockFromDB (hash, cb) {
+    secDataHandler.getAccountTx(hash, cb)
+  }
+
+  /**
+   * get Blocks from db
+   */
+  getBlocksFromDB(hashArray, cb) {
+    let blocks = []
+    hashArray.foreach((hash) => {
+      blocks.push(secDataHandler.getAccountTx(hash))
+    })
+    return blocks
   }
 
   _readBlockChainFile (callback) {
@@ -96,8 +129,19 @@ class SECTransactionBlockChain {
     return this.txBlockChain[0].Difficulty
   }
 
+  getGenesisBlock () {
+    return this.txBlockChain[0]
+  }
+
   getGenesisBlockHash () {
     return this.txBlockChain[0].Hash
+  }
+
+  /**
+   * get last block
+   */
+  getLastBlock () {
+    return this.txBlockChain[this.getCurrentHeight()]
   }
 
   /**
