@@ -18,6 +18,31 @@ Get the block information from transaction pool and write the information to blo
 #### `secjsTokenBlock.getBlock()`
 Return the block instance.
 
+### `secjsTokenBlock.putGenesis(genesis, cb)`
+Put token chain genesis block into database.
+- `genesis`: json object of genesis block
+- `cb`: callback function
+
+### `secjsTokenBlock.getBlockFromDB(hash, cb)`
+Get Block from database using hash.
+- `hash`: the hash of a block
+- `cb`: callback function
+
+### `secjsTokenBlock.getBlocksFromDB(hashArray, cb)`
+Get blocks from array of blockhash
+- `hashArray`: an array of block hash
+- `cb`: callback function
+
+### `secjsTokenBlock.putBlockToDB(block, cb)`
+- `block`: json object of block
+- `cb`: callback function
+
+### `secjsTokenBlock.getGenesis()`
+Get genesis block direct from buffer
+
+### `secjsTokenBlock.getLastBlock()`
+Get last block direct from buffer
+
 #### `secjsTokenBlock.verifyTransaction()`
 Verification the transaction.
 
