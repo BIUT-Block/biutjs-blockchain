@@ -11,5 +11,5 @@ module.exports = {
   SECTokenBlock: SECTokenBlock,
   SECTokenBlockChain: SECTokenBlockChain,
   SECTransactionBlock: SECTransactionBlock,
-  SECTransactionBlockChain: SECTransactionBlockChain,
+  SECTransactionBlockChain: SECTransactionBlockChain
 }
