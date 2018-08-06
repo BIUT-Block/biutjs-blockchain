@@ -10,11 +10,6 @@ And also generate the genesis block.
 Instance object of block of token chain.
 - `config`: the file path to save the token information
 
-#### `secjsTokenBlock.generateBlock(tokenPool, tokenBlockChain)`
-Get the block information from transaction pool and write the information to block object.
-- `tokenPool`: Instance of token transaction pool
-- `tokenBlockChain`: Instance of token-blockchain 
-
 #### `secjsTokenBlock.getBlock()`
 Return the block instance.
 

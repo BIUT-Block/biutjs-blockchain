@@ -1,4 +1,4 @@
-const TxPool = require('../src/secjs-transaction-pool')
+const TxPool = require('@sec-block/secjs-transactionpool')
 const TxBlock = require('../src/secjs-transaction-block')
 const TxBlockChain = require('../src/secjs-transaction-blockchain')
 const TkBlock = require('../src/secjs-token-block')
