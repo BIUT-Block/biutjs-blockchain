@@ -1,4 +1,4 @@
-# SECJS-Block
+# SECJS-Blockchain
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
 This libary contains the definition of block and block chain model. Use this libary can get the information of the block and blockchain information.
