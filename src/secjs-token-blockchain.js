@@ -124,15 +124,13 @@ class SECTokenBlockChain {
   /**
    * get Blocks from db
    */
-  getBlocksFromDB(hashArray, cb) {
+  getBlocksFromDB (hashArray, cb) {
     let blocks = []
     hashArray.foreach((hash) => {
       blocks.push(secDataHandler.getAccountTx(hash))
     })
     return blocks
   }
-
-
 
   /**
      * push a block at the bottom of the blockchain
@@ -180,7 +178,7 @@ class SECTokenBlockChain {
   /**
    * get last block from buffer
    */
-  getLastBlock() {
+  getLastBlock () {
     return this.tokenBlockChain[this.getCurrentHeight()]
   }
 

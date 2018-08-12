@@ -36,8 +36,22 @@ class SECTransactionBlockChain {
     return block
   }
 
-  putGenesis (genesis, cb){
+  putGenesis (genesis, cb) {
     secDataHandler.writeTxChainToDB(genesis, (err) => {
+      if (err) {
+        throw new Error('Something wrong with writeTokenChainToDB function')
+      }
+      cb()
+    })
+  }
+
+  /**
+    * Put transaction block to db
+    * @param {*} block the block object in json formation
+    * @param {*} cb
+  */
+  putBlockToDB (block, cb) {
+    secDataHandler.writeTokenChainToDB(block, (err) => {
       if (err) {
         throw new Error('Something wrong with writeTokenChainToDB function')
       }
@@ -55,7 +69,7 @@ class SECTransactionBlockChain {
   /**
    * get Blocks from db
    */
-  getBlocksFromDB(hashArray, cb) {
+  getBlocksFromDB (hashArray, cb) {
     let blocks = []
     hashArray.foreach((hash) => {
       blocks.push(secDataHandler.getAccountTx(hash))

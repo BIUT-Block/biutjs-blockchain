@@ -21,7 +21,7 @@
   "devDependencies": {},
   "repository": {
     "type": "git",
-    "url": "https://github.com/SEC-block/secjs-block.git"
+    "url": "https://github.com/SEC-block/secjs-blockchain.git"
   },
   "keywords": [
     "secjs",
@@ -30,7 +30,7 @@
   "author": "Minghao Weihan",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/SEC-block/secjs-block/issues"
+    "url": "https://github.com/SEC-block/secjs-blockchain/issues"
   },
-  "homepage": "https://github.com/SEC-block/secjs-block#README"
+  "homepage": "https://github.com/SEC-block/secjs-blockchain#README"
 }
