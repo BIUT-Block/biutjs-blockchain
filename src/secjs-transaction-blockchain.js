@@ -119,6 +119,25 @@ class SECTransactionBlockChain {
   }
 
   /**
+   * get Token Block from db
+   * @param {Array} hashArray
+   * @param {function} callback
+   */
+  getBlocksWithHashFromDB (hashArray, cb) {
+    secDataHandler.getTxBlockFromDB(hashArray, cb)
+  }
+
+  /**
+   * get Token Chain from DB
+   * @param {number} minHeight
+   * @param {number} maxHeight
+   * @param {function} callback
+   */
+  getBlockChainFromDB (minHeight, maxHeight, cb) {
+    secDataHandler.getTxChain(minHeight, maxHeight, cb)
+  }
+
+  /**
    * push a block at the bottom of the blockchain
    * @param {*} block
    */

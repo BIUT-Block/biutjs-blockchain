@@ -47,7 +47,7 @@ class SECTokenBlockChain {
 
   /**
    * read saved blockchain file
-   * @param {function} callback 
+   * @param {function} callback
    */
   _readBlockChainFile (callback) {
     fs.readFile(this.config.filePath, (err, data) => {
@@ -115,21 +115,22 @@ class SECTokenBlockChain {
   }
 
   /**
-   * get Block from db
+   * get Token Block from db
+   * @param {Array} hashArray
+   * @param {function} callback
    */
-  getBlockFromDB (hash, cb) {
-    secDataHandler.getAccountTx(hash, cb)
+  getBlocksWithHashFromDB (hashArray, cb) {
+    secDataHandler.getTokenBlockFromDB(hashArray, cb)
   }
 
   /**
-   * get Blocks from db
+   * get Token Chain from DB
+   * @param {number} minHeight
+   * @param {number} maxHeight
+   * @param {function} callback
    */
-  getBlocksFromDB (hashArray, cb) {
-    let blocks = []
-    hashArray.foreach((hash) => {
-      blocks.push(secDataHandler.getAccountTx(hash))
-    })
-    return blocks
+  getBlockChainFromDB (minHeight, maxHeight, cb) {
+    secDataHandler.getTokenChain(minHeight, maxHeight, cb)
   }
 
   /**

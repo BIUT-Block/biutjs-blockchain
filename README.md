@@ -18,18 +18,18 @@ Put token chain genesis block into database.
 - `genesis`: json object of genesis block
 - `cb`: callback function
 
-### `secjsTokenBlock.getBlockFromDB(hash, cb)`
-Get Block from database using hash.
-- `hash`: the hash of a block
-- `cb`: callback function
-
-### `secjsTokenBlock.getBlocksFromDB(hashArray, cb)`
+### `secjsTokenBlock.getBlocksWithHashFromDB(hashArray, cb)`
 Get blocks from array of blockhash
 - `hashArray`: an array of block hash
 - `cb`: callback function
 
 ### `secjsTokenBlock.putBlockToDB(block, cb)`
 - `block`: json object of block
+- `cb`: callback function
+
+### `secjsTokenBlock.getBlockChainFromDB(minHeight, maxHeight, cb)`
+- `minHeight`: height of block begin to read
+- `maxHeight`: height of block end to read
 - `cb`: callback function
 
 ### `secjsTokenBlock.getGenesis()`

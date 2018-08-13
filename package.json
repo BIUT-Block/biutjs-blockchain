@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@sec-block/secjs-datahandler": "^1.0.1",
+    "@sec-block/secjs-datahandler": "^1.0.3",
     "@sec-block/secjs-tx": "^0.1.4",
     "@sec-block/secjs-util": "^1.1.12",
     "chai": "^4.1.2",
@@ -12,7 +12,7 @@
     "test": "mocha --reporter spec"
   },
   "name": "@sec-block/secjs-blockchain",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "description": "sec blockchain block lib",
   "main": "src/index.js",
   "directories": {
