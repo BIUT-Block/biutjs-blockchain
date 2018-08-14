@@ -20,21 +20,6 @@ class SECTokenBlockChain {
     this.util = new SECUtil()
   }
 
-  init (callback) {
-    if (fs.existsSync(this.config.filePath)) {
-      this._readBlockChainFile((data) => {
-        this.tokenBlockChain = JSON.parse(data)
-        callback(this.tokenBlockChain)
-      })
-    } else {
-      let genesisBlock = this._generateGenesisBlock()
-      this.addBlockToChain(genesisBlock)
-      this.writeBlockChainToFile(() => {
-        callback(this.tokenBlockChain)
-      })
-    }
-  }
-
   /**
    * generate genesis block
    */
@@ -62,6 +47,25 @@ class SECTokenBlockChain {
   }
 
   /**
+   * Initialize the class token-blockchain
+   * @param {requestCallback} callback - The callback that handles the response.
+   */
+  init (callback) {
+    if (fs.existsSync(this.config.filePath)) {
+      this._readBlockChainFile((data) => {
+        this.tokenBlockChain = JSON.parse(data)
+        callback(this.tokenBlockChain)
+      })
+    } else {
+      let genesisBlock = this._generateGenesisBlock()
+      this.addBlockToChain(genesisBlock)
+      this.writeBlockChainToFile(() => {
+        callback(this.tokenBlockChain)
+      })
+    }
+  }
+
+  /**
    * put genesis into token block chain level database
    */
   putGenesis (genesis, cb) {
@@ -74,14 +78,19 @@ class SECTokenBlockChain {
   }
 
   /**
-   * get Block from db
+   * get Token Block from db
+   * @param {Array} hashArray
+   * @param {function} callback
    */
-  getBlockFromDB (hash, cb) {
-    secDataHandler.getAccountTx(hash, cb)
+  getBlocksWithHashFromDB (hashArray, cb) {
+    secDataHandler.getTokenBlockFromDB(hashArray, cb)
   }
 
   /**
-   * get Blocks from db
+   * get Token Chain from DB
+   * @param {number} minHeight
+   * @param {number} maxHeight
+   * @param {function} callback
    */
   getBlocksFromDB (hashArray, cb) {
     let blocks = []
@@ -125,6 +134,16 @@ class SECTokenBlockChain {
   }
 
   /**
+   * get Token Chain from DB
+   * @param {number} minHeight
+   * @param {number} maxHeight
+   * @param {function} callback
+   */
+  getBlockChainFromDB (minHeight, maxHeight, cb) {
+    secDataHandler.getTokenChain(minHeight, maxHeight, cb)
+  }
+
+  /**
    * push a block at the bottom of the blockchain
    * @param {*} block
    *
@@ -137,6 +156,11 @@ class SECTokenBlockChain {
     }
   }
 
+  /**
+   * Put transaction block to db
+   * @param {*} block the block object in json formation
+   * @param {*} cb
+   */
   putBlockToDB (block, cb) {
     secDataHandler.writeTokenChainToDB(block, (err) => {
       if (err) {
@@ -165,7 +189,7 @@ class SECTokenBlockChain {
   /**
    * get genius block from buffer
    */
-  getGenesis () {
+  getGenesisBlock () {
     return this.tokenBlockChain[0]
   }
 

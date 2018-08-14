@@ -1,7 +1,6 @@
 const SECTX = require('@sec-block/secjs-tx')
 const SECUtil = require('@sec-block/secjs-util')
 const SECHash = require('./secjs-hash.js')
-const SECDataHandler = require('@sec-block/secjs-datahandler')
 
 class SECTokenBlock {
   /**
