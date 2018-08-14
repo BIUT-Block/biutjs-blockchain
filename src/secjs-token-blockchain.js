@@ -10,65 +10,14 @@ let secDataHandler = new SECDataHandler(dbconfig)
 
 class SECTokenBlockChain {
   /**
-     * create a token chain block chain with config
-     * @param {*} blockchain, config
-     *
-     */
+    * create a token chain block chain with config
+    * @param {*} blockchain, config
+    *
+    */
   constructor (config = { filePath: process.cwd() + '/data/tokenchain.json' }) {
     this.tokenBlockChain = []
     this.config = config
     this.util = new SECUtil()
-  }
-
-  /**
-   * generate genesis block
-   */
-  _generateGenesisBlock () {
-    let hashalgo = 'sha256'
-    let secjsHash = new SECHash(hashalgo)
-    let block = {}
-    block.Height = 0
-    block.TimeStamp = 1530297308
-    block.Transactions = []
-    block.Parent_Hash = 'Genesis'
-    block.Mined_By = 'SEC'
-    block.Difficulty = 1
-    block.Total_Difficulty = 1
-    block.Gas_Used = 0
-    block.Gas_Limit = 0
-    block.Block_Reward = 10
-    block.Extra_Data = 'SEC Hello World'
-
-    block.Size = JSON.stringify(block).length + 2 * secjsHash.getHashLength()
-    block.Nonce = ''
-    block.Hash = secjsHash.hash(JSON.stringify(block))
-    return block
-  }
-
-  /**
-   * read saved blockchain file
-   * @param {function} callback 
-   */
-  _readBlockChainFile (callback) {
-    fs.readFile(this.config.filePath, (err, data) => {
-      if (err) {
-        throw new Error(`Token Blockchain can not be loaded`)
-      } else {
-        callback(data)
-      }
-    })
-  }
-
-  /**
-     * store the blockchain to a local file
-     * @param {*} file
-     *
-     */
-  writeBlockChainToFile (callback) {
-    fs.writeFile(this.config.filePath, JSON.stringify(this.tokenBlockChain), (err) => {
-      if (err) throw err
-      callback()
-    })
   }
 
   init (callback) {
@@ -87,10 +36,29 @@ class SECTokenBlockChain {
   }
 
   /**
-   * get blockchain model
+   * generate genesis block
    */
-  getBlockChain () {
-    return this.tokenBlockChain
+  _generateGenesisBlock () {
+    let hashalgo = 'sha256'
+    let secjsHash = new SECHash(hashalgo)
+    let block = {}
+    block.ParentHash = 'Genesis' // verify in header
+    block.TransactionsRoot = '' // verify in header
+    block.ReceiptRoot = '' // verify in header
+    block.LogsBloom = '' // verify in header
+    block.Difficulty = 1 // verify in header
+    block.Number = 0 // verify in header
+    block.GasLimit = 0 // verify in header
+    block.GasUsed = 0 // verify in header
+    block.TimeStamp = 1533686400 // verify in header
+    block.ExtraData = 'SEC Genesis' // verify in header
+    block.MixHash = '' // verify in header
+    block.Nonce = '' // verify in header
+    block.Beneficiary = 'SEC-Miner'
+    block.StateRoot = ''
+    block.Hash = secjsHash.hash(JSON.stringify(block))
+    block.Transactions = []
+    return block
   }
 
   /**
@@ -98,15 +66,6 @@ class SECTokenBlockChain {
    */
   putGenesis (genesis, cb) {
     secDataHandler.writeTokenChainToDB(genesis, (err) => {
-      if (err) {
-        throw new Error('Something wrong with writeTokenChainToDB function')
-      }
-      cb()
-    })
-  }
-
-  putBlockToDB (block, cb) {
-    secDataHandler.writeTokenChainToDB(block, (err) => {
       if (err) {
         throw new Error('Something wrong with writeTokenChainToDB function')
       }
@@ -124,7 +83,7 @@ class SECTokenBlockChain {
   /**
    * get Blocks from db
    */
-  getBlocksFromDB(hashArray, cb) {
+  getBlocksFromDB (hashArray, cb) {
     let blocks = []
     hashArray.foreach((hash) => {
       blocks.push(secDataHandler.getAccountTx(hash))
@@ -132,19 +91,59 @@ class SECTokenBlockChain {
     return blocks
   }
 
-
+  /**
+   * read saved blockchain file
+   * @param {function} callback
+   */
+  _readBlockChainFile (callback) {
+    fs.readFile(this.config.filePath, (err, data) => {
+      if (err) {
+        throw new Error(`Token Blockchain can not be loaded`)
+      } else {
+        callback(data)
+      }
+    })
+  }
 
   /**
-     * push a block at the bottom of the blockchain
-     * @param {*} block
-     *
-     */
+   * store the blockchain to a local file
+   * @param {*} file
+   *
+   */
+  writeBlockChainToFile (callback) {
+    fs.writeFile(this.config.filePath, JSON.stringify(this.tokenBlockChain), (err) => {
+      if (err) throw err
+      callback()
+    })
+  }
+
+  /**
+   * get blockchain model
+   */
+  getBlockChain () {
+    return this.tokenBlockChain
+  }
+
+  /**
+   * push a block at the bottom of the blockchain
+   * @param {*} block
+   *
+   */
   addBlockToChain (block) {
-    if (this.getCurrentHeight() < block.Height) {
+    if (this.getCurrentHeight() < block.Number) {
       this.tokenBlockChain.push(block)
     } else {
       // TODO: must changed in future
     }
+  }
+
+  putBlockToDB (block, cb) {
+    secDataHandler.writeTokenChainToDB(block, (err) => {
+      if (err) {
+        throw new Error('Something wrong with writeTokenChainToDB function')
+      }
+      cb()
+    })
   }
 
   /**
@@ -180,7 +179,7 @@ class SECTokenBlockChain {
   /**
    * get last block from buffer
    */
-  getLastBlock() {
+  getLastBlock () {
     return this.tokenBlockChain[this.getCurrentHeight()]
   }
 
