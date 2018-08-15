@@ -51,18 +51,22 @@ class SECTokenBlockChain {
    * @param {requestCallback} callback - The callback that handles the response.
    */
   init (callback) {
-    if (fs.existsSync(this.config.filePath)) {
-      this._readBlockChainFile((data) => {
-        this.tokenBlockChain = JSON.parse(data)
-        callback(this.tokenBlockChain)
-      })
-    } else {
-      let genesisBlock = this._generateGenesisBlock()
-      this.addBlockToChain(genesisBlock)
-      this.writeBlockChainToFile(() => {
-        callback(this.tokenBlockChain)
-      })
-    }
+    secDataHandler.isTokenBlockChainDBEmpty((err, isEmpty) => {
+      if (err) {
+        throw new Error('Could not check db content')
+      }
+      if (isEmpty) {
+        let genesisBlock = this._generateGenesisBlock()
+        secDataHandler.writeTokenChainToDB(genesisBlock, callback)
+      } else {
+        secDataHandler.getTokenBlockChainToDB((err, buffer) => {
+          if (err) {
+            throw new Error('Could not get Blockchain from DB')
+          }
+          this.tokenBlockChain = buffer
+        })
+      }
+    })
   }
 
   /**
@@ -98,32 +102,6 @@ class SECTokenBlockChain {
       blocks.push(secDataHandler.getAccountTx(hash))
     })
     return blocks
-  }
-
-  /**
-   * read saved blockchain file
-   * @param {function} callback
-   */
-  _readBlockChainFile (callback) {
-    fs.readFile(this.config.filePath, (err, data) => {
-      if (err) {
-        throw new Error(`Token Blockchain can not be loaded`)
-      } else {
-        callback(data)
-      }
-    })
-  }
-
-  /**
-   * store the blockchain to a local file
-   * @param {*} file
-   *
-   */
-  writeBlockChainToFile (callback) {
-    fs.writeFile(this.config.filePath, JSON.stringify(this.tokenBlockChain), (err) => {
-      if (err) throw err
-      callback()
-    })
   }
 
   /**

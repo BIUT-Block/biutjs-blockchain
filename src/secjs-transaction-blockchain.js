@@ -45,18 +45,22 @@ class SECTransactionBlockChain {
    * @param {requestCallback} callback - The callback that handles the response.
    */
   init (callback) {
-    if (fs.existsSync(this.config.filePath)) {
-      this._readBlockChainFile((data) => {
-        this.txBlockChain = JSON.parse(data)
-        callback(this.txBlockChain)
-      })
-    } else {
-      let genesisBlock = this._generateGenesisBlock()
-      this.addBlockToChain(genesisBlock)
-      this.writeBlockChainToFile(() => {
-        callback(this.txBlockChain)
-      })
-    }
+    secDataHandler.isTxBlockChainDBEmpty((err, isEmpty) => {
+      if (err) {
+        throw new Error('Could not check db content')
+      }
+      if (isEmpty) {
+        let genesisBlock = this._generateGenesisBlock()
+        secDataHandler.writeTxChainToDB(genesisBlock, callback)
+      } else {
+        secDataHandler.getTxBlockChainToDB((err, buffer) => {
+          if (err) {
+            throw new Error('Could not get Blockchain from DB')
+          }
+          this.txBlockChain = buffer
+        })
+      }
+    })
   }
 
   /**
@@ -199,20 +203,6 @@ class SECTransactionBlockChain {
    */
   getLastBlockTimeStamp () {
     return this.txBlockChain[this.getCurrentHeight()].TimeStamp
-  }
-
-  /**
-   * read saved blockchain file
-   * @param {function} callback
-   */
-  _readBlockChainFile (callback) {
-    fs.readFile(this.config.filePath, (err, data) => {
-      if (err) {
-        throw new Error(`Transaction Blockchain can not be loaded`)
-      } else {
-        callback(data)
-      }
-    })
   }
 
   /**
