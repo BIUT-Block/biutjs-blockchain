@@ -73,9 +73,9 @@ class SECTokenBlockChain {
    * put genesis into token block chain level database
    */
   putGenesis (genesis, cb) {
-    secDataHandler.writeTokenChainToDB(genesis, (err) => {
+    secDataHandler.writeSingleTokenBlockToDB(genesis, (err) => {
       if (err) {
-        throw new Error('Something wrong with writeTokenChainToDB function')
+        throw new Error('Something wrong with writeSingleTokenBlockToDB function')
       }
       cb()
     })
@@ -140,9 +140,9 @@ class SECTokenBlockChain {
    * @param {*} cb
    */
   putBlockToDB (block, cb) {
-    secDataHandler.writeTokenChainToDB(block, (err) => {
+    secDataHandler.writeSingleTokenBlockToDB(block, (err) => {
       if (err) {
-        throw new Error('Something wrong with writeTokenChainToDB function')
+        throw new Error('Something wrong with writeSingleTokenBlockToDB function')
       }
       cb()
     })
