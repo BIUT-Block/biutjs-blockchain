@@ -1,4 +1,3 @@
-const fs = require('fs')
 const SECUtil = require('@sec-block/secjs-util')
 const SECHash = require('./secjs-hash.js')
 const SECDataHandler = require('@sec-block/secjs-datahandler')
@@ -68,8 +67,6 @@ class SECTransactionBlockChain {
    * put genesis into token block chain level database
    */
   putGenesis (genesis, cb) {
-    // TODO: change later
-    genesis = JSON.stringify(genesis)
     secDataHandler.writeTxChainToDB(genesis, (err) => {
       if (err) {
         throw new Error('Something wrong with writeTokenChainToDB function')
@@ -96,18 +93,6 @@ class SECTransactionBlockChain {
       blocks.push(secDataHandler.getAccountTx(hash))
     })
     return blocks
-  }
-
-  /**
-   * store the blockchain to a local file
-   * @param {*} file
-   *
-   */
-  writeBlockChainToFile (callback) {
-    fs.writeFile(this.config.filePath, JSON.stringify(this.txBlockChain), (err) => {
-      if (err) throw err
-      callback()
-    })
   }
 
   /**
@@ -145,8 +130,6 @@ class SECTransactionBlockChain {
     * @param {*} cb
   */
   putBlockToDB (block, cb) {
-    // TODO: change later
-    block = JSON.stringify(block)
     secDataHandler.writeTokenChainToDB(block, (err) => {
       if (err) {
         throw new Error('Something wrong with writeTokenChainToDB function')
