@@ -2,7 +2,7 @@ const SECUtil = require('@sec-block/secjs-util')
 const SECHash = require('./secjs-hash.js')
 const SECDataHandler = require('@sec-block/secjs-datahandler')
 const dbconfig = {
-  'DBPath': '../data/'
+  'DBPath': `${process.cwd()}/data/`
 }
 
 let secDataHandler = new SECDataHandler(dbconfig)
@@ -13,7 +13,7 @@ class SECTransactionBlockChain {
    * @param {*} blockchain, config
    *
    */
-  constructor (config = { filePath: process.cwd() + '/data/txchain.json' }) {
+  constructor (config = {}) {
     this.txBlockChain = []
     this.config = config
     this.util = new SECUtil()
