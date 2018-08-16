@@ -53,11 +53,12 @@ class SECTransactionBlockChain {
         let genesisBlock = this._generateGenesisBlock()
         secDataHandler.writeTxChainToDB(genesisBlock, callback)
       } else {
-        secDataHandler.getTxBlockChainToDB((err, buffer) => {
+        secDataHandler.getTxBlockChainDB((err, buffer) => {
           if (err) {
             throw new Error('Could not get Blockchain from DB')
           }
           this.txBlockChain = buffer
+          callback()
         })
       }
     })

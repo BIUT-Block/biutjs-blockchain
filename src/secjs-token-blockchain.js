@@ -1,4 +1,3 @@
-const fs = require('fs')
 const SECUtil = require('@sec-block/secjs-util')
 const SECHash = require('./secjs-hash.js')
 const SECDataHandler = require('@sec-block/secjs-datahandler')
@@ -59,11 +58,12 @@ class SECTokenBlockChain {
         let genesisBlock = this._generateGenesisBlock()
         secDataHandler.writeTokenChainToDB(genesisBlock, callback)
       } else {
-        secDataHandler.getTokenBlockChainToDB((err, buffer) => {
+        secDataHandler.getTokenBlockChainDB((err, buffer) => {
           if (err) {
             throw new Error('Could not get Blockchain from DB')
           }
           this.tokenBlockChain = buffer
+          callback()
         })
       }
     })
