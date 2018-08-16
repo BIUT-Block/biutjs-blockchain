@@ -51,7 +51,7 @@ class SECTransactionBlockChain {
       }
       if (isEmpty) {
         let genesisBlock = this._generateGenesisBlock()
-        secDataHandler.writeTxChainToDB(genesisBlock, callback)
+        this.putGenesis(genesisBlock, callback)
       } else {
         secDataHandler.getTxBlockChainDB((err, buffer) => {
           if (err) {
@@ -68,6 +68,8 @@ class SECTransactionBlockChain {
    * put genesis into token block chain level database
    */
   putGenesis (genesis, cb) {
+    // TODO: change later
+    genesis = JSON.stringify(genesis)
     secDataHandler.writeTxChainToDB(genesis, (err) => {
       if (err) {
         throw new Error('Something wrong with writeTokenChainToDB function')
@@ -143,6 +145,8 @@ class SECTransactionBlockChain {
     * @param {*} cb
   */
   putBlockToDB (block, cb) {
+    // TODO: change later
+    block = JSON.stringify(block)
     secDataHandler.writeTokenChainToDB(block, (err) => {
       if (err) {
         throw new Error('Something wrong with writeTokenChainToDB function')

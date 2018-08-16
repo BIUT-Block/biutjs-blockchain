@@ -55,8 +55,10 @@ class SECTokenBlockChain {
         throw new Error('Could not check db content')
       }
       if (isEmpty) {
+        // TODO: change later
         let genesisBlock = this._generateGenesisBlock()
-        secDataHandler.writeTokenChainToDB(genesisBlock, callback)
+        this.putGenesis(genesisBlock, callback)
+        // secDataHandler.writeTokenChainToDB(genesisBlock, callback)
       } else {
         secDataHandler.getTokenBlockChainDB((err, buffer) => {
           if (err) {
@@ -73,6 +75,8 @@ class SECTokenBlockChain {
    * put genesis into token block chain level database
    */
   putGenesis (genesis, cb) {
+    // TODO: change later
+    genesis = JSON.stringify(genesis)
     secDataHandler.writeTokenChainToDB(genesis, (err) => {
       if (err) {
         throw new Error('Something wrong with writeTokenChainToDB function')
@@ -140,6 +144,8 @@ class SECTokenBlockChain {
    * @param {*} cb
    */
   putBlockToDB (block, cb) {
+    // TODO: change later
+    block = JSON.stringify(block)
     secDataHandler.writeTokenChainToDB(block, (err) => {
       if (err) {
         throw new Error('Something wrong with writeTokenChainToDB function')
