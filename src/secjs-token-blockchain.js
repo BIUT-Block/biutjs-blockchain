@@ -2,7 +2,7 @@ const SECUtil = require('@sec-block/secjs-util')
 const SECHash = require('./secjs-hash.js')
 const SECDataHandler = require('@sec-block/secjs-datahandler')
 const dbconfig = {
-  'DBPath': '../data/'
+  'DBPath': `${process.cwd()}/data/`
 }
 
 let secDataHandler = new SECDataHandler(dbconfig)
@@ -54,10 +54,8 @@ class SECTokenBlockChain {
         throw new Error('Could not check db content')
       }
       if (isEmpty) {
-        // TODO: change later
         let genesisBlock = this._generateGenesisBlock()
         this.putGenesis(genesisBlock, callback)
-        // secDataHandler.writeTokenChainToDB(genesisBlock, callback)
       } else {
         secDataHandler.getTokenBlockChainDB((err, buffer) => {
           if (err) {
@@ -74,11 +72,9 @@ class SECTokenBlockChain {
    * put genesis into token block chain level database
    */
   putGenesis (genesis, cb) {
-    // TODO: change later
-    genesis = JSON.stringify(genesis)
-    secDataHandler.writeTokenChainToDB(genesis, (err) => {
+    secDataHandler.writeSingleTokenBlockToDB(genesis, (err) => {
       if (err) {
-        throw new Error('Something wrong with writeTokenChainToDB function')
+        throw new Error('Something wrong with writeSingleTokenBlockToDB function')
       }
       cb()
     })
@@ -143,11 +139,9 @@ class SECTokenBlockChain {
    * @param {*} cb
    */
   putBlockToDB (block, cb) {
-    // TODO: change later
-    block = JSON.stringify(block)
-    secDataHandler.writeTokenChainToDB(block, (err) => {
+    secDataHandler.writeSingleTokenBlockToDB(block, (err) => {
       if (err) {
-        throw new Error('Something wrong with writeTokenChainToDB function')
+        throw new Error('Something wrong with writeSingleTokenBlockToDB function')
       }
       cb()
     })
