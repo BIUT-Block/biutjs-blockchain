@@ -13,9 +13,8 @@ class SECTokenBlockChain {
     * @param {*} blockchain, config
     *
     */
-  constructor (config = { filePath: process.cwd() + '/data/tokenchain.json' }) {
+  constructor () {
     this.tokenBlockChain = []
-    this.config = config
     this.util = new SECUtil()
   }
 
