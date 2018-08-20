@@ -53,13 +53,31 @@ class SECTransactionBlockChain {
         this.putGenesis(genesisBlock, callback)
       } else {
         secDataHandler.getTxBlockChainDB((err, buffer) => {
-          if (err) {
-            throw new Error('Could not get Blockchain from DB')
-          }
-          this.txBlockChain = buffer
-          callback()
+          this.getAllBlockChainFromDB(() => {
+            callback(err)
+          })
         })
       }
+    })
+  }
+
+  /**
+   * get all blockchain data
+   */
+  getAllBlockChainFromDB (callback) {
+    let blockchain = []
+    secDataHandler.getTxBlockChainDB((err, data) => {
+      if (err) {
+        throw new Error(`Can not get whole token block chain data from database`)
+      }
+
+      Object.keys(data).forEach((key) => {
+        if (key.length !== 64) {
+          blockchain.push(data[key])
+        }
+      })
+      this.txBlockChain = blockchain
+      callback()
     })
   }
 
@@ -110,18 +128,6 @@ class SECTransactionBlockChain {
    */
   getBlockChainFromDB (minHeight, maxHeight, cb) {
     secDataHandler.getTxChain(minHeight, maxHeight, cb)
-  }
-
-  /**
-   * push a block at the bottom of the blockchain
-   * @param {*} block
-   */
-  addBlockToChain (block) {
-    if (this.getCurrentHeight() < block.Number) {
-      this.txBlockChain.push(block)
-    } else {
-      // TODO: must changed in future
-    }
   }
 
   /**
