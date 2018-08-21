@@ -5,7 +5,7 @@ const dbconfig = {
   'DBPath': `${process.cwd()}/data/`
 }
 
-let secDataHandler = new SECDataHandler(dbconfig)
+let secDataHandler = new SECDataHandler.TxBlockChainDB(dbconfig)
 
 class SECTransactionBlockChain {
   /**
@@ -70,12 +70,7 @@ class SECTransactionBlockChain {
       if (err) {
         throw new Error(`Can not get whole token block chain data from database`)
       }
-
-      Object.keys(data).forEach((key) => {
-        if (key.length !== 64) {
-          blockchain.push(data[key])
-        }
-      })
+      blockchain = data
       this.txBlockChain = blockchain
       callback()
     })
@@ -85,7 +80,7 @@ class SECTransactionBlockChain {
    * put genesis into token block chain level database
    */
   putGenesis (genesis, cb) {
-    secDataHandler.writeSingleTxBlockToDB(genesis, (err) => {
+    secDataHandler.writeTxBlockToDB(genesis, (err) => {
       if (err) {
         throw new Error('Something wrong with writeTokenChainToDB function')
       }
@@ -94,23 +89,12 @@ class SECTransactionBlockChain {
   }
 
   /**
-   * get Token Block from db
+   * get Transaction Block from db
    * @param {Array} hashArray
    * @param {function} callback
    */
-  getBlocksWithHashFromDB (hashArray, cb) {
-    secDataHandler.getTxBlockFromDB(hashArray, cb)
-  }
-
-  /**
-   * get Blocks from db
-   */
-  getBlocksFromDB (hashArray, cb) {
-    let blocks = []
-    hashArray.foreach((hash) => {
-      blocks.push(secDataHandler.getAccountTx(hash))
-    })
-    return blocks
+  getBlocksWithHashFromDB (hashArray, callback) {
+    secDataHandler.getTxBlockFromDB(hashArray, callback)
   }
 
   /**
@@ -135,12 +119,26 @@ class SECTransactionBlockChain {
     * @param {*} block the block object in json formation
     * @param {*} cb
   */
-  putBlockToDB (block, cb) {
-    secDataHandler.writeSingleTxBlockToDB(block, (err) => {
+  putBlockToDB (block, callback) {
+    secDataHandler.writeTxBlockToDB(block, (err) => {
       if (err) {
         throw new Error('Something wrong with writeTokenChainToDB function')
       }
-      cb()
+      callback()
+    })
+  }
+
+  /**
+   * Put token block to db
+   * @param {*} block the block object in json formation
+   * @param {*} callbback
+   */
+  putBlocksToDB (blocks, callback) {
+    secDataHandler.writeTxBlockToDB(blocks, (err) => {
+      if (err) {
+        throw new Error('Can not put token blocks into database')
+      }
+      callback()
     })
   }
 
@@ -197,13 +195,6 @@ class SECTransactionBlockChain {
    */
   getLastBlockTimeStamp () {
     return this.txBlockChain[this.getCurrentHeight()].TimeStamp
-  }
-
-  /**
-   * get block from db
-   */
-  getBlockFromDB (hash, cb) {
-    secDataHandler.getAccountTx(hash, cb)
   }
 }
 

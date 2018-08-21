@@ -5,7 +5,7 @@ const dbconfig = {
   'DBPath': `${process.cwd()}/data/`
 }
 
-let secDataHandler = new SECDataHandler(dbconfig)
+let secDataHandler = new SECDataHandler.TokenBlockChainDB(dbconfig)
 
 class SECTokenBlockChain {
   /**
@@ -67,13 +67,13 @@ class SECTokenBlockChain {
   /**
    * put genesis into token block chain level database
    */
-  putGenesis (genesis, cb) {
+  putGenesis (genesis, callback) {
     this.tokenBlockChain.push(genesis)
-    secDataHandler.writeSingleTokenBlockToDB(genesis, (err) => {
+    secDataHandler.writeTokenBlockToDB(genesis, (err) => {
       if (err) {
-        throw new Error('Something wrong with writeSingleTokenBlockToDB function')
+        throw new Error('Something wrong to write block into database')
       }
-      cb(err)
+      callback()
     })
   }
 
@@ -102,12 +102,7 @@ class SECTokenBlockChain {
       if (err) {
         throw new Error(`Can not get whole token block chain data from database`)
       }
-
-      Object.keys(data).forEach((key) => {
-        if (key.length !== 64) {
-          blockchain.push(data[key])
-        }
-      })
+      blockchain = data
       this.tokenBlockChain = blockchain
       callback()
     })
@@ -124,16 +119,30 @@ class SECTokenBlockChain {
   }
 
   /**
-   * Put transaction block to db
+   * Put token block to db
    * @param {*} block the block object in json formation
    * @param {*} cb
    */
   putBlockToDB (block, cb) {
-    secDataHandler.writeSingleTokenBlockToDB(block, (err) => {
+    secDataHandler.writeTokenBlockToDB(block, (err) => {
       if (err) {
         throw new Error('Something wrong with writeSingleTokenBlockToDB function')
       }
       cb()
+    })
+  }
+
+  /**
+   * Put token block to db
+   * @param {*} block the block object in json formation
+   * @param {*} callbback
+   */
+  putBlocksToDB (blocks, callback) {
+    secDataHandler.writeTokenBlockToDB(blocks, (err) => {
+      if (err) {
+        throw new Error('Can not put token blocks into database')
+      }
+      callback()
     })
   }
 
