@@ -64,8 +64,8 @@ class SECTransactionBlock {
     */
   fillInBlockInfo (txBlockChain) {
     this.block.Number = parseInt(txBlockChain.getCurrentHeight()) + 1 // txBlockChain.currentHeight + 1
-    this.TransactionsRoot = this.config.TransactionsRoot
-    this.ReceiptRoot = this.config.ReceiptRoot
+    this.block.TransactionsRoot = this.config.TransactionsRoot
+    this.block.ReceiptRoot = this.config.ReceiptRoot
     this.block.TimeStamp = this.util.currentUnixTimeSecond()
     this.block.Transactions = this.transactions
     this.block.ParentHash = this.config.ParentHash // randomGen.randomGenerate('string', 32)
