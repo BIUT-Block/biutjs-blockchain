@@ -129,6 +129,7 @@ class SECTransactionBlockChain {
    * @param {*} callbback
    */
   putBlocksToDB (blocks, callback) {
+    this.txBlockChain = this.txBlockChain.concat(blocks)
     secDataHandler.writeTxBlockToDB(blocks, (err) => {
       if (err) {
         throw new Error('Can not put token blocks into database')

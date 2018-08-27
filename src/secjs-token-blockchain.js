@@ -152,7 +152,6 @@ class SECTokenBlockChain {
    *
    */
   getCurrentHeight () {
-    console.log(this.tokenBlockChain)
     return this.tokenBlockChain.length - 1
   }
 

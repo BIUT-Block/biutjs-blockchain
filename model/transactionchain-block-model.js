@@ -2,15 +2,16 @@
  * define of
  */
 var transactionChainBlockModel = {
-  Height: '',
+  Number: '',
+  TransactionsRoot: '',
+  ReceiptRoot: '',
   TimeStamp: '',
-  Transactions: '',
-  Hash: '',
-  Parent_Hash: '',
-  Mined_By: '',
-  Size: '',
+  ParentHash: '',
+  ExtraData: '',
   Nonce: '',
-  Extra_Data: ''
+  Beneficiary: '',
+  Hash: '',
+  Transactions: ''
 }
 
 module.exports = transactionChainBlockModel
