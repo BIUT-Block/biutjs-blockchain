@@ -1,5 +1,4 @@
 const SECUtil = require('@sec-block/secjs-util')
-const SECHash = require('./secjs-hash.js')
 const SECDataHandler = require('@sec-block/secjs-datahandler')
 const dbconfig = {
   'DBPath': `${process.cwd()}/data/`
@@ -22,25 +21,24 @@ class SECTokenBlockChain {
    * generate genesis block
    */
   _generateGenesisBlock () {
-    let hashalgo = 'sha256'
-    let secjsHash = new SECHash(hashalgo)
     let block = {
       'Number': 0,
+      'TransactionsRoot': '',
+      'ReceiptRoot': '',
+      'LogsBloom': '',
+      'MixHash': '',
+      'StateRoot': '',
       'TimeStamp': 1530297308,
       'Transactions': [],
-      'Parent_Hash': 'Genesis',
-      'Mined_By': 'SEC',
+      'ParentHash': 'Genesis',
+      'Beneficiary': 'SEC-Miner',
       'Difficulty': 1,
-      'Total_Difficulty': 1,
-      'Gas_Used': 0,
-      'Gas_Limit': 0,
-      'Block_Reward': 10,
-      'Extra_Data': 'SEC Hello World',
-      'Size': 334,
+      'GasUsed': 0,
+      'GasLimit': 0,
+      'ExtraData': 'SEC Hello World',
       'Nonce': '',
-      'Hash': ''
+      'Hash': '5f213ac06cfe4a82e167aa3ea430e520be99dcedb4ab47fd8f668448708e34c1'
     }
-    block.Hash = secjsHash.hash(JSON.stringify(block))
     return block
   }
 

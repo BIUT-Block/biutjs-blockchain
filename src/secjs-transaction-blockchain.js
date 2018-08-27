@@ -1,5 +1,4 @@
 const SECUtil = require('@sec-block/secjs-util')
-const SECHash = require('./secjs-hash.js')
 const SECDataHandler = require('@sec-block/secjs-datahandler')
 const dbconfig = {
   'DBPath': `${process.cwd()}/data/`
@@ -11,7 +10,6 @@ class SECTransactionBlockChain {
   /**
    * create a transaction chain block chain with config
    * @param {*} blockchain, config
-   *
    */
   constructor (config = {}) {
     this.txBlockChain = []
@@ -23,18 +21,16 @@ class SECTransactionBlockChain {
    * generate genesis block
    */
   _generateGenesisBlock () {
-    let hashalgo = 'sha256'
-    let secjsHash = new SECHash(hashalgo)
     let block = {}
-    block.ParentHash = 'Genesis'
+    block.Number = 0 // txBlockChain.currentHeight + 1
     block.TransactionsRoot = ''
     block.ReceiptRoot = ''
-    block.Number = 0 // txBlockChain.currentHeight + 1
     block.TimeStamp = 1530297308
+    block.ParentHash = 'Genesis'
     block.ExtraData = 'SEC Hello World'
     block.Nonce = '' // powCal.getNonce(this.block)
     block.Beneficiary = 'SEC-Miner'
-    block.Hash = secjsHash.hash(JSON.stringify(block))
+    block.Hash = '04c7123071429bbfcfb6ffd22501bdcc575f8df820041d63d8c16b94a9696ecf'
     block.Transactions = []
     return block
   }
