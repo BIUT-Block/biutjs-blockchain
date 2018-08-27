@@ -58,19 +58,20 @@ class SECTokenBlock {
     let hashalgo = 'sha256'
     let secjsHash = new SECHash(hashalgo)
 
-    this.block.Height = parseInt(tokenBlockChain.getCurrentHeight()) + 1
+    this.block.Number = parseInt(tokenBlockChain.getCurrentHeight()) + 1
+    this.block.TransactionsRoot = this.config.TransactionsRoot
+    this.block.ReceiptRoot = this.config.ReceiptRoot
+    this.block.LogsBloom = this.config.LogsBloom
+    this.block.MixHash = this.config.MixHash
+    this.block.StateRoot = this.config.StateRoot
     this.block.TimeStamp = this.util.currentUnixTimeSecond()
     this.block.Transactions = this.transactions
-    this.block.Parent_Hash = this.config.Parent_Hash
-    this.block.Mined_By = this.config.userAddr
+    this.block.ParentHash = this.config.ParentHash
+    this.block.Beneficiary = this.config.userAddr
     this.block.Difficulty = this.config.Difficulty // randomGen.randomGenerate('number', 10000)
-    this.block.Total_Difficulty = this.config.Total_Difficulty // randomGen.randomGenerate('number', 100000)
-    this.block.Gas_Used = this.config.Gas_Used // randomGen.randomGenerate('number', 10000)
-    this.block.Gas_Limit = this.config.Gas_Limit // randomGen.randomGenerate('number', 100000)
-    this.block.Block_Reward = this.config.Block_Reward // 10 // TBD
-    this.block.Extra_Data = this.config.Extra_Data // Empty?
-
-    this.block.Size = JSON.stringify(this.block).length + 2 * secjsHash.getHashLength()
+    this.block.GasUsed = this.config.GasUsed // randomGen.randomGenerate('number', 10000)
+    this.block.GasLimit = this.config.GasLimit // randomGen.randomGenerate('number', 100000)
+    this.block.ExtraData = this.config.ExtraData // Empty?
     this.block.Nonce = this.config.Nonce // powCal.getNonce(this.block)
     this.block.Hash = secjsHash.hash(JSON.stringify(this.block))
   }

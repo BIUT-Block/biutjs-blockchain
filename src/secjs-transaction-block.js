@@ -63,14 +63,15 @@ class SECTransactionBlock {
     *
     */
   fillInBlockInfo (txBlockChain) {
-    this.block.Height = parseInt(txBlockChain.getCurrentHeight()) + 1 // txBlockChain.currentHeight + 1
+    this.block.Number = parseInt(txBlockChain.getCurrentHeight()) + 1 // txBlockChain.currentHeight + 1
+    this.TransactionsRoot = this.config.TransactionsRoot
+    this.ReceiptRoot = this.config.ReceiptRoot
     this.block.TimeStamp = this.util.currentUnixTimeSecond()
     this.block.Transactions = this.transactions
-    this.block.Parent_Hash = this.config.Parent_Hash // randomGen.randomGenerate('string', 32)
-    this.block.Mined_By = this.config.userAddr // randomGen.randomGenerate('string', 32)
-    this.block.Extra_Data = this.config.Extra_Data // Empty?
+    this.block.ParentHash = this.config.ParentHash // randomGen.randomGenerate('string', 32)
+    this.block.Beneficiary = this.config.userAddr // randomGen.randomGenerate('string', 32)
+    this.block.ExtraData = this.config.ExtraData // Empty?
 
-    this.block.Size = JSON.stringify(this.block).length + 2 * this.secHash.getHashLength()
     this.block.Nonce = this.config.Nonce // powCal.getNonce(this.block)
     this.block.Hash = this.calculateBlockHash()
   }
