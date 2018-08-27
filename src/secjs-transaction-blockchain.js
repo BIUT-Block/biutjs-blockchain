@@ -11,9 +11,8 @@ class SECTransactionBlockChain {
    * create a transaction chain block chain with config
    * @param {*} blockchain, config
    */
-  constructor (config = {}) {
+  constructor () {
     this.txBlockChain = []
-    this.config = config
     this.util = new SECUtil()
   }
 
@@ -48,39 +47,23 @@ class SECTransactionBlockChain {
         let genesisBlock = this._generateGenesisBlock()
         this.putGenesis(genesisBlock, callback)
       } else {
-        secDataHandler.getTxBlockChainDB((err, buffer) => {
-          this.getAllBlockChainFromDB(() => {
-            callback(err)
-          })
+        this.getAllBlockChainFromDB(() => {
+          callback(err)
         })
       }
     })
   }
 
   /**
-   * get all blockchain data
-   */
-  getAllBlockChainFromDB (callback) {
-    let blockchain = []
-    secDataHandler.getTxBlockChainDB((err, data) => {
-      if (err) {
-        throw new Error(`Can not get whole token block chain data from database`)
-      }
-      blockchain = data
-      this.txBlockChain = blockchain
-      callback()
-    })
-  }
-
-  /**
    * put genesis into token block chain level database
    */
-  putGenesis (genesis, cb) {
+  putGenesis (genesis, callback) {
+    this.txBlockChain.push(genesis)
     secDataHandler.writeTxBlockToDB(genesis, (err) => {
       if (err) {
         throw new Error('Something wrong with writeTokenChainToDB function')
       }
-      cb()
+      callback()
     })
   }
 
@@ -101,6 +84,21 @@ class SECTransactionBlockChain {
   }
 
   /**
+   * get all blockchain data
+   */
+  getAllBlockChainFromDB (callback) {
+    let blockchain = []
+    secDataHandler.getTxBlockChainDB((err, data) => {
+      if (err) {
+        throw new Error(`Can not get whole token block chain data from database`)
+      }
+      blockchain = data
+      this.txBlockChain = blockchain
+      callback()
+    })
+  }
+
+  /**
    * get Token Chain from DB
    * @param {number} minHeight
    * @param {number} maxHeight
@@ -116,6 +114,7 @@ class SECTransactionBlockChain {
     * @param {*} cb
   */
   putBlockToDB (block, callback) {
+    this.txBlockChain.push(block)
     secDataHandler.writeTxBlockToDB(block, (err) => {
       if (err) {
         throw new Error('Something wrong with writeTokenChainToDB function')

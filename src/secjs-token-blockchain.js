@@ -122,6 +122,7 @@ class SECTokenBlockChain {
    * @param {*} cb
    */
   putBlockToDB (block, cb) {
+    this.tokenBlockChain.push(block)
     secDataHandler.writeTokenBlockToDB(block, (err) => {
       if (err) {
         throw new Error('Something wrong with writeSingleTokenBlockToDB function')
@@ -136,6 +137,7 @@ class SECTokenBlockChain {
    * @param {*} callbback
    */
   putBlocksToDB (blocks, callback) {
+    this.tokenBlockChain = this.tokenBlockChain.concat(blocks)
     secDataHandler.writeTokenBlockToDB(blocks, (err) => {
       if (err) {
         throw new Error('Can not put token blocks into database')
@@ -150,6 +152,7 @@ class SECTokenBlockChain {
    *
    */
   getCurrentHeight () {
+    console.log(this.tokenBlockChain)
     return this.tokenBlockChain.length - 1
   }
 
