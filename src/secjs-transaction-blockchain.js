@@ -1,17 +1,12 @@
 const SECUtil = require('@sec-block/secjs-util')
-const SECDataHandler = require('@sec-block/secjs-datahandler')
-const dbconfig = {
-  'DBPath': `${process.cwd()}/data/`
-}
-
-let secDataHandler = new SECDataHandler.TxBlockChainDB(dbconfig)
 
 class SECTransactionBlockChain {
   /**
    * create a transaction chain block chain with config
    * @param {*} blockchain, config
    */
-  constructor () {
+  constructor (secDataHandler) {
+    this.secDataHandler = secDataHandler
     this.txBlockChain = []
     this.util = new SECUtil()
   }
@@ -39,7 +34,7 @@ class SECTransactionBlockChain {
    * @param {requestCallback} callback - The callback that handles the response.
    */
   init (callback) {
-    secDataHandler.isTxBlockChainDBEmpty((err, isEmpty) => {
+    this.secDataHandler.isTxBlockChainDBEmpty((err, isEmpty) => {
       if (err) {
         throw new Error('Could not check db content')
       }
@@ -59,7 +54,7 @@ class SECTransactionBlockChain {
    */
   putGenesis (genesis, callback) {
     this.txBlockChain.push(genesis)
-    secDataHandler.writeTxBlockToDB(genesis, (err) => {
+    this.secDataHandler.writeTxBlockToDB(genesis, (err) => {
       if (err) {
         throw new Error('Something wrong with writeTokenChainToDB function')
       }
@@ -73,7 +68,7 @@ class SECTransactionBlockChain {
    * @param {function} callback
    */
   getBlocksWithHashFromDB (hashArray, callback) {
-    secDataHandler.getTxBlockFromDB(hashArray, callback)
+    this.secDataHandler.getTxBlockFromDB(hashArray, callback)
   }
 
   /**
@@ -88,7 +83,7 @@ class SECTransactionBlockChain {
    */
   getAllBlockChainFromDB (callback) {
     let blockchain = []
-    secDataHandler.getTxBlockChainDB((err, data) => {
+    this.secDataHandler.getTxBlockChainDB((err, data) => {
       if (err) {
         throw new Error(`Can not get whole token block chain data from database`)
       }
@@ -105,7 +100,7 @@ class SECTransactionBlockChain {
    * @param {function} callback
    */
   getBlockChainFromDB (minHeight, maxHeight, cb) {
-    secDataHandler.getTxChain(minHeight, maxHeight, cb)
+    this.secDataHandler.getTxChain(minHeight, maxHeight, cb)
   }
 
   /**
@@ -115,7 +110,7 @@ class SECTransactionBlockChain {
   */
   putBlockToDB (block, callback) {
     this.txBlockChain.push(block)
-    secDataHandler.writeTxBlockToDB(block, (err) => {
+    this.secDataHandler.writeTxBlockToDB(block, (err) => {
       if (err) {
         throw new Error('Something wrong with writeTokenChainToDB function')
       }
@@ -130,7 +125,7 @@ class SECTransactionBlockChain {
    */
   putBlocksToDB (blocks, callback) {
     this.txBlockChain = this.txBlockChain.concat(blocks)
-    secDataHandler.writeTxBlockToDB(blocks, (err) => {
+    this.secDataHandler.writeTxBlockToDB(blocks, (err) => {
       if (err) {
         throw new Error('Can not put token blocks into database')
       }
