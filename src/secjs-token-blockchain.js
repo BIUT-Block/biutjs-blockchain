@@ -154,6 +154,9 @@ class SECTokenBlockChain {
    * get the dificulty of blockchain
    */
   getGenesisBlockDifficulty () {
+    if (typeof this.tokenBlockChain[0] === 'string') {
+      this.tokenBlockChain[0] = JSON.parse(this.tokenBlockChain[0])
+    }
     return this.tokenBlockChain[0].Difficulty
   }
 
@@ -161,6 +164,9 @@ class SECTokenBlockChain {
    * get genius block from buffer
    */
   getGenesisBlock () {
+    if (typeof this.tokenBlockChain[0] === 'string') {
+      this.tokenBlockChain[0] = JSON.parse(this.tokenBlockChain[0])
+    }
     return this.tokenBlockChain[0]
   }
 
@@ -168,6 +174,9 @@ class SECTokenBlockChain {
    * get the genesis block hash
    */
   getGenesisBlockHash () {
+    if (typeof this.tokenBlockChain[0] === 'string') {
+      this.tokenBlockChain[0] = JSON.parse(this.tokenBlockChain[0])
+    }
     return this.tokenBlockChain[0].Hash
   }
 
@@ -175,6 +184,9 @@ class SECTokenBlockChain {
    * get last block from buffer
    */
   getLastBlock () {
+    if (typeof this.tokenBlockChain[this.getCurrentHeight()] === 'string') {
+      this.tokenBlockChain[this.getCurrentHeight()] = JSON.parse(this.tokenBlockChain[this.getCurrentHeight()])
+    }
     return this.tokenBlockChain[this.getCurrentHeight()]
   }
 
@@ -184,6 +196,9 @@ class SECTokenBlockChain {
    *
    */
   getLastBlockHash () {
+    if (typeof this.tokenBlockChain[this.getCurrentHeight()] === 'string') {
+      this.tokenBlockChain[this.getCurrentHeight()] = JSON.parse(this.tokenBlockChain[this.getCurrentHeight()])
+    }
     return this.tokenBlockChain[this.getCurrentHeight()].Hash
   }
 
@@ -193,6 +208,9 @@ class SECTokenBlockChain {
    *
    */
   getLastBlockTimeStamp () {
+    if (typeof this.tokenBlockChain[this.getCurrentHeight()] === 'string') {
+      this.tokenBlockChain[this.getCurrentHeight()] = JSON.parse(this.tokenBlockChain[this.getCurrentHeight()])
+    }
     return this.tokenBlockChain[this.getCurrentHeight()].TimeStamp
   }
 }
