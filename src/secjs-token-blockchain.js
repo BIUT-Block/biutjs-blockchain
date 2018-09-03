@@ -17,22 +17,22 @@ class SECTokenBlockChain {
    */
   _generateGenesisBlock () {
     let block = {
-      'Number': 0,
-      'TransactionsRoot': '',
-      'ReceiptRoot': '',
-      'LogsBloom': '',
-      'MixHash': '',
-      'StateRoot': '',
-      'TimeStamp': 1530297308,
-      'Transactions': [],
-      'ParentHash': 'Genesis',
-      'Beneficiary': 'SEC-Miner',
-      'Difficulty': 1,
-      'GasUsed': 0,
-      'GasLimit': 0,
-      'ExtraData': 'SEC Hello World',
-      'Nonce': '',
-      'Hash': '5f213ac06cfe4a82e167aa3ea430e520be99dcedb4ab47fd8f668448708e34c1'
+      Number: 0,
+      TransactionsRoot: this.util.SHA3_RLP.toString('hex'),
+      ReceiptRoot: this.util.SHA3_RLP.toString('hex'),
+      LogsBloom: this.util.zeros(256).toString('hex'),
+      MixHash: this.util.zeros(32).toString('hex'),
+      StateRoot: this.util.SHA3_RLP.toString('hex'),
+      TimeStamp: '1530297308',
+      Transactions: [],
+      ParentHash: this.util.zeros(32).toString('hex'),
+      Beneficiary: 'GENESIS BLOCK',
+      Difficulty: '1',
+      GasUsed: '0',
+      GasLimit: '100000',
+      ExtraData: 'SEC Hello World',
+      Nonce: this.util.zeros(8).toString('hex'),
+      Hash: '5f213ac06cfe4a82e167aa3ea430e520be99dcedb4ab47fd8f668448708e34c1'
     }
     return block
   }
