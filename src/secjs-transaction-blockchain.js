@@ -15,17 +15,18 @@ class SECTransactionBlockChain {
    * generate genesis block
    */
   _generateGenesisBlock () {
-    let block = {}
-    block.Number = 0 // txBlockChain.currentHeight + 1
-    block.TransactionsRoot = ''
-    block.ReceiptRoot = ''
-    block.TimeStamp = 1530297308
-    block.ParentHash = 'Genesis'
-    block.ExtraData = 'SEC Hello World'
-    block.Nonce = '' // powCal.getNonce(this.block)
-    block.Beneficiary = 'SEC-Miner'
-    block.Hash = '04c7123071429bbfcfb6ffd22501bdcc575f8df820041d63d8c16b94a9696ecf'
-    block.Transactions = []
+    let block = {
+      Number: 0,
+      TransactionsRoot: this.util.SHA3_RLP.toString('hex'),
+      ReceiptRoot: this.util.SHA3_RLP.toString('hex'),
+      TimeStamp: '1530297308',
+      ParentHash: this.util.zeros(32).toString('hex'),
+      Beneficiary: 'GENESIS BLOCK',
+      ExtraData: 'SEC Hello World',
+      Nonce: this.util.zeros(8).toString('hex'),
+      Hash: '04c7123071429bbfcfb6ffd22501bdcc575f8df820041d63d8c16b94a9696ecf',
+      Transactions: []
+    }
     return block
   }
 
