@@ -50,10 +50,9 @@ class SECHash {
 
 // Methode of generating random data
 const randomData = function (type, length) {
-  if (length < 0) {
+  if (length <= 0) {
     throw TypeError('Input length is invalid')
   }
-
   if (type === 'number') {
     return Math.floor(Math.random() * Math.floor(length))
   } else if (type === 'string') {
@@ -66,7 +65,7 @@ const randomData = function (type, length) {
     }
     return resultStr
   } else {
-    throw TypeError('Wrong random generate data type')
+    throw TypeError('Wrong random generate data type, please choose between number, string and hex')
   }
 }
 
@@ -322,29 +321,56 @@ class RandomTokenDataGenerator {
 }
 
 class randomGenerate {
-  constructor (tx) {
-    this.tx = tx
+  /**
+   * @param  {} type number, string, or hex
+   * @param  {} length wanted length, must be bigger than zero
+   */
+  generateRandomData (type, length) {
+    if (length < 0) {
+      throw TypeError('Input length is invalid')
+    }
+    if (type === 'number') {
+      return Math.floor(Math.random() * Math.floor(length))
+    } else if (type === 'string') {
+      return getRandomString(length)
+    } else if (type === 'hex') {
+      let resultStr = ''
+      for (let i = 0; i < length; i++) {
+        let dec = Math.floor(Math.random() * Math.floor(16))
+        resultStr += dec.toString(16)
+      }
+      return resultStr
+    } else {
+      throw TypeError('Wrong random generate data type')
+    }
   }
 
-  getTxData (tx) {
-    this.getTxData = new GetTxData(tx)
-    return this.getTxData
-  }
-
-  getTokenData (tx) {
-    this.getTokenData = new GetTokenTxData(tx)
-    return this.getTokenData
-  }
-
+  /** generate a random transaction chain data of SEC
+   * @param  {}
+   */
   generateRandomTxData () {
-    this.tx = new RandomTxDataGenerator()
-    this.generateTxData = this.tx
-    return this.generateTxData
+    return new RandomTxDataGenerator()
   }
 
+  /** generate a random token chain data of SEC
+   * @param  {}
+   */
   generateRandomTokenData () {
-    this.generateTokenData = new RandomTokenDataGenerator()
-    return this.generateTokenData
+    return new RandomTokenDataGenerator()
+  }
+
+  /** get a transaction chain data, contains multi functions of single data acquirsition
+   * @param  {} tx transaction chain data
+   */
+  getTxData (tx) {
+    return new GetTxData(tx)
+  }
+
+  /** get a token chain data, contains multi functions of single data acquirsition
+    * @param  {} tx transaction chain data
+    */
+  getTokenData (tx) {
+    return new GetTokenTxData(tx)
   }
 }
 module.exports = randomGenerate

@@ -58,7 +58,17 @@ Create the genesis blockchain
 ### API of transaction block chain
 Funcionality simlar as token blockchain and token block
 
+### generateRandomTxData
+A utility function of generating random transaction data in SEC transaction-chian. It is aviable to generate any involved data seperately.
 
+### generateRandomTokenData
+A utility function of generating random transaction data in SEC token-chian. It is aviable to generate any involved data seperately.
+
+### getTxData
+A utility function of acquiring transaction data for SEC transaction-chain. It is aviable to acquire any involved data seperately.
+
+### getTokenData
+A utility function of acquiring transaction data for SEC token-chain. It is aviable to acquire any involved data seperately.
 
 #### License
 MIT
