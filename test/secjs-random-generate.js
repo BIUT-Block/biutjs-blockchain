@@ -1,6 +1,6 @@
 let randomGen = require('../src/secjs-random-generate')
 let expect = require('chai').expect
-let describe = require('describe')
+// let describe = require('describe')
 
 describe('secjs-random-generate', () => {
   describe('random generation correctness test', () => {
@@ -27,7 +27,7 @@ describe('secjs-random-generate', () => {
 
     it('throw an error when input "length" is invalid', () => {
       expect(() => { randomGen.randomGenerate('string', -1) }).to.throw('Input length is invalid')
-      expect(() => { randomGen.randomGenerate('number', -1) }).to.throw('Input length is invalid')
+      expect(() => { randomGen.randomGenerate('number', -10) }).to.throw('Input length is invalid')
     })
   })
 })

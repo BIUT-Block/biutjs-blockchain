@@ -58,7 +58,5 @@ Create the genesis blockchain
 ### API of transaction block chain
 Funcionality simlar as token blockchain and token block
 
-
-
 #### License
 MIT
