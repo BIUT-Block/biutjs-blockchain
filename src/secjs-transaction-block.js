@@ -68,9 +68,9 @@ class SECTransactionBlock {
     this.block.ReceiptRoot = this.config.ReceiptRoot
     this.block.TimeStamp = this.util.currentUnixTimeSecond()
     this.block.Transactions = this.transactions
-    this.block.ParentHash = this.config.ParentHash // randomGen.randomGenerate('string', 32)
-    this.block.Beneficiary = this.config.userAddr // randomGen.randomGenerate('string', 32)
-    this.block.ExtraData = this.config.ExtraData // Empty?
+    this.block.ParentHash = this.config.ParentHash
+    this.block.Beneficiary = this.config.userAddr
+    this.block.ExtraData = this.config.ExtraData
 
     this.block.Nonce = this.config.Nonce // powCal.getNonce(this.block)
     this.block.Hash = this.calculateBlockHash()

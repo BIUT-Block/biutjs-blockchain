@@ -68,10 +68,10 @@ class SECTokenBlock {
     this.block.Transactions = this.transactions
     this.block.ParentHash = this.config.ParentHash
     this.block.Beneficiary = this.config.userAddr
-    this.block.Difficulty = this.config.Difficulty // randomGen.randomGenerate('number', 10000)
-    this.block.GasUsed = this.config.GasUsed // randomGen.randomGenerate('number', 10000)
-    this.block.GasLimit = this.config.GasLimit // randomGen.randomGenerate('number', 100000)
-    this.block.ExtraData = this.config.ExtraData // Empty?
+    this.block.Difficulty = this.config.Difficulty
+    this.block.GasUsed = this.config.GasUsed
+    this.block.GasLimit = this.config.GasLimit
+    this.block.ExtraData = this.config.ExtraData
     this.block.Nonce = this.config.Nonce // powCal.getNonce(this.block)
     this.block.Hash = secjsHash.hash(JSON.stringify(this.block))
   }
