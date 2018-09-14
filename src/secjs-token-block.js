@@ -22,6 +22,46 @@ class SECTokenBlock {
     return this.block
   }
 
+  setBlockHeader () {
+
+  }
+
+  setBlockHeaderBuffer () {
+
+  }
+
+  getBlockHeader () {
+
+  }
+
+  getBlockHeaderBuffer () {
+
+  }
+
+  getBlockHeaderHash () {
+
+  }
+
+  setBlockBody () {
+
+  }
+
+  setBlockBodyBuffer () {
+
+  }
+
+  getBlockBody () {
+
+  }
+
+  getBlockBodyBuffer () {
+
+  }
+
+  getBlockBodyHash () {
+
+  }
+
   /**
     * generate a token chain block
     * @param {*} tokenPool, tokenBlockChain
