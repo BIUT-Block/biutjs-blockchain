@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@sec-block/secjs-datahandler": "^1.0.13",
+    "@sec-block/secjs-datahandler": "^1.0.14",
     "@sec-block/secjs-tx": "^0.1.6",
     "@sec-block/secjs-util": "^1.1.14",
     "chai": "^4.1.2",
