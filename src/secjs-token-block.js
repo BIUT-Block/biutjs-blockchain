@@ -175,17 +175,17 @@ class SECTokenBlock {
 
   _generateBlockHeaderBuffer () {
     this.blockHeaderBuffer = [
-      this.SECUtils.intToBuffer(this.blockHeader.Number),
+      this.util.intToBuffer(this.blockHeader.Number),
       Buffer.from(this.blockHeader.TransactionsRoot, 'hex'),
       Buffer.from(this.blockHeader.ReceiptRoot, 'hex'),
       Buffer.from(this.blockHeader.LogsBloom, 'hex'),
       Buffer.from(this.blockHeader.MixHash, 'hex'),
       Buffer.from(this.blockHeader.StateRoot, 'hex'),
-      this.SECUtils.intToBuffer(this.blockHeader.TimeStamp),
+      this.util.intToBuffer(this.blockHeader.TimeStamp),
       Buffer.from(this.blockHeader.ParentHash),
-      this.SECUtils.intToBuffer(this.blockHeader.Difficulty),
-      this.SECUtils.intToBuffer(this.blockHeader.GasUsed),
-      this.SECUtils.intToBuffer(this.blockHeader.GasLimit),
+      this.util.intToBuffer(this.blockHeader.Difficulty),
+      this.util.intToBuffer(this.blockHeader.GasUsed),
+      this.util.intToBuffer(this.blockHeader.GasLimit),
       Buffer.from(this.blockHeader.ExtraData, 'hex'),
       Buffer.from(this.blockHeader.Nonce, 'hex')
     ]
