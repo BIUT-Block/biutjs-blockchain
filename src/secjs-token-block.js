@@ -1,6 +1,5 @@
 const SECTX = require('@sec-block/secjs-tx')
 const SECUtil = require('@sec-block/secjs-util')
-const SECHash = require('./secjs-hash.js')
 
 class SECTokenBlock {
   /**
@@ -13,53 +12,90 @@ class SECTokenBlock {
       type: 'tokenchain-block'
     }).getInstance()
     this.config = config
-    this.transactions = []
     this.block = this.tokenChainBlockHandler.getModel()
+    this.blockHeader = {}
+    this.blockHeaderBuffer = []
+    this.blockBody = []
+    this.blockBodyBuffer = []
     this.util = new SECUtil()
+    this.hasHeader = false
+    this.hasBody = false
   }
 
   getBlock () {
     return this.block
   }
 
-  setBlockHeader () {
-
+  setBlock (block) {
+    this.block = block
+    this.blockHeader = block
+    delete this.blockHeader.Beneficiary
+    delete this.blockHeader.Hash
+    delete this.blockHeader.Transactions
+    this._generateBlockHeaderBuffer()
+    this._generateBlockBodyBuffer()
   }
 
-  setBlockHeaderBuffer () {
+  setBlockHeader (block) {
+    for (let key in block) {
+      this.block[key] = block[key]
+    }
+    this.blockHeader = block
+    delete this.blockHeader.Beneficiary
+    delete this.blockHeader.Hash
+    delete this.blockHeader.Transactions
+    this._generateBlockHeaderBuffer()
+  }
 
+  setBlockHeaderFromBuffer (blockHeaderBuffer) {
+    this.blockBodyBuffer = this.blockBodyBuffer
+    this.block.Number = this.util.bufferToInt(blockHeaderBuffer[0])
+    this.block.TransactionsRoot = blockHeaderBuffer[1].toString('hex')
+    this.block.ReceiptRoot = blockHeaderBuffer[2].toString('hex')
+    this.block.LogsBloom = blockHeaderBuffer[3].toString('hex')
+    this.block.MixHash = blockHeaderBuffer[4].toString('hex')
+    this.block.StateRoot = blockHeaderBuffer[5].toString('hex')
+    this.block.TimeStamp = this.util.bufferToInt(blockHeaderBuffer[6])
+    this.block.ParentHash = blockHeaderBuffer[7].toString('hex')
+    this.block.Difficulty = this.util.bufferToInt(blockHeaderBuffer[8])
+    this.block.GasUsed = this.util.bufferToInt(blockHeaderBuffer[9])
+    this.block.GasLimit = this.util.bufferToInt(blockHeaderBuffer[10])
+    this.block.ExtraData = blockHeaderBuffer[11].toString('hex')
+    this.block.Nonce = blockHeaderBuffer[12].toString('hex')
   }
 
   getBlockHeader () {
-
+    return this.blockHeader
   }
 
   getBlockHeaderBuffer () {
-
+    return this.blockHeaderBuffer
   }
 
   getBlockHeaderHash () {
-
+    return this.util.rlphash(this.blockBodyBuffer)
   }
 
-  setBlockBody () {
-
+  setBlockBody (body) {
+    this.blockBody = body
+    this.block.Transactions = this.blockBody
+    this._generateBlockBodyBuffer()
   }
 
-  setBlockBodyBuffer () {
-
+  setBlockBodyBuffer (bodyBuffer) {
+    this.blockBodyBuffer = bodyBuffer
   }
 
   getBlockBody () {
-
+    return this.blockBody
   }
 
   getBlockBodyBuffer () {
-
+    return this.blockBodyBuffer
   }
 
   getBlockBodyHash () {
-
+    return this.util.rlphash(this.blockBodyBuffer)
   }
 
   /**
@@ -78,14 +114,12 @@ class SECTokenBlock {
     *
     */
   collectTxFromPool (tokenPool) {
-    let txBuffer = tokenPool.getAllTxFromPool()
-    txBuffer.forEach((currTx) => {
+    let txCache = tokenPool.getAllTxFromPool()
+    txCache.forEach((currTx) => {
       let tx = JSON.parse(currTx)
       if (this.verifyTransaction(tx)) {
-        this.transactions.push(tx)
-      } // else{
-      // report???
-      // }
+        this.blockBody.push(tx)
+      }
     })
   }
 
@@ -95,25 +129,38 @@ class SECTokenBlock {
     *
     */
   fillInBlockInfo (tokenBlockChain) {
-    let hashalgo = 'sha256'
-    let secjsHash = new SECHash(hashalgo)
+    // Header
+    this.blockHeader.Number = parseInt(tokenBlockChain.getCurrentHeight()) + 1
+    this.blockHeader.TransactionsRoot = this.config.TransactionsRoot
+    this.blockHeader.ReceiptRoot = this.config.ReceiptRoot
+    this.blockHeader.LogsBloom = this.config.LogsBloom
+    this.blockHeader.MixHash = this.config.MixHash
+    this.blockHeader.StateRoot = this.config.StateRoot
+    this.blockHeader.TimeStamp = this.util.currentUnixTimeSecond()
+    this.blockHeader.ParentHash = this.config.ParentHash
+    this.blockHeader.Difficulty = this.config.Difficulty
+    this.blockHeader.GasUsed = this.config.GasUsed
+    this.blockHeader.GasLimit = this.config.GasLimit
+    this.blockHeader.ExtraData = this.config.ExtraData
+    this.blockHeader.Nonce = this.config.Nonce
 
-    this.block.Number = parseInt(tokenBlockChain.getCurrentHeight()) + 1
-    this.block.TransactionsRoot = this.config.TransactionsRoot
-    this.block.ReceiptRoot = this.config.ReceiptRoot
-    this.block.LogsBloom = this.config.LogsBloom
-    this.block.MixHash = this.config.MixHash
-    this.block.StateRoot = this.config.StateRoot
-    this.block.TimeStamp = this.util.currentUnixTimeSecond()
-    this.block.Transactions = this.transactions
-    this.block.ParentHash = this.config.ParentHash
+    this.block = this.blockHeader
     this.block.Beneficiary = this.config.userAddr
-    this.block.Difficulty = this.config.Difficulty
-    this.block.GasUsed = this.config.GasUsed
-    this.block.GasLimit = this.config.GasLimit
-    this.block.ExtraData = this.config.ExtraData
-    this.block.Nonce = this.config.Nonce // powCal.getNonce(this.block)
-    this.block.Hash = secjsHash.hash(JSON.stringify(this.block))
+    this.block.Hash = this.util.rlphash(this.blockHeaderBuffer)
+
+    this._generateBlockHeaderBuffer()
+
+    // Body
+    this.block.Transactions = this.blockBody
+    this._generateBlockBodyBuffer()
+  }
+
+  hasHeader () {
+    return this.hasHeader
+  }
+
+  hasBody () {
+    return this.hasBody
   }
 
   /**
@@ -124,6 +171,30 @@ class SECTokenBlock {
   verifyTransaction (transaction) {
     // TODO: will be implemented in the future
     return true
+  }
+
+  _generateBlockHeaderBuffer () {
+    this.blockHeaderBuffer = [
+      this.SECUtils.intToBuffer(this.blockHeader.Number),
+      Buffer.from(this.blockHeader.TransactionsRoot, 'hex'),
+      Buffer.from(this.blockHeader.ReceiptRoot, 'hex'),
+      Buffer.from(this.blockHeader.LogsBloom, 'hex'),
+      Buffer.from(this.blockHeader.MixHash, 'hex'),
+      Buffer.from(this.blockHeader.StateRoot, 'hex'),
+      this.SECUtils.intToBuffer(this.blockHeader.TimeStamp),
+      Buffer.from(this.blockHeader.ParentHash),
+      this.SECUtils.intToBuffer(this.blockHeader.Difficulty),
+      this.SECUtils.intToBuffer(this.blockHeader.GasUsed),
+      this.SECUtils.intToBuffer(this.blockHeader.GasLimit),
+      Buffer.from(this.blockHeader.ExtraData, 'hex'),
+      Buffer.from(this.blockHeader.Nonce, 'hex')
+    ]
+  }
+
+  _generateBlockBodyBuffer () {
+    this.blockBody.forEach(tx => {
+      this.blockBodyBuffer.push(Buffer.from(JSON.stringify(tx), 'hex'))
+    })
   }
 }
 
