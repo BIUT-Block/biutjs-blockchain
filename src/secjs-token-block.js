@@ -81,7 +81,7 @@ class SECTokenBlock {
 
   setBlockBody (body) {
     this.blockBody = body
-    this.block.Transactions = Object.assign({}, this.blockBody)
+    this.block.Transactions = this.blockBody
     this._generateBlockBodyBuffer()
     this.hasBody = true
   }
@@ -159,7 +159,7 @@ class SECTokenBlock {
     this._generateBlockHeaderBuffer()
 
     // Body
-    this.block.Transactions = Object.assign({}, this.blockBody)
+    this.block.Transactions = this.blockBody
     this._generateBlockBodyBuffer()
     this.hasHeader = true
     this.hasBody = true
