@@ -34,6 +34,8 @@ class SECTokenBlock {
     delete this.blockHeader.Transactions
     this._generateBlockHeaderBuffer()
     this._generateBlockBodyBuffer()
+    this.hasHeader = true
+    this.hasBody = true
   }
 
   setBlockHeader (block) {
@@ -45,10 +47,10 @@ class SECTokenBlock {
     delete this.blockHeader.Hash
     delete this.blockHeader.Transactions
     this._generateBlockHeaderBuffer()
+    this.hasHeader = true
   }
 
   setBlockHeaderFromBuffer (blockHeaderBuffer) {
-    this.blockBodyBuffer = this.blockBodyBuffer
     this.block.Number = this.util.bufferToInt(blockHeaderBuffer[0])
     this.block.TransactionsRoot = blockHeaderBuffer[1].toString('hex')
     this.block.ReceiptRoot = blockHeaderBuffer[2].toString('hex')
@@ -62,6 +64,7 @@ class SECTokenBlock {
     this.block.GasLimit = this.util.bufferToInt(blockHeaderBuffer[10])
     this.block.ExtraData = blockHeaderBuffer[11].toString('hex')
     this.block.Nonce = blockHeaderBuffer[12].toString('hex')
+    this.hasHeader = true
   }
 
   getBlockHeader () {
@@ -73,17 +76,22 @@ class SECTokenBlock {
   }
 
   getBlockHeaderHash () {
-    return this.util.rlphash(this.blockBodyBuffer)
+    return this.util.rlphash(this.blockHeaderBuffer)
   }
 
   setBlockBody (body) {
     this.blockBody = body
-    this.block.Transactions = this.blockBody
+    this.block.Transactions = Object.assign({}, this.blockBody)
     this._generateBlockBodyBuffer()
+    this.hasBody = true
   }
 
   setBlockBodyBuffer (bodyBuffer) {
     this.blockBodyBuffer = bodyBuffer
+    this.blockBodyBuffer.forEach(txBuffer => {
+      this.blockBody.push(JSON.stringify(txBuffer.toString('hex')))
+    })
+    this.hasBody = true
   }
 
   getBlockBody () {
@@ -144,15 +152,17 @@ class SECTokenBlock {
     this.blockHeader.ExtraData = this.config.ExtraData
     this.blockHeader.Nonce = this.config.Nonce
 
-    this.block = this.blockHeader
+    this.block = Object.assign({}, this.blockHeader)
     this.block.Beneficiary = this.config.userAddr
     this.block.Hash = this.util.rlphash(this.blockHeaderBuffer)
 
     this._generateBlockHeaderBuffer()
 
     // Body
-    this.block.Transactions = this.blockBody
+    this.block.Transactions = Object.assign({}, this.blockBody)
     this._generateBlockBodyBuffer()
+    this.hasHeader = true
+    this.hasBody = true
   }
 
   hasHeader () {
