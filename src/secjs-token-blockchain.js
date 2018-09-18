@@ -1,73 +1,94 @@
 const SECUtil = require('@sec-block/secjs-util')
+const SECTokenBlock = require('./secjs-token-block')
 
 class SECTokenBlockChain {
   /**
    * create a token chain block chain with config
-   * @param {*} blockchain, config
+   * @param {SECDataHandler} SECDataHandler
    *
    */
-  constructor (secDataHandler) {
-    this.secDataHandler = secDataHandler
+  constructor (SECDataHandler) {
+    if (!SECDataHandler) {
+      throw new Error('Can not find SECDataHandler Instance')
+    }
+    this.SECDataHandler = SECDataHandler
     this.tokenBlockChain = []
     this.util = new SECUtil()
   }
 
   /**
-   * generate genesis block
+   * generate genesis token block
    */
   _generateGenesisBlock () {
-    let block = {
+    return new SECTokenBlock({
       Number: 0,
       TransactionsRoot: this.util.SHA3_RLP.toString('hex'),
       ReceiptRoot: this.util.SHA3_RLP.toString('hex'),
       LogsBloom: this.util.zeros(256).toString('hex'),
       MixHash: this.util.zeros(32).toString('hex'),
       StateRoot: this.util.SHA3_RLP.toString('hex'),
-      TimeStamp: '1530297308',
-      Transactions: [],
+      TimeStamp: 1537222077,
       ParentHash: this.util.zeros(32).toString('hex'),
-      Beneficiary: 'GENESIS BLOCK',
-      Difficulty: '1',
-      GasUsed: '0',
-      GasLimit: '100000',
+      Beneficiary: this.util.SHA3_RLP.toString('hex'),
+      Difficulty: 1,
+      GasUsed: 0,
+      GasLimit: 100000,
       ExtraData: 'SEC Hello World',
       Nonce: this.util.zeros(8).toString('hex'),
-      Hash: '5f213ac06cfe4a82e167aa3ea430e520be99dcedb4ab47fd8f668448708e34c1'
-    }
-    return block
+      Transactions: []
+    }).getBlock()
   }
 
   /**
    * Initialize the class token-blockchain
-   * @param {requestCallback} callback - The callback that handles the response.
+   * @param {callback} callback - The callback that handles the response.
    */
   init (callback) {
-    this.secDataHandler.isTokenBlockChainDBEmpty((err, isEmpty) => {
-      if (err) {
-        throw new Error('Could not check db content')
-      }
+    this.SECDataHandler.isTokenBlockChainDBEmpty((err, isEmpty) => {
+      if (err) throw new Error('Could not check db content')
       if (isEmpty) {
-        let genesisBlock = this._generateGenesisBlock()
-        this.putGenesis(genesisBlock, callback)
+        this.putBlockToDB(this._generateGenesisBlock(), callback)
       } else {
-        this.getAllBlockChainFromDB(() => {
-          callback(err)
-        })
+        this._getAllBlockChainFromDB(callback)
       }
     })
   }
 
   /**
-   * put genesis into token block chain level database
+   * Put token block to db
+   * @param {SECTokenBlock} block the block object in json formation
+   * @param {callback} callback
    */
-  putGenesis (genesis, callback) {
-    this.tokenBlockChain.push(genesis)
-    this.secDataHandler.writeTokenBlockToDB(genesis, (err) => {
-      if (err) {
-        throw new Error('Something wrong to write block into database')
-      }
+  putBlockToDB (block, callback) {
+    if (block.Number === this.tokenBlockChain.length) {
+      this.tokenBlockChain.push(JSON.parse(JSON.stringify(block)))
+      this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
+        if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
+        callback()
+      })
+    } else {
+      throw new Error('Can not add token Block, token Block Number is falsh.')
+    }
+  }
+
+  /**
+   * Put token block to db
+   * @param {Array} blocks the block object in json formation
+   * @param {callback} callbback
+   */
+  putBlocksToDB (blocks, callback) {
+    this.tokenBlockChain = this.tokenBlockChain.concat(blocks)
+    this.SECDataHandler.writeTokenBlockToDB(blocks, (err) => {
+      if (err) throw new Error('Can not put token blocks into database')
       callback()
     })
+  }
+
+  /**
+   * get blockchain from cache
+   */
+  getBlockChain () {
+    return this.tokenBlockChain
   }
 
   /**
@@ -75,27 +96,16 @@ class SECTokenBlockChain {
    * @param {Array} hashArray
    * @param {function} callback
    */
-  getBlocksWithHashFromDB (hashArray, cb) {
-    this.secDataHandler.getTokenBlockFromDB(hashArray, cb)
-  }
-
-  /**
-   * get blockchain model
-   */
-  getBlockChain () {
-    return this.tokenBlockChain
+  getBlocksWithHash (hashArray, callback) {
+    this.SECDataHandler.getTokenBlockFromDB(hashArray, callback)
   }
 
   /**
    * get all blockchain data
    */
-  getAllBlockChainFromDB (callback) {
-    let blockchain = []
-    this.secDataHandler.getTokenBlockChainDB((err, data) => {
-      if (err) {
-        throw new Error(`Can not get whole token block chain data from database`)
-      }
-      blockchain = data
+  _getAllBlockChainFromDB (callback) {
+    this.SECDataHandler.getTokenBlockChainDB((err, blockchain) => {
+      if (err) throw new Error('Can not get whole token block chain data from database')
       this.tokenBlockChain = blockchain
       callback()
     })
@@ -107,57 +117,15 @@ class SECTokenBlockChain {
    * @param {number} maxHeight
    * @param {function} callback
    */
-  getBlockChainFromDB (minHeight, maxHeight, cb) {
-    this.secDataHandler.getTokenChain(minHeight, maxHeight, cb)
-  }
-
-  /**
-   * Put token block to db
-   * @param {*} block the block object in json formation
-   * @param {*} cb
-   */
-  putBlockToDB (block, cb) {
-    this.tokenBlockChain.push(block)
-    this.secDataHandler.writeTokenBlockToDB(block, (err) => {
-      if (err) {
-        throw new Error('Something wrong with writeSingleTokenBlockToDB function')
-      }
-      cb()
-    })
-  }
-
-  /**
-   * Put token block to db
-   * @param {*} block the block object in json formation
-   * @param {*} callbback
-   */
-  putBlocksToDB (blocks, callback) {
-    this.tokenBlockChain = this.tokenBlockChain.concat(blocks)
-    this.secDataHandler.writeTokenBlockToDB(blocks, (err) => {
-      if (err) {
-        throw new Error('Can not put token blocks into database')
-      }
-      callback()
-    })
+  getBlockChainFromDB (minHeight, maxHeight, callback) {
+    this.SECDataHandler.getTokenChain(minHeight, maxHeight, callback)
   }
 
   /**
    * return last block's height
-   * @param {*} None
-   *
    */
   getCurrentHeight () {
     return this.tokenBlockChain.length - 1
-  }
-
-  /**
-   * get the dificulty of blockchain
-   */
-  getGenesisBlockDifficulty () {
-    if (typeof this.tokenBlockChain[0] === 'string') {
-      this.tokenBlockChain[0] = JSON.parse(this.tokenBlockChain[0])
-    }
-    return this.tokenBlockChain[0].Difficulty
   }
 
   /**
@@ -168,6 +136,16 @@ class SECTokenBlockChain {
       this.tokenBlockChain[0] = JSON.parse(this.tokenBlockChain[0])
     }
     return this.tokenBlockChain[0]
+  }
+
+  /**
+   * get the dificulty of blockchain
+   */
+  getGenesisBlockDifficulty () {
+    if (typeof this.tokenBlockChain[0] === 'string') {
+      this.tokenBlockChain[0] = JSON.parse(this.tokenBlockChain[0])
+    }
+    return this.tokenBlockChain[0].Difficulty
   }
 
   /**
@@ -192,8 +170,6 @@ class SECTokenBlockChain {
 
   /**
    * return last block's hash value
-   * @param {*} None
-   *
    */
   getLastBlockHash () {
     if (typeof this.tokenBlockChain[this.getCurrentHeight()] === 'string') {
@@ -204,14 +180,22 @@ class SECTokenBlockChain {
 
   /**
    * return last block's timestamp
-   * @param {*} None
-   *
    */
   getLastBlockTimeStamp () {
     if (typeof this.tokenBlockChain[this.getCurrentHeight()] === 'string') {
       this.tokenBlockChain[this.getCurrentHeight()] = JSON.parse(this.tokenBlockChain[this.getCurrentHeight()])
     }
     return this.tokenBlockChain[this.getCurrentHeight()].TimeStamp
+  }
+
+  /**
+   * get the dificulty of the last blockchain
+   */
+  getLastBlockDifficulty () {
+    if (typeof this.tokenBlockChain[this.getCurrentHeight()] === 'string') {
+      this.tokenBlockChain[this.getCurrentHeight()] = JSON.parse(this.tokenBlockChain[this.getCurrentHeight()])
+    }
+    return this.tokenBlockChain[this.getCurrentHeight()].Difficulty
   }
 }
 

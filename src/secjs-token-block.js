@@ -1,5 +1,5 @@
-const SECTX = require('@sec-block/secjs-tx')
 const SECUtil = require('@sec-block/secjs-util')
+const SECTokenBlockModel = require('../model/tokenchain-block-model')
 
 class SECTokenBlock {
   /**
@@ -7,12 +7,9 @@ class SECTokenBlock {
     * @param {*} config
     *
     */
-  constructor (config) {
-    this.tokenChainBlockHandler = new SECTX({
-      type: 'tokenchain-block'
-    }).getInstance()
+  constructor (config = {}) {
     this.config = config
-    this.block = this.tokenChainBlockHandler.getModel()
+    this.block = SECTokenBlockModel
     this.blockHeader = {}
     this.blockHeaderBuffer = []
     this.blockBody = []
@@ -20,6 +17,13 @@ class SECTokenBlock {
     this.util = new SECUtil()
     this.hasHeader = false
     this.hasBody = false
+    if (Object.keys(config).length !== 0) {
+      this._generateBlock()
+    }
+  }
+
+  setBlockchain (tokenBlockchain) {
+    this.tokenBlockchain = tokenBlockchain
   }
 
   getBlock () {
@@ -27,8 +31,9 @@ class SECTokenBlock {
   }
 
   setBlock (block) {
-    this.block = block
-    this.blockHeader = block
+    this.block = Object.assign({}, block)
+    this.blockBody = block.Transactions
+    this.blockHeader = Object.assign({}, block)
     delete this.blockHeader.Beneficiary
     delete this.blockHeader.Hash
     delete this.blockHeader.Transactions
@@ -42,7 +47,7 @@ class SECTokenBlock {
     for (let key in block) {
       this.block[key] = block[key]
     }
-    this.blockHeader = block
+    this.blockHeader = Object.assign({}, block)
     delete this.blockHeader.Beneficiary
     delete this.blockHeader.Hash
     delete this.blockHeader.Transactions
@@ -51,6 +56,7 @@ class SECTokenBlock {
   }
 
   setBlockHeaderFromBuffer (blockHeaderBuffer) {
+    this.blockHeaderBuffer = Object.assign({}, blockHeaderBuffer)
     this.block.Number = this.util.bufferToInt(blockHeaderBuffer[0])
     this.block.TransactionsRoot = blockHeaderBuffer[1].toString('hex')
     this.block.ReceiptRoot = blockHeaderBuffer[2].toString('hex')
@@ -62,8 +68,12 @@ class SECTokenBlock {
     this.block.Difficulty = this.util.bufferToInt(blockHeaderBuffer[8])
     this.block.GasUsed = this.util.bufferToInt(blockHeaderBuffer[9])
     this.block.GasLimit = this.util.bufferToInt(blockHeaderBuffer[10])
-    this.block.ExtraData = blockHeaderBuffer[11].toString('hex')
+    this.block.ExtraData = blockHeaderBuffer[11].toString()
     this.block.Nonce = blockHeaderBuffer[12].toString('hex')
+    this.blockHeader = Object.assign({}, this.block)
+    delete this.blockHeader.Beneficiary
+    delete this.blockHeader.Hash
+    delete this.blockHeader.Transactions
     this.hasHeader = true
   }
 
@@ -76,7 +86,7 @@ class SECTokenBlock {
   }
 
   getBlockHeaderHash () {
-    return this.util.rlphash(this.blockHeaderBuffer)
+    return this.util.rlphash(this.blockHeaderBuffer).toString('hex')
   }
 
   setBlockBody (body) {
@@ -86,10 +96,10 @@ class SECTokenBlock {
     this.hasBody = true
   }
 
-  setBlockBodyBuffer (bodyBuffer) {
+  setBlockBodyFromBuffer (bodyBuffer) {
     this.blockBodyBuffer = bodyBuffer
     this.blockBodyBuffer.forEach(txBuffer => {
-      this.blockBody.push(JSON.stringify(txBuffer.toString('hex')))
+      this.blockBody.push(JSON.parse(txBuffer.toString()))
     })
     this.hasBody = true
   }
@@ -103,48 +113,29 @@ class SECTokenBlock {
   }
 
   getBlockBodyHash () {
-    return this.util.rlphash(this.blockBodyBuffer)
+    return this.util.rlphash(this.blockBodyBuffer).toString('hex')
   }
 
-  /**
-    * generate a token chain block
-    * @param {*} tokenPool, tokenBlockChain
-    *
-    */
-  generateBlock (tokenPool, tokenBlockChain) {
-    this.collectTxFromPool(tokenPool)
-    this.fillInBlockInfo(tokenBlockChain)
+  isHeaderEmpty () {
+    return !this.hasHeader
   }
 
-  /**
-    * collect transactions from transaction pool
-    * @param {*} tokenPool
-    *
-    */
-  collectTxFromPool (tokenPool) {
-    let txCache = tokenPool.getAllTxFromPool()
-    txCache.forEach((currTx) => {
-      let tx = JSON.parse(currTx)
-      if (this.verifyTransaction(tx)) {
-        this.blockBody.push(tx)
-      }
-    })
+  isBodyEmpty () {
+    return !this.hasBody
   }
 
   /**
     * assign value to block header
-    * @param {*} tokenBlockChain
-    *
     */
-  fillInBlockInfo (tokenBlockChain) {
+  _generateBlock () {
     // Header
-    this.blockHeader.Number = parseInt(tokenBlockChain.getCurrentHeight()) + 1
+    this.blockHeader.Number = this.tokenBlockchain ? parseInt(this.tokenBlockChain.getCurrentHeight()) + 1 : this.config.Number || 0
     this.blockHeader.TransactionsRoot = this.config.TransactionsRoot
     this.blockHeader.ReceiptRoot = this.config.ReceiptRoot
     this.blockHeader.LogsBloom = this.config.LogsBloom
     this.blockHeader.MixHash = this.config.MixHash
     this.blockHeader.StateRoot = this.config.StateRoot
-    this.blockHeader.TimeStamp = this.util.currentUnixTimeSecond()
+    this.blockHeader.TimeStamp = this.config.TimeStamp || this.util.currentUnixTimeSecond()
     this.blockHeader.ParentHash = this.config.ParentHash
     this.blockHeader.Difficulty = this.config.Difficulty
     this.blockHeader.GasUsed = this.config.GasUsed
@@ -153,34 +144,16 @@ class SECTokenBlock {
     this.blockHeader.Nonce = this.config.Nonce
 
     this.block = Object.assign({}, this.blockHeader)
-    this.block.Beneficiary = this.config.userAddr
-    this.block.Hash = this.util.rlphash(this.blockHeaderBuffer)
-
+    this.block.Beneficiary = this.config.Beneficiary
     this._generateBlockHeaderBuffer()
+    this.block.Hash = this.util.rlphash(this.blockHeaderBuffer).toString('hex')
 
     // Body
+    this.blockBody = this.config.Transactions
     this.block.Transactions = this.blockBody
     this._generateBlockBodyBuffer()
     this.hasHeader = true
     this.hasBody = true
-  }
-
-  hasHeader () {
-    return this.hasHeader
-  }
-
-  hasBody () {
-    return this.hasBody
-  }
-
-  /**
-    * verify that the transaction is legal
-    * @param {*} transaction
-    *
-    */
-  verifyTransaction (transaction) {
-    // TODO: will be implemented in the future
-    return true
   }
 
   _generateBlockHeaderBuffer () {
@@ -192,19 +165,21 @@ class SECTokenBlock {
       Buffer.from(this.blockHeader.MixHash, 'hex'),
       Buffer.from(this.blockHeader.StateRoot, 'hex'),
       this.util.intToBuffer(this.blockHeader.TimeStamp),
-      Buffer.from(this.blockHeader.ParentHash),
+      Buffer.from(this.blockHeader.ParentHash, 'hex'),
       this.util.intToBuffer(this.blockHeader.Difficulty),
       this.util.intToBuffer(this.blockHeader.GasUsed),
       this.util.intToBuffer(this.blockHeader.GasLimit),
-      Buffer.from(this.blockHeader.ExtraData, 'hex'),
+      Buffer.from(this.blockHeader.ExtraData),
       Buffer.from(this.blockHeader.Nonce, 'hex')
     ]
   }
 
   _generateBlockBodyBuffer () {
-    this.blockBody.forEach(tx => {
-      this.blockBodyBuffer.push(Buffer.from(JSON.stringify(tx), 'hex'))
-    })
+    if (this.blockBody.length !== 0) {
+      this.blockBody.forEach(tx => {
+        this.blockBodyBuffer.push(Buffer.from(JSON.stringify(tx)))
+      })
+    }
   }
 }
 

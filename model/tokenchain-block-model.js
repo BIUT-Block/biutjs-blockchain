@@ -2,22 +2,22 @@
  * define of token chain model
  */
 let tokenchainBlockModel = {
-  Number: '',
+  Number: 0,
   TransactionsRoot: '',
   ReceiptRoot: '',
   LogsBloom: '',
   MixHash: '',
   StateRoot: '',
-  TimeStamp: '',
+  TimeStamp: 0,
   ParentHash: '',
-  Difficulty: '',
-  GasUsed: '',
-  GasLimit: '',
+  Difficulty: 0,
+  GasUsed: 0,
+  GasLimit: 0,
   ExtraData: '',
   Nonce: '',
   Hash: '',
   Beneficiary: '',
-  Transactions: ''
+  Transactions: []
 }
 
 module.exports = tokenchainBlockModel

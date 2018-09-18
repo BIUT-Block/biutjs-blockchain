@@ -1,11 +1,8 @@
 {
   "dependencies": {
-    "@sec-block/secjs-datahandler": "^1.1.0",
-    "@sec-block/secjs-tx": "^0.1.8",
     "@sec-block/secjs-util": "^1.1.15",
     "chai": "^4.1.2",
     "describe": "^1.2.0",
-    "lodash": "^4.17.11",
     "mocha": "^5.2.0",
     "standard": "^11.0.1"
   },
@@ -19,7 +16,10 @@
   "directories": {
     "test": "test"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@sec-block/secjs-datahandler": "^1.1.5",
+    "fs-extra": "^7.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/SEC-block/secjs-blockchain.git"

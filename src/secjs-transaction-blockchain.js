@@ -1,12 +1,16 @@
 const SECUtil = require('@sec-block/secjs-util')
+const SECTransactionBlock = require('./secjs-transaction-block')
 
 class SECTransactionBlockChain {
   /**
    * create a transaction chain block chain with config
-   * @param {*} blockchain, config
+   * @param {SECDataHandler} SECDataHandler
    */
-  constructor (secDataHandler) {
-    this.secDataHandler = secDataHandler
+  constructor (SECDataHandler) {
+    if (!SECDataHandler) {
+      throw new Error('Can not find SECDataHandler Instance')
+    }
+    this.SECDataHandler = SECDataHandler
     this.txBlockChain = []
     this.util = new SECUtil()
   }
@@ -15,61 +19,62 @@ class SECTransactionBlockChain {
    * generate genesis block
    */
   _generateGenesisBlock () {
-    let block = {
+    return new SECTransactionBlock({
       Number: 0,
       TransactionsRoot: this.util.SHA3_RLP.toString('hex'),
       ReceiptRoot: this.util.SHA3_RLP.toString('hex'),
-      TimeStamp: '1530297308',
+      TimeStamp: 1537222077,
       ParentHash: this.util.zeros(32).toString('hex'),
-      Beneficiary: 'GENESIS BLOCK',
+      Beneficiary: this.util.SHA3_RLP.toString('hex'),
       ExtraData: 'SEC Hello World',
       Nonce: this.util.zeros(8).toString('hex'),
-      Hash: '04c7123071429bbfcfb6ffd22501bdcc575f8df820041d63d8c16b94a9696ecf',
       Transactions: []
-    }
-    return block
+    }).getBlock()
   }
 
   /**
-   * Initialize the class token-blockchain
-   * @param {requestCallback} callback - The callback that handles the response.
+   * Initialize the class tx-blockchain
+   * @param {callback} callback - The callback that handles the response.
    */
   init (callback) {
-    this.secDataHandler.isTxBlockChainDBEmpty((err, isEmpty) => {
-      if (err) {
-        throw new Error('Could not check db content')
-      }
+    this.SECDataHandler.isTxBlockChainDBEmpty((err, isEmpty) => {
+      if (err) throw new Error('Could not check db content')
       if (isEmpty) {
-        let genesisBlock = this._generateGenesisBlock()
-        this.putGenesis(genesisBlock, callback)
+        this.putBlockToDB(this._generateGenesisBlock(), callback)
       } else {
-        this.getAllBlockChainFromDB(() => {
-          callback(err)
-        })
+        this._getAllBlockChainFromDB(callback)
       }
     })
   }
 
   /**
-   * put genesis into token block chain level database
+   * put genesis into tx block chain level database
+   * @param {SECTransactionBlock} block the block object in json formation
+   * @param {callback} callback
    */
-  putGenesis (genesis, callback) {
-    this.txBlockChain.push(genesis)
-    this.secDataHandler.writeTxBlockToDB(genesis, (err) => {
-      if (err) {
-        throw new Error('Something wrong with writeTokenChainToDB function')
-      }
+  putBlockToDB (block, callback) {
+    if (block.Number === this.txBlockChain.length) {
+      this.txBlockChain.push(JSON.parse(JSON.stringify(block)))
+      this.SECDataHandler.writeTxBlockToDB(block, (err) => {
+        if (err) throw new Error('Something wrong with writeTokenChainToDB function')
+        callback()
+      })
+    } else {
+      throw new Error('Can not add tx Block, tx Block Number is falsh.')
+    }
+  }
+
+  /**
+   * Put tx block to db
+   * @param {*} block the block object in json formation
+   * @param {*} callbback
+   */
+  putBlocksToDB (blocks, callback) {
+    this.txBlockChain = this.txBlockChain.concat(blocks)
+    this.SECDataHandler.writeTxBlockToDB(blocks, (err) => {
+      if (err) throw new Error('Can not put tx blocks into database')
       callback()
     })
-  }
-
-  /**
-   * get Transaction Block from db
-   * @param {Array} hashArray
-   * @param {function} callback
-   */
-  getBlocksWithHashFromDB (hashArray, callback) {
-    this.secDataHandler.getTxBlockFromDB(hashArray, callback)
   }
 
   /**
@@ -80,15 +85,20 @@ class SECTransactionBlockChain {
   }
 
   /**
+   * get Transaction Block from db
+   * @param {Array} hashArray
+   * @param {function} callback
+   */
+  getBlocksWithHashFromDB (hashArray, callback) {
+    this.SECDataHandler.getTxBlockFromDB(hashArray, callback)
+  }
+
+  /**
    * get all blockchain data
    */
-  getAllBlockChainFromDB (callback) {
-    let blockchain = []
-    this.secDataHandler.getTxBlockChainDB((err, data) => {
-      if (err) {
-        throw new Error(`Can not get whole token block chain data from database`)
-      }
-      blockchain = data
+  _getAllBlockChainFromDB (callback) {
+    this.SECDataHandler.getTxBlockChainDB((err, blockchain) => {
+      if (err) throw new Error(`Can not get whole tx block chain data from database`)
       this.txBlockChain = blockchain
       callback()
     })
@@ -101,56 +111,14 @@ class SECTransactionBlockChain {
    * @param {function} callback
    */
   getBlockChainFromDB (minHeight, maxHeight, cb) {
-    this.secDataHandler.getTxChain(minHeight, maxHeight, cb)
-  }
-
-  /**
-    * Put transaction block to db
-    * @param {*} block the block object in json formation
-    * @param {*} cb
-  */
-  putBlockToDB (block, callback) {
-    this.txBlockChain.push(block)
-    this.secDataHandler.writeTxBlockToDB(block, (err) => {
-      if (err) {
-        throw new Error('Something wrong with writeTokenChainToDB function')
-      }
-      callback()
-    })
-  }
-
-  /**
-   * Put token block to db
-   * @param {*} block the block object in json formation
-   * @param {*} callbback
-   */
-  putBlocksToDB (blocks, callback) {
-    this.txBlockChain = this.txBlockChain.concat(blocks)
-    this.secDataHandler.writeTxBlockToDB(blocks, (err) => {
-      if (err) {
-        throw new Error('Can not put token blocks into database')
-      }
-      callback()
-    })
+    this.SECDataHandler.getTxChain(minHeight, maxHeight, cb)
   }
 
   /**
    * return last block's height
-   * @param {*} None
-   *
    */
   getCurrentHeight () {
     return this.txBlockChain.length - 1
-  }
-
-  /**
-   * get the dificulty of blockchain
-   */
-  getGenesisBlockDifficulty () {
-    if (typeof this.txBlockChain[0] === 'string') {
-      this.txBlockChain[0] = JSON.parse(this.txBlockChain[0])
-    }
-    return this.txBlockChain[0].Difficulty
   }
 
   /**
@@ -161,6 +129,16 @@ class SECTransactionBlockChain {
       this.txBlockChain[0] = JSON.parse(this.txBlockChain[0])
     }
     return this.txBlockChain[0]
+  }
+
+  /**
+   * get the dificulty of blockchain
+   */
+  getGenesisBlockDifficulty () {
+    if (typeof this.txBlockChain[0] === 'string') {
+      this.txBlockChain[0] = JSON.parse(this.txBlockChain[0])
+    }
+    return this.txBlockChain[0].Difficulty
   }
 
   /**
@@ -185,8 +163,6 @@ class SECTransactionBlockChain {
 
   /**
    * return last block's hash value
-   * @param {*} None
-   *
    */
   getLastBlockHash () {
     if (typeof this.txBlockChain[this.getCurrentHeight()] === 'string') {
@@ -205,6 +181,16 @@ class SECTransactionBlockChain {
       this.txBlockChain[this.getCurrentHeight()] = JSON.parse(this.txBlockChain[this.getCurrentHeight()])
     }
     return this.txBlockChain[this.getCurrentHeight()].TimeStamp
+  }
+
+  /**
+   * get the dificulty of blockchain
+   */
+  getLastBlockDifficulty () {
+    if (typeof this.txBlockChain[this.getCurrentHeight()] === 'string') {
+      this.txBlockChain[this.getCurrentHeight()] = JSON.parse(this.txBlockChain[this.getCurrentHeight()])
+    }
+    return this.txBlockChain[this.getCurrentHeight()].Difficulty
   }
 }
 
