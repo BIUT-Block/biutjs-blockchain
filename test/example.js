@@ -1,7 +1,8 @@
-const SECTokenBlock = require('./src/secjs-token-block')
-const SECTransactionBlock = require('./src/secjs-transaction-block')
-const SECTokenBlockchain = require('./src/secjs-token-blockchain')
-const SECTransactionBlockchain = require('./src/secjs-transaction-blockchain')
+const assert = require('assert')
+const SECTokenBlock = require('../src/secjs-token-block')
+const SECTransactionBlock = require('../src/secjs-transaction-block')
+const SECTokenBlockchain = require('../src/secjs-token-blockchain')
+const SECTransactionBlockchain = require('../src/secjs-transaction-blockchain')
 const SECDataHandler = require('@sec-block/secjs-datahandler')
 const dbconfig = {
   DBPath: process.cwd() + '/data',
@@ -10,9 +11,33 @@ const dbconfig = {
 const TokenBlockchainDataHandler = new SECDataHandler.TokenBlockChainDB(dbconfig)
 const TxBlockchainDataHandler = new SECDataHandler.TxBlockChainDB(dbconfig)
 
-let tokenBlock = new SECTokenBlock(require('./test/mock-data').tokenBlock).getBlock()
+const tokenBlockData = require('./mock-data').tokenBlock
+let tokenBlock = new SECTokenBlock()
+tokenBlockData.Hash = '5f213ac06cfe4a82e167aa3ea430e520be99dcedb4ab47fd8f668448708e34c1'
+tokenBlock.setBlock(tokenBlockData)
+let block = new SECTokenBlock()
+console.log(tokenBlock.getBlockBuffer())
+block.setBlockFromBuffer(tokenBlock.getBlockBuffer())
+console.log(block.getBlockHeaderBuffer())
+console.log(block.getBlockHeader())
+console.log(block.getBlockBodyBuffer())
+console.log(block.getBlockBody())
+console.log(block.getBlockBuffer())
+assert.deepEqual(block.getBlockBuffer(), tokenBlock.getBlockBuffer())
 
-let transactionBlock = new SECTransactionBlock(require('./test/mock-data').transactionBlock).getBlock()
+const transactionBlockData = require('./mock-data').transactionBlock
+let transactionBlock = new SECTransactionBlock()
+transactionBlockData.Hash = '5f213ac06cfe4a82e167aa3ea430e520be99dcedb4ab47fd8f668448708e34c1'
+transactionBlock.setBlock(transactionBlockData)
+block = new SECTransactionBlock()
+console.log(transactionBlock.getBlockBuffer())
+block.setBlockFromBuffer(transactionBlock.getBlockBuffer())
+console.log(block.getBlockHeaderBuffer())
+console.log(block.getBlockHeader())
+console.log(block.getBlockBodyBuffer())
+console.log(block.getBlockBody())
+console.log(block.getBlockBuffer())
+assert.deepEqual(block.getBlockBuffer(), transactionBlock.getBlockBuffer())
 
 let tokenBlockchain = new SECTokenBlockchain(TokenBlockchainDataHandler)
 tokenBlockchain.init(() => {

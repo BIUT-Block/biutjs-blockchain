@@ -10,6 +10,7 @@ class SECTransactionBlock {
   constructor (config = {}) {
     this.config = config
     this.block = SECTransactionBlockModel
+    this.blockBuffer = []
     this.blockHeader = {}
     this.blockHeaderBuffer = []
     this.blockBody = []
@@ -30,6 +31,10 @@ class SECTransactionBlock {
     return this.block
   }
 
+  getBlockBuffer () {
+    return this.blockBuffer
+  }
+
   setBlock (block) {
     this.block = Object.assign({}, block)
     this.blockBody = block.Transactions
@@ -37,9 +42,33 @@ class SECTransactionBlock {
     delete this.blockHeader.Beneficiary
     delete this.blockHeader.Hash
     delete this.blockHeader.Transactions
+    this._generateBlockBuffer()
     this._generateBlockHeaderBuffer()
     this._generateBlockBodyBuffer()
     this.hasHeader = true
+    this.hasBody = true
+  }
+
+  setBlockFromBuffer (blockBuffer) {
+    this.blockBuffer = blockBuffer.slice(0)
+    this.block.Number = this.util.bufferToInt(blockBuffer[0])
+    this.block.TransactionsRoot = blockBuffer[1].toString('hex')
+    this.block.ReceiptRoot = blockBuffer[2].toString('hex')
+    this.block.TimeStamp = this.util.bufferToInt(blockBuffer[3])
+    this.block.ParentHash = blockBuffer[4].toString('hex')
+    this.block.ExtraData = blockBuffer[5].toString()
+    this.block.Nonce = blockBuffer[6].toString('hex')
+    this.blockHeader = Object.assign({}, this.block)
+    delete this.blockHeader.Beneficiary
+    delete this.blockHeader.Hash
+    delete this.blockHeader.Transactions
+    this._generateBlockHeaderBuffer()
+    this.hasHeader = true
+    this.block.Hash = blockBuffer[7].toString('hex')
+    this.block.Beneficiary = blockBuffer[8].toString('hex')
+    this.block.Transactions = JSON.parse(blockBuffer[9].toString())
+    this.blockBody = this.block.Transactions.slice(0)
+    this._generateBlockBodyBuffer()
     this.hasBody = true
   }
 
@@ -56,13 +85,13 @@ class SECTransactionBlock {
   }
 
   setBlockHeaderFromBuffer (blockHeaderBuffer) {
-    this.blockHeaderBuffer = blockHeaderBuffer
+    this.blockHeaderBuffer = blockHeaderBuffer.slice(0)
     this.block.Number = this.util.bufferToInt(blockHeaderBuffer[0])
     this.block.TransactionsRoot = blockHeaderBuffer[1].toString('hex')
     this.block.ReceiptRoot = blockHeaderBuffer[2].toString('hex')
     this.block.TimeStamp = this.util.bufferToInt(blockHeaderBuffer[3])
     this.block.ParentHash = blockHeaderBuffer[4].toString('hex')
-    this.block.ExtraData = blockHeaderBuffer[5].toString('hex')
+    this.block.ExtraData = blockHeaderBuffer[5].toString()
     this.block.Nonce = blockHeaderBuffer[6].toString('hex')
     this.blockHeader = Object.assign({}, this.block)
     delete this.blockHeader.Beneficiary
@@ -142,6 +171,22 @@ class SECTransactionBlock {
     this._generateBlockBodyBuffer()
     this.hasHeader = true
     this.hasBody = true
+    this._generateBlockBuffer()
+  }
+
+  _generateBlockBuffer () {
+    this.blockBuffer = [
+      this.util.intToBuffer(this.block.Number),
+      Buffer.from(this.block.TransactionsRoot, 'hex'),
+      Buffer.from(this.block.ReceiptRoot, 'hex'),
+      this.util.intToBuffer(this.block.TimeStamp),
+      Buffer.from(this.block.ParentHash, 'hex'),
+      Buffer.from(this.block.ExtraData),
+      Buffer.from(this.block.Nonce, 'hex'),
+      Buffer.from(this.block.Hash, 'hex'),
+      Buffer.from(this.block.Beneficiary, 'hex'),
+      Buffer.from(JSON.stringify(this.block.Transactions))
+    ]
   }
 
   _generateBlockHeaderBuffer () {
@@ -150,8 +195,8 @@ class SECTransactionBlock {
       Buffer.from(this.blockHeader.TransactionsRoot, 'hex'),
       Buffer.from(this.blockHeader.ReceiptRoot, 'hex'),
       this.util.intToBuffer(this.blockHeader.TimeStamp),
-      Buffer.from(this.blockHeader.ParentHash),
-      Buffer.from(this.blockHeader.ExtraData, 'hex'),
+      Buffer.from(this.blockHeader.ParentHash, 'hex'),
+      Buffer.from(this.blockHeader.ExtraData),
       Buffer.from(this.blockHeader.Nonce, 'hex')
     ]
   }
