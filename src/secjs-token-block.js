@@ -136,6 +136,7 @@ class SECTokenBlock {
     this.blockBodyBuffer.forEach(txBuffer => {
       this.blockBody.push(JSON.parse(txBuffer.toString()))
     })
+    this.block.Transactions = this.blockBody.slice(0)
     this.hasBody = true
   }
 
