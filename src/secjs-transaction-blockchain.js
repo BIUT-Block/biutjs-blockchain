@@ -192,6 +192,17 @@ class SECTransactionBlockChain {
     }
     return this.txBlockChain[this.getCurrentHeight()].Difficulty
   }
+
+  getHashList () {
+    let hashList = []
+    this.txBlockChain.forEach(block => {
+      hashList.push({
+        Number: block.Number,
+        Hash: block.Hash
+      })
+    })
+    return hashList
+  }
 }
 
 module.exports = SECTransactionBlockChain

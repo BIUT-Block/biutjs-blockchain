@@ -197,6 +197,17 @@ class SECTokenBlockChain {
     }
     return this.tokenBlockChain[this.getCurrentHeight()].Difficulty
   }
+
+  getHashList () {
+    let hashList = []
+    this.tokenBlockChain.forEach(block => {
+      hashList.push({
+        Number: block.Number,
+        Hash: block.Hash
+      })
+    })
+    return hashList
+  }
 }
 
 module.exports = SECTokenBlockChain
