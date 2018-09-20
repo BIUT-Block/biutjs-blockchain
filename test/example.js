@@ -12,9 +12,7 @@ const TokenBlockchainDataHandler = new SECDataHandler.TokenBlockChainDB(dbconfig
 const TxBlockchainDataHandler = new SECDataHandler.TxBlockChainDB(dbconfig)
 
 const tokenBlockData = require('./mock-data').tokenBlock
-let tokenBlock = new SECTokenBlock()
-tokenBlockData.Hash = '5f213ac06cfe4a82e167aa3ea430e520be99dcedb4ab47fd8f668448708e34c1'
-tokenBlock.setBlock(tokenBlockData)
+let tokenBlock = new SECTokenBlock(tokenBlockData)
 let block = new SECTokenBlock()
 console.log(tokenBlock.getBlockBuffer())
 block.setBlockFromBuffer(tokenBlock.getBlockBuffer())
@@ -26,9 +24,7 @@ console.log(block.getBlockBuffer())
 assert.deepEqual(block.getBlockBuffer(), tokenBlock.getBlockBuffer())
 
 const transactionBlockData = require('./mock-data').transactionBlock
-let transactionBlock = new SECTransactionBlock()
-transactionBlockData.Hash = '5f213ac06cfe4a82e167aa3ea430e520be99dcedb4ab47fd8f668448708e34c1'
-transactionBlock.setBlock(transactionBlockData)
+let transactionBlock = new SECTransactionBlock(transactionBlockData)
 block = new SECTransactionBlock()
 console.log(transactionBlock.getBlockBuffer())
 block.setBlockFromBuffer(transactionBlock.getBlockBuffer())
