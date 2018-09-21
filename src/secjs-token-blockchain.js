@@ -210,7 +210,7 @@ class SECTokenBlockChain {
   }
 
   updateBlockchain (position, BlockArray, callback) {
-    this.SECDataHandler.updateBlockchain(position, BlockArray, callback)
+    this.SECDataHandler.addUpdateBlock(position, BlockArray, callback)
   }
 }
 
