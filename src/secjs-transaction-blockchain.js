@@ -205,7 +205,12 @@ class SECTransactionBlockChain {
   }
 
   updateBlockchain (position, BlockArray, callback) {
-    this.SECDataHandler.addUpdateBlock(position, BlockArray, callback)
+    this.SECDataHandler.addUpdateBlock(position, BlockArray, (err) => {
+      if (err) callback(err)
+      this._getAllBlockChainFromDB(() => {
+        callback()
+      })
+    })
   }
 }
 
