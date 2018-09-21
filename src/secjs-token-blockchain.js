@@ -208,6 +208,10 @@ class SECTokenBlockChain {
     })
     return hashList
   }
+
+  updateBlockchain (position, BlockArray, callback) {
+    this.SECDataHandler.updateBlockchain(position, BlockArray, callback)
+  }
 }
 
 module.exports = SECTokenBlockChain
