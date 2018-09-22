@@ -108,6 +108,11 @@ class SECTransactionBlock {
     return this.blockHeaderBuffer
   }
 
+  getBlockHeaderPOWBuffer () {
+    this._generateBlockHeaderPOWBuffer()
+    return this.blockHeaderPOWBuffer
+  }
+  
   getBlockHeaderHash () {
     return this.util.rlphash(this.blockHeaderBuffer).toString('hex')
   }
@@ -197,6 +202,14 @@ class SECTransactionBlock {
       Buffer.from(this.blockHeader.ReceiptRoot, 'hex'),
       this.util.intToBuffer(this.blockHeader.TimeStamp),
       Buffer.from(this.blockHeader.ParentHash, 'hex'),
+      Buffer.from(this.blockHeader.ExtraData),
+      Buffer.from(this.blockHeader.Nonce, 'hex')
+    ]
+  }
+
+  _generateBlockHeaderPOWBuffer () {
+    this.blockHeaderPOWBuffer = [
+      this.util.intToBuffer(this.blockHeader.Number),
       Buffer.from(this.blockHeader.ExtraData),
       Buffer.from(this.blockHeader.Nonce, 'hex')
     ]

@@ -13,6 +13,7 @@ class SECTokenBlock {
     this.blockBuffer = []
     this.blockHeader = {}
     this.blockHeaderBuffer = []
+    this.blockHeaderPOWBuffer = []
     this.blockBody = []
     this.blockBodyBuffer = []
     this.util = new SECUtil()
@@ -118,6 +119,11 @@ class SECTokenBlock {
 
   getBlockHeaderBuffer () {
     return this.blockHeaderBuffer
+  }
+
+  getBlockHeaderPOWBuffer () {
+    this._generateBlockHeaderPOWBuffer()
+    return this.blockHeaderPOWBuffer
   }
 
   getBlockHeaderHash () {
@@ -226,6 +232,17 @@ class SECTokenBlock {
       Buffer.from(this.blockHeader.ParentHash, 'hex'),
       this.util.intToBuffer(this.blockHeader.Difficulty),
       this.util.intToBuffer(this.blockHeader.GasUsed),
+      this.util.intToBuffer(this.blockHeader.GasLimit),
+      Buffer.from(this.blockHeader.ExtraData),
+      Buffer.from(this.blockHeader.Nonce, 'hex')
+    ]
+  }
+
+  _generateBlockHeaderPOWBuffer () {
+    this.blockHeaderPOWBuffer = [
+      this.util.intToBuffer(this.blockHeader.Number),
+      Buffer.from(this.blockHeader.StateRoot, 'hex'),
+      this.util.intToBuffer(this.blockHeader.Difficulty),
       this.util.intToBuffer(this.blockHeader.GasLimit),
       Buffer.from(this.blockHeader.ExtraData),
       Buffer.from(this.blockHeader.Nonce, 'hex')
