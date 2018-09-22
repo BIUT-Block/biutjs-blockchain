@@ -112,6 +112,11 @@ class SECTransactionBlock {
     this._generateBlockHeaderPOWBuffer()
     return this.blockHeaderPOWBuffer
   }
+
+  getBlockHeaderPOWHashBuffer () {
+    this._generateBlockHeaderPOWBuffer()
+    return this.util.rlphash(this.blockHeaderPOWBuffer)
+  }
   
   getBlockHeaderHash () {
     return this.util.rlphash(this.blockHeaderBuffer).toString('hex')
