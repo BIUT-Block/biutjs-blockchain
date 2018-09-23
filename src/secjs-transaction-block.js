@@ -65,7 +65,7 @@ class SECTransactionBlock {
     this._generateBlockHeaderBuffer()
     this.hasHeader = true
     this.block.Hash = blockBuffer[7].toString('hex')
-    this.block.Beneficiary = blockBuffer[8].toString('hex')
+    this.block.Beneficiary = blockBuffer[8].toString()
     this.block.Transactions = JSON.parse(blockBuffer[9].toString())
     this.blockBody = this.block.Transactions.slice(0)
     this._generateBlockBodyBuffer()
@@ -117,7 +117,7 @@ class SECTransactionBlock {
     this._generateBlockHeaderPOWBuffer()
     return this.util.rlphash(this.blockHeaderPOWBuffer)
   }
-  
+
   getBlockHeaderHash () {
     return this.util.rlphash(this.blockHeaderBuffer).toString('hex')
   }
@@ -195,7 +195,7 @@ class SECTransactionBlock {
       Buffer.from(this.block.ExtraData),
       Buffer.from(this.block.Nonce, 'hex'),
       Buffer.from(this.block.Hash, 'hex'),
-      Buffer.from(this.block.Beneficiary, 'hex'),
+      Buffer.from(this.block.Beneficiary),
       Buffer.from(JSON.stringify(this.block.Transactions))
     ]
   }

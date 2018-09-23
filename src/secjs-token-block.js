@@ -72,7 +72,7 @@ class SECTokenBlock {
     this._generateBlockHeaderBuffer()
     this.hasHeader = true
     this.block.Hash = blockBuffer[13].toString('hex')
-    this.block.Beneficiary = blockBuffer[14].toString('hex')
+    this.block.Beneficiary = blockBuffer[14].toString()
     this.block.Transactions = JSON.parse(blockBuffer[15].toString())
     this.blockBody = this.block.Transactions.slice(0)
     this._generateBlockBodyBuffer()
@@ -220,7 +220,7 @@ class SECTokenBlock {
       Buffer.from(this.block.ExtraData),
       Buffer.from(this.block.Nonce, 'hex'),
       Buffer.from(this.block.Hash, 'hex'),
-      Buffer.from(this.block.Beneficiary, 'hex'),
+      Buffer.from(this.block.Beneficiary),
       Buffer.from(JSON.stringify(this.block.Transactions))
     ]
   }
