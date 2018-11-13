@@ -105,9 +105,22 @@ class SECTokenBlockChain {
    */
   _getAllBlockChainFromDB (callback) {
     this.SECDataHandler.getTokenBlockChainDB((err, blockchain) => {
-      if (err) throw new Error('Can not get whole token block chain data from database')
-      this.tokenBlockChain = blockchain
-      callback()
+      if (err) {
+        throw new Error('Can not get whole token block chain data from database')
+      } else {
+        let index = 0
+        let buffer = []
+        blockchain.forEach((block) => {
+          if (block.Number !== index) {
+            buffer.push(null)
+          } else {
+            buffer.push(block)
+          }
+          index += 1
+        })
+        this.tokenBlockChain = buffer
+        callback()
+      }
     })
   }
 

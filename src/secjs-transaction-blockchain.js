@@ -56,7 +56,7 @@ class SECTransactionBlockChain {
     if (block.Number === this.txBlockChain.length) {
       this.txBlockChain.push(JSON.parse(JSON.stringify(block)))
       this.SECDataHandler.writeTxBlockToDB(block, (err) => {
-        if (err) throw new Error('Something wrong with writeTokenChainToDB function')
+        if (err) throw new Error('Something wrong with writeTxChainToDB function')
         callback()
       })
     } else {
@@ -98,14 +98,27 @@ class SECTransactionBlockChain {
    */
   _getAllBlockChainFromDB (callback) {
     this.SECDataHandler.getTxBlockChainDB((err, blockchain) => {
-      if (err) throw new Error(`Can not get whole tx block chain data from database`)
-      this.txBlockChain = blockchain
-      callback()
+      if (err) {
+        throw new Error('Can not get whole transaction block chain data from database')
+      } else {
+        let index = 0
+        let buffer = []
+        blockchain.forEach((block) => {
+          if (block.Number !== index) {
+            buffer.push(null)
+          } else {
+            buffer.push(block)
+          }
+          index += 1
+        })
+        this.txBlockChain = buffer
+        callback()
+      }
     })
   }
 
   /**
-   * get Token Chain from DB
+   * get Transaction Chain from DB
    * @param {number} minHeight
    * @param {number} maxHeight
    * @param {function} callback
