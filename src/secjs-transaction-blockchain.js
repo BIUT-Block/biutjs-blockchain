@@ -101,17 +101,16 @@ class SECTransactionBlockChain {
       if (err) {
         throw new Error('Can not get whole transaction block chain data from database')
       } else {
-        let index = 0
-        let buffer = []
+        let key_array = []
         blockchain.forEach((block) => {
-          if (block.Number !== index) {
-            buffer.push(null)
-          } else {
-            buffer.push(block)
-          }
-          index += 1
+          key_array.push(parseInt(block.Number, 10))
         })
-        this.txBlockChain = buffer
+        for (let i = 0; i < key_array[key_array.length - 1]; i++) {
+          if (!(i in key_array)) {
+            blockchain.splice(i, 0, null)
+          }
+        }
+        this.txBlockChain = blockchain
         callback()
       }
     })
