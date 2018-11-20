@@ -171,6 +171,16 @@ class SECTokenBlockChain {
   }
 
   /**
+   * get the second last block from buffer
+   */
+  getSecondLastBlock () {
+    if (typeof this.tokenBlockChain[this.getCurrentHeight() - 1] === 'string') {
+      this.tokenBlockChain[this.getCurrentHeight() - 1] = JSON.parse(this.tokenBlockChain[this.getCurrentHeight() - 1])
+    }
+    return this.tokenBlockChain[this.getCurrentHeight() - 1]
+  }
+
+  /**
    * get last block from buffer
    */
   getLastBlock () {
