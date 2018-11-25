@@ -16,7 +16,6 @@ class SECTokenBlock {
     this.blockHeaderPOWBuffer = []
     this.blockBody = []
     this.blockBodyBuffer = []
-    this.util = new SECUtil()
     this.hasHeader = false
     this.hasBody = false
     if (Object.keys(config).length !== 0) {
@@ -52,17 +51,17 @@ class SECTokenBlock {
 
   setBlockFromBuffer (blockBuffer) {
     this.blockBuffer = blockBuffer.slice(0)
-    this.block.Number = this.util.bufferToInt(blockBuffer[0])
+    this.block.Number = SECUtil.bufferToInt(blockBuffer[0])
     this.block.TransactionsRoot = blockBuffer[1].toString('hex')
     this.block.ReceiptRoot = blockBuffer[2].toString('hex')
     this.block.LogsBloom = blockBuffer[3].toString('hex')
     this.block.MixHash = blockBuffer[4].toString('hex')
     this.block.StateRoot = blockBuffer[5].toString('hex')
-    this.block.TimeStamp = this.util.bufferToInt(blockBuffer[6])
+    this.block.TimeStamp = SECUtil.bufferToInt(blockBuffer[6])
     this.block.ParentHash = blockBuffer[7].toString('hex')
-    this.block.Difficulty = this.util.bufferToInt(blockBuffer[8])
-    this.block.GasUsed = this.util.bufferToInt(blockBuffer[9])
-    this.block.GasLimit = this.util.bufferToInt(blockBuffer[10])
+    this.block.Difficulty = SECUtil.bufferToInt(blockBuffer[8])
+    this.block.GasUsed = SECUtil.bufferToInt(blockBuffer[9])
+    this.block.GasLimit = SECUtil.bufferToInt(blockBuffer[10])
     this.block.ExtraData = blockBuffer[11].toString()
     this.block.Nonce = blockBuffer[12].toString('hex')
     this.blockHeader = Object.assign({}, this.block)
@@ -93,17 +92,17 @@ class SECTokenBlock {
 
   setBlockHeaderFromBuffer (blockHeaderBuffer) {
     this.blockHeaderBuffer = blockHeaderBuffer.slice(0)
-    this.block.Number = this.util.bufferToInt(blockHeaderBuffer[0])
+    this.block.Number = SECUtil.bufferToInt(blockHeaderBuffer[0])
     this.block.TransactionsRoot = blockHeaderBuffer[1].toString('hex')
     this.block.ReceiptRoot = blockHeaderBuffer[2].toString('hex')
     this.block.LogsBloom = blockHeaderBuffer[3].toString('hex')
     this.block.MixHash = blockHeaderBuffer[4].toString('hex')
     this.block.StateRoot = blockHeaderBuffer[5].toString('hex')
-    this.block.TimeStamp = this.util.bufferToInt(blockHeaderBuffer[6])
+    this.block.TimeStamp = SECUtil.bufferToInt(blockHeaderBuffer[6])
     this.block.ParentHash = blockHeaderBuffer[7].toString('hex')
-    this.block.Difficulty = this.util.bufferToInt(blockHeaderBuffer[8])
-    this.block.GasUsed = this.util.bufferToInt(blockHeaderBuffer[9])
-    this.block.GasLimit = this.util.bufferToInt(blockHeaderBuffer[10])
+    this.block.Difficulty = SECUtil.bufferToInt(blockHeaderBuffer[8])
+    this.block.GasUsed = SECUtil.bufferToInt(blockHeaderBuffer[9])
+    this.block.GasLimit = SECUtil.bufferToInt(blockHeaderBuffer[10])
     this.block.ExtraData = blockHeaderBuffer[11].toString()
     this.block.Nonce = blockHeaderBuffer[12].toString('hex')
     this.blockHeader = Object.assign({}, this.block)
@@ -128,11 +127,11 @@ class SECTokenBlock {
 
   getBlockHeaderPOWHashBuffer () {
     this._generateBlockHeaderPOWBuffer()
-    return this.util.rlphash(this.blockHeaderPOWBuffer)
+    return SECUtil.rlphash(this.blockHeaderPOWBuffer)
   }
 
   getBlockHeaderHash () {
-    return this.util.rlphash(this.blockHeaderBuffer).toString('hex')
+    return SECUtil.rlphash(this.blockHeaderBuffer).toString('hex')
   }
 
   setBlockBody (body) {
@@ -160,7 +159,7 @@ class SECTokenBlock {
   }
 
   getBlockBodyHash () {
-    return this.util.rlphash(this.blockBodyBuffer).toString('hex')
+    return SECUtil.rlphash(this.blockBodyBuffer).toString('hex')
   }
 
   isHeaderEmpty () {
@@ -182,7 +181,7 @@ class SECTokenBlock {
     this.blockHeader.LogsBloom = this.config.LogsBloom
     this.blockHeader.MixHash = this.config.MixHash
     this.blockHeader.StateRoot = this.config.StateRoot
-    this.blockHeader.TimeStamp = this.config.TimeStamp || this.util.currentUnixTimeSecond()
+    this.blockHeader.TimeStamp = this.config.TimeStamp || SECUtil.currentUnixTimeSecond()
     this.blockHeader.ParentHash = this.config.ParentHash
     this.blockHeader.Difficulty = this.config.Difficulty
     this.blockHeader.GasUsed = this.config.GasUsed
@@ -193,7 +192,7 @@ class SECTokenBlock {
     this.block = Object.assign({}, this.blockHeader)
     this.block.Beneficiary = this.config.Beneficiary
     this._generateBlockHeaderBuffer()
-    this.block.Hash = this.util.rlphash(this.blockHeaderBuffer).toString('hex')
+    this.block.Hash = SECUtil.rlphash(this.blockHeaderBuffer).toString('hex')
 
     // Body
     this.blockBody = this.config.Transactions
@@ -206,17 +205,17 @@ class SECTokenBlock {
 
   _generateBlockBuffer () {
     this.blockBuffer = [
-      this.util.intToBuffer(this.block.Number),
+      SECUtil.intToBuffer(this.block.Number),
       Buffer.from(this.block.TransactionsRoot, 'hex'),
       Buffer.from(this.block.ReceiptRoot, 'hex'),
       Buffer.from(this.block.LogsBloom, 'hex'),
       Buffer.from(this.block.MixHash, 'hex'),
       Buffer.from(this.block.StateRoot, 'hex'),
-      this.util.intToBuffer(this.block.TimeStamp),
+      SECUtil.intToBuffer(this.block.TimeStamp),
       Buffer.from(this.block.ParentHash, 'hex'),
-      this.util.intToBuffer(this.block.Difficulty),
-      this.util.intToBuffer(this.block.GasUsed),
-      this.util.intToBuffer(this.block.GasLimit),
+      SECUtil.intToBuffer(this.block.Difficulty),
+      SECUtil.intToBuffer(this.block.GasUsed),
+      SECUtil.intToBuffer(this.block.GasLimit),
       Buffer.from(this.block.ExtraData),
       Buffer.from(this.block.Nonce, 'hex'),
       Buffer.from(this.block.Hash, 'hex'),
@@ -227,17 +226,17 @@ class SECTokenBlock {
 
   _generateBlockHeaderBuffer () {
     this.blockHeaderBuffer = [
-      this.util.intToBuffer(this.blockHeader.Number),
+      SECUtil.intToBuffer(this.blockHeader.Number),
       Buffer.from(this.blockHeader.TransactionsRoot, 'hex'),
       Buffer.from(this.blockHeader.ReceiptRoot, 'hex'),
       Buffer.from(this.blockHeader.LogsBloom, 'hex'),
       Buffer.from(this.blockHeader.MixHash, 'hex'),
       Buffer.from(this.blockHeader.StateRoot, 'hex'),
-      this.util.intToBuffer(this.blockHeader.TimeStamp),
+      SECUtil.intToBuffer(this.blockHeader.TimeStamp),
       Buffer.from(this.blockHeader.ParentHash, 'hex'),
-      this.util.intToBuffer(this.blockHeader.Difficulty),
-      this.util.intToBuffer(this.blockHeader.GasUsed),
-      this.util.intToBuffer(this.blockHeader.GasLimit),
+      SECUtil.intToBuffer(this.blockHeader.Difficulty),
+      SECUtil.intToBuffer(this.blockHeader.GasUsed),
+      SECUtil.intToBuffer(this.blockHeader.GasLimit),
       Buffer.from(this.blockHeader.ExtraData),
       Buffer.from(this.blockHeader.Nonce, 'hex')
     ]
@@ -245,10 +244,10 @@ class SECTokenBlock {
 
   _generateBlockHeaderPOWBuffer () {
     this.blockHeaderPOWBuffer = [
-      this.util.intToBuffer(this.blockHeader.Number),
+      SECUtil.intToBuffer(this.blockHeader.Number),
       Buffer.from(this.blockHeader.StateRoot, 'hex'),
-      this.util.intToBuffer(this.blockHeader.Difficulty),
-      this.util.intToBuffer(this.blockHeader.GasLimit),
+      SECUtil.intToBuffer(this.blockHeader.Difficulty),
+      SECUtil.intToBuffer(this.blockHeader.GasLimit),
       Buffer.from(this.blockHeader.ExtraData),
       Buffer.from(this.blockHeader.Nonce, 'hex')
     ]
