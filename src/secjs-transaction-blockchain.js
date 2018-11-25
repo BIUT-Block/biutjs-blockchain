@@ -20,11 +20,11 @@ class SECTransactionBlockChain {
   _generateGenesisBlock () {
     return new SECTransactionBlock({
       Number: 0,
-      TransactionsRoot: SECUtil.SHA3_RLP.toString('hex'),
-      ReceiptRoot: SECUtil.SHA3_RLP.toString('hex'),
+      TransactionsRoot: SECUtil.KECCAK256_RLP.toString('hex'),
+      ReceiptRoot: SECUtil.KECCAK256_RLP.toString('hex'),
       TimeStamp: 1537222077,
       ParentHash: SECUtil.zeros(32).toString('hex'),
-      Beneficiary: SECUtil.SHA3_RLP.toString('hex'),
+      Beneficiary: SECUtil.KECCAK256_RLP.toString('hex'),
       ExtraData: 'SEC Hello World',
       Nonce: SECUtil.zeros(8).toString('hex'),
       Transactions: []
