@@ -6,10 +6,8 @@ const dbconfig = {
 }
 const TxBlockchainDataHandler = new SECDataHandler.TxBlockChainDB(dbconfig)
 const TokenBlockchainDataHandler = new SECDataHandler.TokenBlockChainDB(dbconfig)
-const _SECUtils = require('@sec-block/secjs-util')
 const fs = require('fs-extra')
 const mockData = require('./mock-data')
-const expect = require('chai').expect
 const assert = require('chai').assert
 const should = require('chai').should()
 const SECBlockchain = require('../src/index')
@@ -27,10 +25,6 @@ describe('Block Tester', () => {
 
     it('instance', () => {
       assert.typeOf(tokenBlockChain, 'Object')
-    })
-
-    it('instance of util lib', () => {
-      expect(tokenBlockChain.util).to.instanceof(_SECUtils)
     })
 
     it('init Token BlockChain Object', () => {
@@ -67,10 +61,6 @@ describe('Block Tester', () => {
 
     it('instance', () => {
       assert.typeOf(transactionBlockChain, 'Object')
-    })
-
-    it('instance of util lib', () => {
-      expect(transactionBlockChain.util).to.instanceof(_SECUtils)
     })
 
     it('init Transaction BlockChain Object', () => {

@@ -13,7 +13,6 @@ class SECTokenBlockChain {
     }
     this.SECDataHandler = SECDataHandler
     this.tokenBlockChain = []
-    this.util = new SECUtil()
   }
 
   /**
@@ -22,19 +21,19 @@ class SECTokenBlockChain {
   _generateGenesisBlock () {
     return new SECTokenBlock({
       Number: 0,
-      TransactionsRoot: this.util.SHA3_RLP.toString('hex'),
-      ReceiptRoot: this.util.SHA3_RLP.toString('hex'),
-      LogsBloom: this.util.zeros(256).toString('hex'),
-      MixHash: this.util.zeros(32).toString('hex'),
-      StateRoot: this.util.SHA3_RLP.toString('hex'),
+      TransactionsRoot: SECUtil.KECCAK256_RLP.toString('hex'),
+      ReceiptRoot: SECUtil.KECCAK256_RLP.toString('hex'),
+      LogsBloom: SECUtil.zeros(256).toString('hex'),
+      MixHash: SECUtil.zeros(32).toString('hex'),
+      StateRoot: SECUtil.KECCAK256_RLP.toString('hex'),
       TimeStamp: 1537222077,
-      ParentHash: this.util.zeros(32).toString('hex'),
-      Beneficiary: this.util.SHA3_RLP.toString('hex'),
+      ParentHash: SECUtil.zeros(32).toString('hex'),
+      Beneficiary: SECUtil.KECCAK256_RLP.toString('hex'),
       Difficulty: 1,
       GasUsed: 0,
       GasLimit: 100000,
       ExtraData: 'SEC Hello World',
-      Nonce: this.util.zeros(8).toString('hex'),
+      Nonce: SECUtil.zeros(8).toString('hex'),
       Transactions: []
     }).getBlock()
   }
@@ -108,12 +107,12 @@ class SECTokenBlockChain {
       if (err) {
         throw new Error('Can not get whole token block chain data from database')
       } else {
-        let key_array = []
+        let keyArray = []
         blockchain.forEach((block) => {
-          key_array.push(parseInt(block.Number, 10))
+          keyArray.push(parseInt(block.Number, 10))
         })
-        for (let i = 0; i < key_array[key_array.length - 1]; i++) {
-          if (!(i in key_array)) {
+        for (let i = 0; i < keyArray[keyArray.length - 1]; i++) {
+          if (!(i in keyArray)) {
             blockchain.splice(i, 0, null)
           }
         }

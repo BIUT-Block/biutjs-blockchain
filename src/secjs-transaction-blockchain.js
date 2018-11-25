@@ -12,7 +12,6 @@ class SECTransactionBlockChain {
     }
     this.SECDataHandler = SECDataHandler
     this.txBlockChain = []
-    this.util = new SECUtil()
   }
 
   /**
@@ -21,13 +20,13 @@ class SECTransactionBlockChain {
   _generateGenesisBlock () {
     return new SECTransactionBlock({
       Number: 0,
-      TransactionsRoot: this.util.SHA3_RLP.toString('hex'),
-      ReceiptRoot: this.util.SHA3_RLP.toString('hex'),
+      TransactionsRoot: SECUtil.SHA3_RLP.toString('hex'),
+      ReceiptRoot: SECUtil.SHA3_RLP.toString('hex'),
       TimeStamp: 1537222077,
-      ParentHash: this.util.zeros(32).toString('hex'),
-      Beneficiary: this.util.SHA3_RLP.toString('hex'),
+      ParentHash: SECUtil.zeros(32).toString('hex'),
+      Beneficiary: SECUtil.SHA3_RLP.toString('hex'),
       ExtraData: 'SEC Hello World',
-      Nonce: this.util.zeros(8).toString('hex'),
+      Nonce: SECUtil.zeros(8).toString('hex'),
       Transactions: []
     }).getBlock()
   }
@@ -101,12 +100,12 @@ class SECTransactionBlockChain {
       if (err) {
         throw new Error('Can not get whole transaction block chain data from database')
       } else {
-        let key_array = []
+        let keyArray = []
         blockchain.forEach((block) => {
-          key_array.push(parseInt(block.Number, 10))
+          keyArray.push(parseInt(block.Number, 10))
         })
-        for (let i = 0; i < key_array[key_array.length - 1]; i++) {
-          if (!(i in key_array)) {
+        for (let i = 0; i < keyArray[keyArray.length - 1]; i++) {
+          if (!(i in keyArray)) {
             blockchain.splice(i, 0, null)
           }
         }

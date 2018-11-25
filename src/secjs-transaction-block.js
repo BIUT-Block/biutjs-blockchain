@@ -15,7 +15,6 @@ class SECTransactionBlock {
     this.blockHeaderBuffer = []
     this.blockBody = []
     this.blockBodyBuffer = []
-    this.util = new SECUtil()
     this.hasHeader = false
     this.hasBody = false
     if (Object.keys(config).length !== 0) {
@@ -51,10 +50,10 @@ class SECTransactionBlock {
 
   setBlockFromBuffer (blockBuffer) {
     this.blockBuffer = blockBuffer.slice(0)
-    this.block.Number = this.util.bufferToInt(blockBuffer[0])
+    this.block.Number = SECUtil.bufferToInt(blockBuffer[0])
     this.block.TransactionsRoot = blockBuffer[1].toString('hex')
     this.block.ReceiptRoot = blockBuffer[2].toString('hex')
-    this.block.TimeStamp = this.util.bufferToInt(blockBuffer[3])
+    this.block.TimeStamp = SECUtil.bufferToInt(blockBuffer[3])
     this.block.ParentHash = blockBuffer[4].toString('hex')
     this.block.ExtraData = blockBuffer[5].toString()
     this.block.Nonce = blockBuffer[6].toString('hex')
@@ -86,10 +85,10 @@ class SECTransactionBlock {
 
   setBlockHeaderFromBuffer (blockHeaderBuffer) {
     this.blockHeaderBuffer = blockHeaderBuffer.slice(0)
-    this.block.Number = this.util.bufferToInt(blockHeaderBuffer[0])
+    this.block.Number = SECUtil.bufferToInt(blockHeaderBuffer[0])
     this.block.TransactionsRoot = blockHeaderBuffer[1].toString('hex')
     this.block.ReceiptRoot = blockHeaderBuffer[2].toString('hex')
-    this.block.TimeStamp = this.util.bufferToInt(blockHeaderBuffer[3])
+    this.block.TimeStamp = SECUtil.bufferToInt(blockHeaderBuffer[3])
     this.block.ParentHash = blockHeaderBuffer[4].toString('hex')
     this.block.ExtraData = blockHeaderBuffer[5].toString()
     this.block.Nonce = blockHeaderBuffer[6].toString('hex')
@@ -115,11 +114,11 @@ class SECTransactionBlock {
 
   getBlockHeaderPOWHashBuffer () {
     this._generateBlockHeaderPOWBuffer()
-    return this.util.rlphash(this.blockHeaderPOWBuffer)
+    return SECUtil.rlphash(this.blockHeaderPOWBuffer)
   }
 
   getBlockHeaderHash () {
-    return this.util.rlphash(this.blockHeaderBuffer).toString('hex')
+    return SECUtil.rlphash(this.blockHeaderBuffer).toString('hex')
   }
 
   setBlockBody (body) {
@@ -147,7 +146,7 @@ class SECTransactionBlock {
   }
 
   getBlockBodyHash () {
-    return this.util.rlphash(this.blockBodyBuffer).toString('hex')
+    return SECUtil.rlphash(this.blockBodyBuffer).toString('hex')
   }
 
   isHeaderEmpty () {
@@ -166,7 +165,7 @@ class SECTransactionBlock {
     this.blockHeader.Number = this.transactionBlockChain ? parseInt(this.transactionBlockChain.getCurrentHeight()) + 1 : this.config.Number || 0
     this.blockHeader.TransactionsRoot = this.config.TransactionsRoot
     this.blockHeader.ReceiptRoot = this.config.ReceiptRoot
-    this.blockHeader.TimeStamp = this.config.TimeStamp || this.util.currentUnixTimeSecond()
+    this.blockHeader.TimeStamp = this.config.TimeStamp || SECUtil.currentUnixTimeSecond()
     this.blockHeader.ParentHash = this.config.ParentHash
     this.blockHeader.ExtraData = this.config.ExtraData
     this.blockHeader.Nonce = this.config.Nonce
@@ -174,7 +173,7 @@ class SECTransactionBlock {
     this.block = Object.assign({}, this.blockHeader)
     this.block.Beneficiary = this.config.Beneficiary
     this._generateBlockHeaderBuffer()
-    this.block.Hash = this.util.rlphash(this.blockHeaderBuffer).toString('hex')
+    this.block.Hash = SECUtil.rlphash(this.blockHeaderBuffer).toString('hex')
 
     // Body
     this.blockBody = this.config.Transactions
@@ -187,10 +186,10 @@ class SECTransactionBlock {
 
   _generateBlockBuffer () {
     this.blockBuffer = [
-      this.util.intToBuffer(this.block.Number),
+      SECUtil.intToBuffer(this.block.Number),
       Buffer.from(this.block.TransactionsRoot, 'hex'),
       Buffer.from(this.block.ReceiptRoot, 'hex'),
-      this.util.intToBuffer(this.block.TimeStamp),
+      SECUtil.intToBuffer(this.block.TimeStamp),
       Buffer.from(this.block.ParentHash, 'hex'),
       Buffer.from(this.block.ExtraData),
       Buffer.from(this.block.Nonce, 'hex'),
@@ -202,10 +201,10 @@ class SECTransactionBlock {
 
   _generateBlockHeaderBuffer () {
     this.blockHeaderBuffer = [
-      this.util.intToBuffer(this.blockHeader.Number),
+      SECUtil.intToBuffer(this.blockHeader.Number),
       Buffer.from(this.blockHeader.TransactionsRoot, 'hex'),
       Buffer.from(this.blockHeader.ReceiptRoot, 'hex'),
-      this.util.intToBuffer(this.blockHeader.TimeStamp),
+      SECUtil.intToBuffer(this.blockHeader.TimeStamp),
       Buffer.from(this.blockHeader.ParentHash, 'hex'),
       Buffer.from(this.blockHeader.ExtraData),
       Buffer.from(this.blockHeader.Nonce, 'hex')
@@ -214,7 +213,7 @@ class SECTransactionBlock {
 
   _generateBlockHeaderPOWBuffer () {
     this.blockHeaderPOWBuffer = [
-      this.util.intToBuffer(this.blockHeader.Number),
+      SECUtil.intToBuffer(this.blockHeader.Number),
       Buffer.from(this.blockHeader.ExtraData),
       Buffer.from(this.blockHeader.Nonce, 'hex')
     ]
