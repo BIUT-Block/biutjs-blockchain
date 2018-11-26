@@ -24,7 +24,7 @@ class SECTransactionBlockChain {
       ReceiptRoot: SECUtil.KECCAK256_RLP.toString('hex'),
       TimeStamp: 1537222077,
       ParentHash: SECUtil.zeros(32).toString('hex'),
-      Beneficiary: SECUtil.KECCAK256_RLP.toString('hex'),
+      Beneficiary: SECUtil.zeros(20).toString('hex'),
       ExtraData: 'SEC Hello World',
       Nonce: SECUtil.zeros(8).toString('hex'),
       Transactions: []

@@ -28,7 +28,7 @@ class SECTokenBlockChain {
       StateRoot: SECUtil.KECCAK256_RLP.toString('hex'),
       TimeStamp: 1537222077,
       ParentHash: SECUtil.zeros(32).toString('hex'),
-      Beneficiary: SECUtil.KECCAK256_RLP.toString('hex'),
+      Beneficiary: SECUtil.zeros(20).toString('hex'),
       Difficulty: 1,
       GasUsed: 0,
       GasLimit: 100000,
