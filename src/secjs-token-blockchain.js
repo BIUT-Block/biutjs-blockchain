@@ -1,5 +1,7 @@
 const SECUtil = require('@sec-block/secjs-util')
 const SECTokenBlock = require('./secjs-token-block')
+const crypto = require('crypto')
+const _ = require('lodash')
 
 class SECTokenBlockChain {
   /**
@@ -18,7 +20,53 @@ class SECTokenBlockChain {
   /**
    * generate genesis token block
    */
-  _generateGenesisBlock () {
+  _generateTokenTransaction (SmartContractByteCode) {
+
+    let keys = SECUtil.generateSecKeys()
+    let privKey = keys.privKey
+    let secAddress = keys.secAddress
+
+    let TX_VERSION = '0.1'
+    let TOKEN_VERSION = '0.1'
+
+    let tokenTx = {
+      Version: TOKEN_VERSION,
+      TxReceiptStatus: `pending`,
+      TimeStamp: SECUtil.currentUnixTimeInMillisecond(),
+      TxFrom: secAddress,
+      TxTo: crypto.randomBytes(20).toString('hex'),
+      Value: '0',
+      GasLimit: '0',
+      GasUsedByTxn: '0',
+      GasPrice: '0',
+      Nonce: _.random(1, 1000).toString(),
+      InputData: smartContractByteCode
+    }
+
+    let tokenTxBuffer = [
+      Buffer.from(TX_VERSION),
+      SECUtil.intToBuffer(tokenTx.TimeStamp),
+      Buffer.from(tokenTx.TxFrom, 'hex'),
+      Buffer.from(tokenTx.TxTo, 'hex'),
+      SECUtil.intToBuffer(tokenTx.Value),
+      Buffer.from(tokenTx.GasLimit),
+      Buffer.from(tokenTx.GasUsedByTxn),
+      Buffer.from(tokenTx.GasPrice),
+      Buffer.from(tokenTx.Nonce, 'hex'),
+      Buffer.from(tokenTx.InputData)
+    ]
+
+    let txSigHash = Buffer.from(SECUtil.rlphash(tokenTxBuffer).toString('hex'), 'hex')
+    tokenTx.Signature = SECUtil.ecsign(txSigHash, Buffer.from(privKey, 'hex'))
+    tokenTx.TxFee = (tokenTx.GasPrice * tokenTx.GasUsedByTxn)
+
+    tokenTxBuffer.push(Buffer.from(JSON.stringify(tokenTx.Signature)))
+    tokenTx.TxHash = SECUtil.rlphash(tokenTxBuffer).toString('hex')
+
+    return tokenTx
+  }
+
+  _generateGenesisBlock (smartContractByteCode = '') {
     return new SECTokenBlock({
       Number: 0,
       TransactionsRoot: SECUtil.KECCAK256_RLP.toString('hex'),
@@ -34,7 +82,7 @@ class SECTokenBlockChain {
       GasLimit: 100000,
       ExtraData: 'SEC Hello World',
       Nonce: SECUtil.zeros(8).toString('hex'),
-      Transactions: []
+      Transactions: [this._generateTokenTransaction(smartContractByteCode)]
     }).getBlock()
   }
 
@@ -42,11 +90,11 @@ class SECTokenBlockChain {
    * Initialize the class token-blockchain
    * @param {callback} callback - The callback that handles the response.
    */
-  init (callback) {
+  init (SmartContractByteCode, callback) {
     this.SECDataHandler.isTokenBlockChainDBEmpty((err, isEmpty) => {
       if (err) throw new Error('Could not check db content')
       if (isEmpty) {
-        this.putBlockToDB(this._generateGenesisBlock(), callback)
+        this.putBlockToDB(this._generateGenesisBlock(smartContractByteCode), callback)
       } else {
         this._getAllBlockChainFromDB(callback)
       }
