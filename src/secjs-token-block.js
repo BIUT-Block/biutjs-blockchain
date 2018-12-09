@@ -182,9 +182,9 @@ class SECTokenBlock {
     this.setBlock(this.block)
   }
 
-  // --------------------------------------------------------------------------- //
-  // -----------------------------  Set Block Body  ---------------------------- //
-  // --------------------------------------------------------------------------- //
+  // ----------------------------------------------------------------------- //
+  // -----------------------------  Block Body  ---------------------------- //
+  // ----------------------------------------------------------------------- //
 
   getBody () {
     return this.block.Transactions
@@ -220,10 +220,10 @@ class SECTokenBlock {
   }
 
   // --------------------------------------------------------------------------- //
-  // ---------------------------  Get Block Methods  --------------------------- //
+  // ---------------------------  POW Header Buffer  --------------------------- //
   // --------------------------------------------------------------------------- //
 
-  getHeaderPOWBuffer () {
+  getPowHeaderBuffer () {
     if (this.blockBuffer.length !== tokenBufferLength) {
       throw new Error(`this.blockBuffer is not correctly set, it should have a length of: ${tokenBufferLength}`)
     }
@@ -239,10 +239,14 @@ class SECTokenBlock {
     return powHeaderBuffer
   }
 
-  getHeaderPOWHashBuffer () {
-    let powHeaderBuffer = this.getBlockHeaderPOWBuffer()
+  getPowHeaderHashBuffer () {
+    let powHeaderBuffer = this.getPowHeaderBuffer()
     return SECUtils.rlphash(powHeaderBuffer)
   }
+
+  // -------------------------------------------------------------------------- //
+  // ---------------------------  Hash Calculation  --------------------------- //
+  // -------------------------------------------------------------------------- //
 
   getHeaderHash () {
     let headerBuffer = this.getHeaderBuffer()
