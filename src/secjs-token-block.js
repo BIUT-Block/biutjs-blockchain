@@ -1,5 +1,7 @@
-const SECUtil = require('@sec-block/secjs-util')
+const SECUtils = require('@sec-block/secjs-util')
 const SECTokenBlockModel = require('../model/tokenchain-block-model')
+
+const tokenBufferLength = 16
 
 class SECTokenBlock {
   /**
@@ -7,25 +9,18 @@ class SECTokenBlock {
     * @param {*} config
     *
     */
-  constructor (config = {}) {
-    this.config = config
-    this.block = SECTokenBlockModel
+  constructor (block = {}) {
     this.blockBuffer = []
-    this.blockHeader = {}
-    this.blockHeaderBuffer = []
-    this.blockHeaderPOWBuffer = []
-    this.blockBody = []
-    this.blockBodyBuffer = []
-    this.hasHeader = false
-    this.hasBody = false
-    if (Object.keys(config).length !== 0) {
-      this._generateBlock()
+    this.block = SECTokenBlockModel
+
+    if (Object.keys(block).length !== 0) {
+      this.setBlock(block)
     }
   }
 
-  setBlockchain (tokenBlockchain) {
-    this.tokenBlockchain = tokenBlockchain
-  }
+  // --------------------------------------------------------------------------- //
+  // -------------------------------  Set Block  ------------------------------- //
+  // --------------------------------------------------------------------------- //
 
   getBlock () {
     return this.block
@@ -36,229 +31,227 @@ class SECTokenBlock {
   }
 
   setBlock (block) {
-    this.block = Object.assign({}, block)
-    this.blockBody = block.Transactions
-    this.blockHeader = Object.assign({}, block)
-    delete this.blockHeader.Beneficiary
-    delete this.blockHeader.Hash
-    delete this.blockHeader.Transactions
-    this._generateBlockBuffer()
-    this._generateBlockHeaderBuffer()
-    this._generateBlockBodyBuffer()
-    this.hasHeader = true
-    this.hasBody = true
-  }
-
-  setBlockFromBuffer (blockBuffer) {
-    this.blockBuffer = blockBuffer.slice(0)
-    this.block.Number = SECUtil.bufferToInt(blockBuffer[0])
-    this.block.TransactionsRoot = blockBuffer[1].toString('hex')
-    this.block.ReceiptRoot = blockBuffer[2].toString('hex')
-    this.block.LogsBloom = blockBuffer[3].toString('hex')
-    this.block.MixHash = blockBuffer[4].toString('hex')
-    this.block.StateRoot = blockBuffer[5].toString('hex')
-    this.block.TimeStamp = SECUtil.bufferToInt(blockBuffer[6])
-    this.block.ParentHash = blockBuffer[7].toString('hex')
-    this.block.Difficulty = SECUtil.bufferToInt(blockBuffer[8])
-    this.block.GasUsed = SECUtil.bufferToInt(blockBuffer[9])
-    this.block.GasLimit = SECUtil.bufferToInt(blockBuffer[10])
-    this.block.ExtraData = blockBuffer[11].toString()
-    this.block.Nonce = blockBuffer[12].toString('hex')
-    this.blockHeader = Object.assign({}, this.block)
-    delete this.blockHeader.Beneficiary
-    delete this.blockHeader.Hash
-    delete this.blockHeader.Transactions
-    this._generateBlockHeaderBuffer()
-    this.hasHeader = true
-    this.block.Hash = blockBuffer[13].toString('hex')
-    this.block.Beneficiary = blockBuffer[14].toString()
-    this.block.Transactions = JSON.parse(blockBuffer[15].toString())
-    this.blockBody = this.block.Transactions.slice(0)
-    this._generateBlockBodyBuffer()
-    this.hasBody = true
-  }
-
-  setBlockHeader (block) {
-    for (let key in block) {
-      this.block[key] = block[key]
+    if (!(Array.isArray(block))) {
+      // set block from json data
+      this._setBlockFromJson(block)
+    } else {
+      // set block from blockBuffer data
+      this._setBlockFromBuffer(block)
     }
-    this.blockHeader = Object.assign({}, block)
-    delete this.blockHeader.Beneficiary
-    delete this.blockHeader.Hash
-    delete this.blockHeader.Transactions
-    this._generateBlockHeaderBuffer()
-    this.hasHeader = true
   }
 
-  setBlockHeaderFromBuffer (blockHeaderBuffer) {
-    this.blockHeaderBuffer = blockHeaderBuffer.slice(0)
-    this.block.Number = SECUtil.bufferToInt(blockHeaderBuffer[0])
-    this.block.TransactionsRoot = blockHeaderBuffer[1].toString('hex')
-    this.block.ReceiptRoot = blockHeaderBuffer[2].toString('hex')
-    this.block.LogsBloom = blockHeaderBuffer[3].toString('hex')
-    this.block.MixHash = blockHeaderBuffer[4].toString('hex')
-    this.block.StateRoot = blockHeaderBuffer[5].toString('hex')
-    this.block.TimeStamp = SECUtil.bufferToInt(blockHeaderBuffer[6])
-    this.block.ParentHash = blockHeaderBuffer[7].toString('hex')
-    this.block.Difficulty = SECUtil.bufferToInt(blockHeaderBuffer[8])
-    this.block.GasUsed = SECUtil.bufferToInt(blockHeaderBuffer[9])
-    this.block.GasLimit = SECUtil.bufferToInt(blockHeaderBuffer[10])
-    this.block.ExtraData = blockHeaderBuffer[11].toString()
-    this.block.Nonce = blockHeaderBuffer[12].toString('hex')
-    this.blockHeader = Object.assign({}, this.block)
-    delete this.blockHeader.Beneficiary
-    delete this.blockHeader.Hash
-    delete this.blockHeader.Transactions
-    this.hasHeader = true
-  }
+  _setBlockFromJson (block) {
+    let self = this
 
-  getBlockHeader () {
-    return this.blockHeader
-  }
+    // clear this.block
+    this.block = SECTokenBlockModel
 
-  getBlockHeaderBuffer () {
-    return this.blockHeaderBuffer
-  }
-
-  getBlockHeaderPOWBuffer () {
-    this._generateBlockHeaderPOWBuffer()
-    return this.blockHeaderPOWBuffer
-  }
-
-  getBlockHeaderPOWHashBuffer () {
-    this._generateBlockHeaderPOWBuffer()
-    return SECUtil.rlphash(this.blockHeaderPOWBuffer)
-  }
-
-  getBlockHeaderHash () {
-    return SECUtil.rlphash(this.blockHeaderBuffer).toString('hex')
-  }
-
-  setBlockBody (body) {
-    this.blockBody = body
-    this.block.Transactions = this.blockBody
-    this._generateBlockBodyBuffer()
-    this.hasBody = true
-  }
-
-  setBlockBodyFromBuffer (bodyBuffer) {
-    this.blockBodyBuffer = bodyBuffer.slice(0)
-    this.blockBodyBuffer.forEach(txBuffer => {
-      this.blockBody.push(JSON.parse(txBuffer.toString()))
+    // set this.block
+    Object.keys(block).forEach(function (key) {
+      if (!(key in block)) {
+        throw new Error(`key: ${key} is not recognized`)
+      }
+      self.block[key] = block[key]
     })
-    this.block.Transactions = this.blockBody.slice(0)
-    this.hasBody = true
-  }
 
-  getBlockBody () {
-    return this.blockBody
-  }
-
-  getBlockBodyBuffer () {
-    return this.blockBodyBuffer
-  }
-
-  getBlockBodyHash () {
-    return SECUtil.rlphash(this.blockBodyBuffer).toString('hex')
-  }
-
-  isHeaderEmpty () {
-    return !this.hasHeader
-  }
-
-  isBodyEmpty () {
-    return !this.hasBody
-  }
-
-  /**
-    * assign value to block header
-    */
-  _generateBlock () {
-    // Header
-    this.blockHeader.Number = this.tokenBlockchain ? parseInt(this.tokenBlockChain.getCurrentHeight()) + 1 : this.config.Number || 0
-    this.blockHeader.TransactionsRoot = this.config.TransactionsRoot
-    this.blockHeader.ReceiptRoot = this.config.ReceiptRoot
-    this.blockHeader.LogsBloom = this.config.LogsBloom
-    this.blockHeader.MixHash = this.config.MixHash
-    this.blockHeader.StateRoot = this.config.StateRoot
-    this.blockHeader.TimeStamp = this.config.TimeStamp || SECUtil.currentUnixTimeSecond()
-    this.blockHeader.ParentHash = this.config.ParentHash
-    this.blockHeader.Difficulty = this.config.Difficulty
-    this.blockHeader.GasUsed = this.config.GasUsed
-    this.blockHeader.GasLimit = this.config.GasLimit
-    this.blockHeader.ExtraData = this.config.ExtraData
-    this.blockHeader.Nonce = this.config.Nonce
-
-    this.block = Object.assign({}, this.blockHeader)
-    this.block.Beneficiary = this.config.Beneficiary
-    this._generateBlockHeaderBuffer()
-    this.block.Hash = SECUtil.rlphash(this.blockHeaderBuffer).toString('hex')
-
-    // Body
-    this.blockBody = this.config.Transactions
-    this.block.Transactions = this.blockBody
-    this._generateBlockBodyBuffer()
-    this.hasHeader = true
-    this.hasBody = true
-    this._generateBlockBuffer()
-  }
-
-  _generateBlockBuffer () {
+    // set this.blockBuffer
     this.blockBuffer = [
-      SECUtil.intToBuffer(this.block.Number),
+      SECUtils.intToBuffer(this.block.Number),
       Buffer.from(this.block.TransactionsRoot, 'hex'),
       Buffer.from(this.block.ReceiptRoot, 'hex'),
       Buffer.from(this.block.LogsBloom, 'hex'),
       Buffer.from(this.block.MixHash, 'hex'),
       Buffer.from(this.block.StateRoot, 'hex'),
-      SECUtil.intToBuffer(this.block.TimeStamp),
+      SECUtils.intToBuffer(this.block.TimeStamp),
       Buffer.from(this.block.ParentHash, 'hex'),
-      SECUtil.intToBuffer(this.block.Difficulty),
-      SECUtil.intToBuffer(this.block.GasUsed),
-      SECUtil.intToBuffer(this.block.GasLimit),
+      Buffer.from(this.block.Difficulty),
+      Buffer.from(this.block.GasUsed),
+      Buffer.from(this.block.GasLimit),
       Buffer.from(this.block.ExtraData),
       Buffer.from(this.block.Nonce, 'hex'),
       Buffer.from(this.block.Hash, 'hex'),
-      Buffer.from(this.block.Beneficiary),
+      Buffer.from(this.block.Beneficiary, 'hex'),
       Buffer.from(JSON.stringify(this.block.Transactions))
     ]
   }
 
-  _generateBlockHeaderBuffer () {
-    this.blockHeaderBuffer = [
-      SECUtil.intToBuffer(this.blockHeader.Number),
-      Buffer.from(this.blockHeader.TransactionsRoot, 'hex'),
-      Buffer.from(this.blockHeader.ReceiptRoot, 'hex'),
-      Buffer.from(this.blockHeader.LogsBloom, 'hex'),
-      Buffer.from(this.blockHeader.MixHash, 'hex'),
-      Buffer.from(this.blockHeader.StateRoot, 'hex'),
-      SECUtil.intToBuffer(this.blockHeader.TimeStamp),
-      Buffer.from(this.blockHeader.ParentHash, 'hex'),
-      SECUtil.intToBuffer(this.blockHeader.Difficulty),
-      SECUtil.intToBuffer(this.blockHeader.GasUsed),
-      SECUtil.intToBuffer(this.blockHeader.GasLimit),
-      Buffer.from(this.blockHeader.ExtraData),
-      Buffer.from(this.blockHeader.Nonce, 'hex')
-    ]
+  _setBlockFromBuffer (blockBuffer) {
+    // clear this.block
+    this.block = SECTokenBlockModel
+
+    if (blockBuffer.length !== tokenBufferLength) {
+      throw new Error(`input blockBuffer length(${blockBuffer.length}) mismatch, its length should be: ${tokenBufferLength}`)
+    }
+
+    // set this.block
+    this.block = {
+      Number: SECUtils.bufferToInt(blockBuffer[0]),
+      TransactionsRoot: blockBuffer[1].toString('hex'),
+      ReceiptRoot: blockBuffer[2].toString('hex'),
+      LogsBloom: blockBuffer[3].toString('hex'),
+      MixHash: blockBuffer[4].toString('hex'),
+      StateRoot: blockBuffer[5].toString('hex'),
+      TimeStamp: SECUtils.bufferToInt(blockBuffer[6]),
+      ParentHash: blockBuffer[7].toString('hex'),
+      Difficulty: blockBuffer[8].toString(),
+      GasUsed: blockBuffer[9].toString(),
+      GasLimit: blockBuffer[10].toString(),
+      ExtraData: blockBuffer[11].toString(),
+      Nonce: blockBuffer[12].toString('hex'),
+      Hash: blockBuffer[13].toString('hex'),
+      Beneficiary: blockBuffer[14].toString('hex'),
+      Transactions: JSON.parse(blockBuffer[15].toString())
+    }
+
+    // set this.blockBuffer
+    this.blockBuffer = blockBuffer
   }
 
-  _generateBlockHeaderPOWBuffer () {
-    this.blockHeaderPOWBuffer = [
-      SECUtil.intToBuffer(this.blockHeader.Number),
-      Buffer.from(this.blockHeader.StateRoot, 'hex'),
-      SECUtil.intToBuffer(this.blockHeader.Difficulty),
-      SECUtil.intToBuffer(this.blockHeader.GasLimit),
-      Buffer.from(this.blockHeader.ExtraData),
-      Buffer.from(this.blockHeader.Nonce, 'hex')
-    ]
+  // ----------------------------------------------------------------------- //
+  // ---------------------------  Block Header  ---------------------------- //
+  // ----------------------------------------------------------------------- //
+
+  getHeader () {
+    let header = {
+      Number: this.tx.Number,
+      TransactionsRoot: this.tx.TransactionsRoot,
+      ReceiptRoot: this.tx.ReceiptRoot,
+      LogsBloom: this.tx.LogsBloom,
+      MixHash: this.tx.MixHash,
+      StateRoot: this.tx.StateRoot,
+      TimeStamp: this.tx.TimeStamp,
+      ParentHash: this.tx.ParentHash,
+      Difficulty: this.tx.Difficulty,
+      GasUsed: this.tx.GasUsed,
+      GasLimit: this.tx.GasLimit,
+      ExtraData: this.tx.ExtraData,
+      Nonce: this.tx.Nonce
+    }
+    return header
   }
 
-  _generateBlockBodyBuffer () {
-    if (this.blockBody.length !== 0) {
-      this.blockBody.forEach(tx => {
-        this.blockBodyBuffer.push(Buffer.from(JSON.stringify(tx)))
+  getHeaderBuffer () {
+    if (this.blockBuffer.length !== tokenBufferLength) {
+      throw new Error(`this.blockBuffer is not correctly set, it should have a length of: ${tokenBufferLength}`)
+    }
+
+    let headerBuffer = [
+      this.blockBuffer[0], // Number
+      this.blockBuffer[1], // TransactionsRoot
+      this.blockBuffer[2], // ReceiptRoot
+      this.blockBuffer[3], // LogsBloom
+      this.blockBuffer[4], // MixHash
+      this.blockBuffer[5], // StateRoot
+      this.blockBuffer[6], // TimeStamp
+      this.blockBuffer[7], // ParentHash
+      this.blockBuffer[8], // Difficulty
+      this.blockBuffer[9], // GasUsed
+      this.blockBuffer[10], // GasLimit
+      this.blockBuffer[11], // ExtraData
+      this.blockBuffer[12] // Nonce
+    ]
+    return headerBuffer
+  }
+
+  setHeader (header) {
+    if (!(Array.isArray(header))) {
+      // set header from json data
+      this.setBlock(header)
+    } else {
+      // set header from headerBuffer data
+      this._setHeaderFromBuffer(header)
+    }
+  }
+
+  _setHeaderFromBuffer (blockHeaderBuffer) {
+    this.block.Number = SECUtils.bufferToInt(blockHeaderBuffer[0])
+    this.block.TransactionsRoot = blockHeaderBuffer[1].toString('hex')
+    this.block.ReceiptRoot = blockHeaderBuffer[2].toString('hex')
+    this.block.LogsBloom = blockHeaderBuffer[3].toString('hex')
+    this.block.MixHash = blockHeaderBuffer[4].toString('hex')
+    this.block.StateRoot = blockHeaderBuffer[5].toString('hex')
+    this.block.TimeStamp = SECUtils.bufferToInt(blockHeaderBuffer[6])
+    this.block.ParentHash = blockHeaderBuffer[7].toString('hex')
+    this.block.Difficulty = blockHeaderBuffer[8].toString()
+    this.block.GasUsed = blockHeaderBuffer[9].toString()
+    this.block.GasLimit = blockHeaderBuffer[10].toString()
+    this.block.ExtraData = blockHeaderBuffer[11].toString()
+    this.block.Nonce = blockHeaderBuffer[12].toString('hex')
+
+    // update this.blockBuffer
+    this.setBlock(this.block)
+  }
+
+  // --------------------------------------------------------------------------- //
+  // -----------------------------  Set Block Body  ---------------------------- //
+  // --------------------------------------------------------------------------- //
+
+  getBody () {
+    return this.block.Transactions
+  }
+
+  getBodyBuffer () {
+    let blockBody = this.block.Transactions
+    let blockBodyBuffer = []
+
+    if (blockBody.length !== 0) {
+      blockBody.forEach(tx => {
+        blockBodyBuffer.push(Buffer.from(JSON.stringify(tx)))
       })
     }
+    return blockBody
+  }
+
+  setBody (body) {
+    if (!(Array.isArray(body))) {
+      // set body from json data
+      this.setBlock(body)
+    } else {
+      // set body from bodyBuffer data
+      this._setBodyFromBuffer(body)
+    }
+  }
+
+  _setBodyFromBuffer (bodyBuffer) {
+    this.block.Transactions = []
+    bodyBuffer.forEach(txBuffer => {
+      this.block.Transactions.push(JSON.parse(txBuffer.toString()))
+    })
+  }
+
+  // --------------------------------------------------------------------------- //
+  // ---------------------------  Get Block Methods  --------------------------- //
+  // --------------------------------------------------------------------------- //
+
+  getHeaderPOWBuffer () {
+    if (this.blockBuffer.length !== tokenBufferLength) {
+      throw new Error(`this.blockBuffer is not correctly set, it should have a length of: ${tokenBufferLength}`)
+    }
+
+    let powHeaderBuffer = [
+      this.blockBuffer[0], // Number
+      this.blockBuffer[5], // StateRoot
+      this.blockBuffer[8], // Difficulty
+      this.blockBuffer[10], // GasLimit
+      this.blockBuffer[11], // ExtraData
+      this.blockBuffer[12] // Nonce
+    ]
+    return powHeaderBuffer
+  }
+
+  getHeaderPOWHashBuffer () {
+    let powHeaderBuffer = this.getBlockHeaderPOWBuffer()
+    return SECUtils.rlphash(powHeaderBuffer)
+  }
+
+  getHeaderHash () {
+    let headerBuffer = this.getHeaderBuffer()
+    return SECUtils.rlphash(headerBuffer).toString('hex')
+  }
+
+  getBodyHash () {
+    let bodyBuffer = this.getBodyBuffer()
+    return SECUtils.rlphash(bodyBuffer).toString('hex')
   }
 }
 
