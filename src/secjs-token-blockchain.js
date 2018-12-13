@@ -13,6 +13,18 @@ class SECTokenBlockChain {
     }
     this.SECDataHandler = SECDataHandler
     this.tokenBlockChain = []
+    this.tokenTx = []
+  }
+
+  _updateTokenTxBuffer (block) {
+    if (typeof block === 'string') {
+      block = JSON.parse(block)
+    }
+
+    let txs = block.Transactions
+    txs.forEach((tx) => {
+      this.tokenTx.push([tx.TxFrom, tx.TxTo, parseFloat(tx.Value), parseFloat(tx.TxFee)])
+    })
   }
 
   /**
@@ -61,6 +73,7 @@ class SECTokenBlockChain {
   putBlockToDB (block, callback) {
     if (block.Number === this.tokenBlockChain.length) {
       this.tokenBlockChain.push(JSON.parse(JSON.stringify(block)))
+      this._updateTokenTxBuffer(block)
       this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
         if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
         callback()
@@ -77,6 +90,9 @@ class SECTokenBlockChain {
    */
   putBlocksToDB (blocks, callback) {
     this.tokenBlockChain = this.tokenBlockChain.concat(blocks)
+    blocks.forEach((block) => {
+      this._updateTokenTxBuffer(block)
+    })
     this.SECDataHandler.writeTokenBlockToDB(blocks, (err) => {
       if (err) throw new Error('Can not put token blocks into database')
       callback()
@@ -88,6 +104,10 @@ class SECTokenBlockChain {
    */
   getBlockChain () {
     return this.tokenBlockChain
+  }
+
+  getTxBuffer () {
+    return this.tokenTx
   }
 
   /**
@@ -110,6 +130,7 @@ class SECTokenBlockChain {
         let keyArray = []
         blockchain.forEach((block) => {
           keyArray.push(parseInt(block.Number, 10))
+          this._updateTokenTxBuffer(block)
         })
         for (let i = 0; i < keyArray[keyArray.length - 1]; i++) {
           if (!(i in keyArray)) {
