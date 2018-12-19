@@ -43,7 +43,7 @@ class SECTokenBlockChain {
       Beneficiary: SECUtil.zeros(20).toString('hex'),
       Difficulty: 1,
       GasUsed: 0,
-      GasLimit: 100000,
+      GasLimit: 200000,
       ExtraData: 'SEC Hello World',
       Nonce: SECUtil.zeros(8).toString('hex'),
       Transactions: []
