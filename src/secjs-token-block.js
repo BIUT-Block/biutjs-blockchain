@@ -127,19 +127,19 @@ class SECTokenBlock {
 
   getHeader () {
     let header = {
-      Number: this.tx.Number,
-      TransactionsRoot: this.tx.TransactionsRoot,
-      ReceiptRoot: this.tx.ReceiptRoot,
-      LogsBloom: this.tx.LogsBloom,
-      MixHash: this.tx.MixHash,
-      StateRoot: this.tx.StateRoot,
-      TimeStamp: this.tx.TimeStamp,
-      ParentHash: this.tx.ParentHash,
-      Difficulty: this.tx.Difficulty,
-      GasUsed: this.tx.GasUsed,
-      GasLimit: this.tx.GasLimit,
-      ExtraData: this.tx.ExtraData,
-      Nonce: this.tx.Nonce
+      Number: this.block.Number,
+      TransactionsRoot: this.block.TransactionsRoot,
+      ReceiptRoot: this.block.ReceiptRoot,
+      LogsBloom: this.block.LogsBloom,
+      MixHash: this.block.MixHash,
+      StateRoot: this.block.StateRoot,
+      TimeStamp: this.block.TimeStamp,
+      ParentHash: this.block.ParentHash,
+      Difficulty: this.block.Difficulty,
+      GasUsed: this.block.GasUsed,
+      GasLimit: this.block.GasLimit,
+      ExtraData: this.block.ExtraData,
+      Nonce: this.block.Nonce
     }
     return header
   }
