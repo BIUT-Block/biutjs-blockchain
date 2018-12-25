@@ -41,9 +41,7 @@ class SECTokenBlockChain {
       TimeStamp: 1537222080,
       ParentHash: SECUtil.zeros(32).toString('hex'),
       Beneficiary: SECUtil.zeros(20).toString('hex'),
-      Difficulty: 1,
-      GasUsed: 0,
-      GasLimit: 200000,
+      Difficulty: '1',
       ExtraData: 'SEC Hello World',
       Nonce: SECUtil.zeros(8).toString('hex'),
       Transactions: []
