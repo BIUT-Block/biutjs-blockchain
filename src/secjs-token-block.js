@@ -163,7 +163,7 @@ class SECTokenBlock {
       this.blockBuffer[10], // GasLimit
       this.blockBuffer[11], // ExtraData
       this.blockBuffer[12], // Nonce
-      this.blockBuffer[13] // Beneficiary
+      this.blockBuffer[14] // Beneficiary
     ]
     return headerBuffer
   }
@@ -192,14 +192,30 @@ class SECTokenBlock {
     this.block.GasLimit = blockHeaderBuffer[10].toString()
     this.block.ExtraData = blockHeaderBuffer[11].toString()
     this.block.Nonce = blockHeaderBuffer[12].toString('hex')
-    this.block.Beneficiary = blockHeaderBuffer[13].toString('hex')
+    this.block.Beneficiary = blockHeaderBuffer[14].toString('hex')
 
     // update this.blockBuffer
     this.setBlock(this.block)
   }
 
   getHeaderHash () {
-    let headerBuffer = this.getHeaderBuffer()
+    let headerBuffer = [
+      SECUtils.intToBuffer(this.block.Number),
+      Buffer.from(this.block.TransactionsRoot, 'hex'),
+      Buffer.from(this.block.ReceiptRoot, 'hex'),
+      Buffer.from(this.block.LogsBloom, 'hex'),
+      Buffer.from(this.block.MixHash, 'hex'),
+      Buffer.from(this.block.StateRoot, 'hex'),
+      SECUtils.intToBuffer(this.block.TimeStamp),
+      Buffer.from(this.block.ParentHash, 'hex'),
+      Buffer.from(this.block.Difficulty),
+      Buffer.from(this.block.GasUsed),
+      Buffer.from(this.block.GasLimit),
+      Buffer.from(this.block.ExtraData),
+      Buffer.from(this.block.Nonce, 'hex'),
+      Buffer.from(this.block.Beneficiary, 'hex')
+    ]
+
     return SECUtils.rlphash(headerBuffer).toString('hex')
   }
 
