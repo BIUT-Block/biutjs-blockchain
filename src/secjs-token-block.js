@@ -59,7 +59,6 @@ class SECTokenBlock {
     this.block['GasUsed'] = 0
     this.block['GasLimit'] = 0
     this.block['Transactions'].forEach(tx => {
-      console.log(tx)
       self.block['GasUsed'] += parseFloat(tx.GasUsedByTxn)
       self.block['GasLimit'] += parseFloat(tx.GasLimit)
       // self.block['TransactionsRoot'] = ''
