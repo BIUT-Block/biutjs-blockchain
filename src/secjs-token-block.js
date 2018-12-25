@@ -54,6 +54,19 @@ class SECTokenBlock {
       self.block[key] = block[key]
     })
 
+    // calculate GasUsed, GasLimit, Hash and TransactionsRoot
+    // TBD: LogsBloom, ReceiptRoot, StateRoot
+    this.block['GasUsed'] = 0
+    this.block['GasLimit'] = 0
+    this.block['Transactions'].forEach(tx => {
+      self.block['GasUsed'] += parseFloat(tx.Transactions.GasUsed)
+      self.block['GasLimit'] += parseFloat(tx.Transactions.GasLimit)
+      // self.block['TransactionsRoot'] = ''
+    })
+    this.block['GasUsed'] = this.block['GasUsed'].toString()
+    this.block['GasLimit'] = this.block['GasLimit'].toString()
+    this.block['Hash'] = this.getHeaderHash()
+
     // set this.blockBuffer
     this.blockBuffer = [
       SECUtils.intToBuffer(this.block.Number),
@@ -125,7 +138,8 @@ class SECTokenBlock {
       GasUsed: this.tx.GasUsed,
       GasLimit: this.tx.GasLimit,
       ExtraData: this.tx.ExtraData,
-      Nonce: this.tx.Nonce
+      Nonce: this.tx.Nonce,
+      Beneficiary: this.tx.Beneficiary
     }
     return header
   }
@@ -148,7 +162,8 @@ class SECTokenBlock {
       this.blockBuffer[9], // GasUsed
       this.blockBuffer[10], // GasLimit
       this.blockBuffer[11], // ExtraData
-      this.blockBuffer[12] // Nonce
+      this.blockBuffer[12], // Nonce
+      this.blockBuffer[13] // Beneficiary
     ]
     return headerBuffer
   }
@@ -177,9 +192,15 @@ class SECTokenBlock {
     this.block.GasLimit = blockHeaderBuffer[10].toString()
     this.block.ExtraData = blockHeaderBuffer[11].toString()
     this.block.Nonce = blockHeaderBuffer[12].toString('hex')
+    this.block.Beneficiary = blockHeaderBuffer[13].toString('hex')
 
     // update this.blockBuffer
     this.setBlock(this.block)
+  }
+
+  getHeaderHash () {
+    let headerBuffer = this.getHeaderBuffer()
+    return SECUtils.rlphash(headerBuffer).toString('hex')
   }
 
   // ----------------------------------------------------------------------- //
@@ -219,6 +240,11 @@ class SECTokenBlock {
     })
   }
 
+  getBodyHash () {
+    let bodyBuffer = this.getBodyBuffer()
+    return SECUtils.rlphash(bodyBuffer).toString('hex')
+  }
+
   // --------------------------------------------------------------------------- //
   // ---------------------------  POW Header Buffer  --------------------------- //
   // --------------------------------------------------------------------------- //
@@ -242,20 +268,6 @@ class SECTokenBlock {
   getPowHeaderHashBuffer () {
     let powHeaderBuffer = this.getPowHeaderBuffer()
     return SECUtils.rlphash(powHeaderBuffer)
-  }
-
-  // -------------------------------------------------------------------------- //
-  // ---------------------------  Hash Calculation  --------------------------- //
-  // -------------------------------------------------------------------------- //
-
-  getHeaderHash () {
-    let headerBuffer = this.getHeaderBuffer()
-    return SECUtils.rlphash(headerBuffer).toString('hex')
-  }
-
-  getBodyHash () {
-    let bodyBuffer = this.getBodyBuffer()
-    return SECUtils.rlphash(bodyBuffer).toString('hex')
   }
 }
 

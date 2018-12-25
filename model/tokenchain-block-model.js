@@ -10,9 +10,9 @@ let tokenchainBlockModel = {
   StateRoot: '', // 所有交易被执行完且区块定稿后的状态树（state trie）根节点的Keccak 256 位哈希
   TimeStamp: 0, // yes
   ParentHash: '', // yes
-  Difficulty: 0, // yes
-  GasUsed: 0, // 当前区块所有交易总共用掉的gas值
-  GasLimit: 0, // 目前每个区块的gas 开支上限
+  Difficulty: '1', // yes
+  GasUsed: '0', // 当前区块所有交易总共用掉的gas值
+  GasLimit: '0', // 目前每个区块的gas 开支上限
   ExtraData: '', // 与当前区块相关的任意字节数据
   Nonce: '', // yes
   Hash: '', // 当前区块hash
@@ -21,22 +21,3 @@ let tokenchainBlockModel = {
 }
 
 module.exports = tokenchainBlockModel
-
-Number
-MixHash
-TimeStamp
-ParentHash
-Difficulty
-ExtraData
-Nonce
-Beneficiary
-Transactions
-
-LogsBloom
-ReceiptRoot
-StateRoot
-
-GasUsed
-GasLimit
-Hash
-TransactionsRoot
