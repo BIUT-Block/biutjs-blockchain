@@ -69,7 +69,7 @@ class SECTokenBlockChain {
    * @param {callback} callback
    */
   putBlockToDB (block, callback) {
-    if (block.Number === this.tokenBlockChain.length) {
+    if (block.Number <= this.tokenBlockChain.length) {
       this.tokenBlockChain.push(JSON.parse(JSON.stringify(block)))
       this._updateTokenTxBuffer(block)
       this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
