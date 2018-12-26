@@ -232,7 +232,7 @@ class SECTokenBlock {
         blockBodyBuffer.push(Buffer.from(JSON.stringify(tx)))
       })
     }
-    return blockBody
+    return blockBodyBuffer
   }
 
   setBody (body) {
