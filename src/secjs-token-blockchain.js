@@ -13,7 +13,7 @@ class SECTokenBlockChain {
     }
     this.SECDataHandler = SECDataHandler
     this.tokenBlockChain = []
-    this.tokenTx = []
+    this.tokenTx = {}
   }
 
   _updateTokenTxBuffer (block) {
@@ -23,7 +23,7 @@ class SECTokenBlockChain {
 
     let txs = block.Transactions
     txs.forEach((tx) => {
-      this.tokenTx.push([tx.TxFrom, tx.TxTo, parseFloat(tx.Value), parseFloat(tx.TxFee)])
+      this.tokenTx[tx.TxHash] = [tx.TxFrom, tx.TxTo, parseFloat(tx.Value), parseFloat(tx.TxFee)]
     })
   }
 
@@ -71,7 +71,7 @@ class SECTokenBlockChain {
   putBlockToDB (block, callback) {
     if (block.Number <= this.tokenBlockChain.length) {
       if (this.tokenBlockChain.filter(_block => (_block.Hash === block.Hash)).length === 0) {
-        this.tokenBlockChain.push(JSON.parse(JSON.stringify(block)))
+        this.tokenBlockChain[block.Number] = block
         this._updateTokenTxBuffer(block)
         this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
           if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
@@ -113,8 +113,8 @@ class SECTokenBlockChain {
       } else {
         blockchain.forEach((block) => {
           this._updateTokenTxBuffer(block)
+          this.tokenBlockChain[block.Number] = block
         })
-        this.tokenBlockChain = blockchain
         callback()
       }
     })
@@ -226,15 +226,6 @@ class SECTokenBlockChain {
       })
     })
     return hashList
-  }
-
-  updateBlockchain (position, BlockArray, callback) {
-    this.SECDataHandler.addUpdateBlock(position, BlockArray, (err) => {
-      if (err) callback(err)
-      this._getAllBlockChainFromDB(() => {
-        callback()
-      })
-    })
   }
 }
 

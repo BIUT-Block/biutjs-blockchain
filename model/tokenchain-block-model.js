@@ -11,11 +11,11 @@ let tokenchainBlockModel = {
   TimeStamp: 0, // yes
   ParentHash: '', // yes
   Difficulty: '1', // yes
-  GasUsed: '0', // 当前区块所有交易总共用掉的gas值
-  GasLimit: '0', // 目前每个区块的gas 开支上限
-  ExtraData: '', // 与当前区块相关的任意字节数据
+  GasUsed: '0', // yes
+  GasLimit: '0', // yes
+  ExtraData: '', // yes
   Nonce: '', // yes
-  Hash: '', // 当前区块hash
+  Hash: '', // yes
   Beneficiary: '', // yes
   Transactions: [] // yes
 }
@@ -25,22 +25,23 @@ module.exports = tokenchainBlockModel
 /*
 given:
   Number
-  TransactionsRoot
-  ReceiptRoot
-  LogsBloom
   MixHash
-  StateRoot
   TimeStamp
   ParentHash
   Difficulty
-  GasUsed
-  GasLimit
   ExtraData
   Nonce
-  Hash
   Beneficiary
   Transactions
 
 calculated:
-not sure:
+  GasUsed
+  GasLimit
+  Hash
+
+To be implemented:
+  TransactionsRoot
+  StateRoot
+  ReceiptRoot
+  LogsBloom
 */
