@@ -84,22 +84,6 @@ class SECTokenBlockChain {
   }
 
   /**
-   * Put token block to db
-   * @param {Array} blocks the block object in json formation
-   * @param {callback} callbback
-   */
-  putBlocksToDB (blocks, callback) {
-    this.tokenBlockChain = this.tokenBlockChain.concat(blocks)
-    blocks.forEach((block) => {
-      this._updateTokenTxBuffer(block)
-    })
-    this.SECDataHandler.writeTokenBlockToDB(blocks, (err) => {
-      if (err) throw new Error('Can not put token blocks into database')
-      callback()
-    })
-  }
-
-  /**
    * get blockchain from cache
    */
   getBlockChain () {
@@ -127,16 +111,9 @@ class SECTokenBlockChain {
       if (err) {
         throw new Error('Can not get whole token block chain data from database')
       } else {
-        let keyArray = []
         blockchain.forEach((block) => {
-          keyArray.push(parseInt(block.Number, 10))
           this._updateTokenTxBuffer(block)
         })
-        for (let i = 0; i < keyArray[keyArray.length - 1]; i++) {
-          if (!(i in keyArray)) {
-            blockchain.splice(i, 0, null)
-          }
-        }
         this.tokenBlockChain = blockchain
         callback()
       }
