@@ -71,7 +71,7 @@ class SECTokenBlockChain {
   putBlockToDB (block, callback) {
     if (block.Number <= this.tokenBlockChain.length) {
       if (this.tokenBlockChain.filter(_block => (_block.Hash === block.Hash)).length === 0) {
-        this.tokenBlockChain[block.Number] = block
+        this.tokenBlockChain[block.Number] = JSON.parse(JSON.stringify(block))
         this._updateTokenTxBuffer(block)
         this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
           if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
