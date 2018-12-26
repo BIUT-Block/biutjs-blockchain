@@ -38,7 +38,7 @@ class SECTokenBlockChain {
       LogsBloom: SECUtil.zeros(256).toString('hex'),
       MixHash: SECUtil.zeros(32).toString('hex'),
       StateRoot: SECUtil.KECCAK256_RLP.toString('hex'),
-      TimeStamp: 1537222080,
+      TimeStamp: 1537222090,
       ParentHash: SECUtil.zeros(32).toString('hex'),
       Beneficiary: SECUtil.zeros(20).toString('hex'),
       Difficulty: '1',
@@ -77,7 +77,7 @@ class SECTokenBlockChain {
         callback()
       })
     } else {
-      throw new Error('Can not add token Block, token Block Number is falsh.')
+      throw new Error('Can not add token Block, token Block Number is false.')
     }
   }
 
