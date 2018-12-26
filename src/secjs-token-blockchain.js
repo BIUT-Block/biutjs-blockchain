@@ -70,12 +70,14 @@ class SECTokenBlockChain {
    */
   putBlockToDB (block, callback) {
     if (block.Number <= this.tokenBlockChain.length) {
-      this.tokenBlockChain.push(JSON.parse(JSON.stringify(block)))
-      this._updateTokenTxBuffer(block)
-      this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
-        if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
-        callback()
-      })
+      if (this.tokenBlockChain.filter(_block => (_block.Hash === block.Hash)).length === 0) {
+        this.tokenBlockChain.push(JSON.parse(JSON.stringify(block)))
+        this._updateTokenTxBuffer(block)
+        this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
+          if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
+          callback()
+        })
+      }
     } else {
       throw new Error('Can not add token Block, token Block Number is false.')
     }

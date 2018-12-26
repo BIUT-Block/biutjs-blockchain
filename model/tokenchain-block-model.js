@@ -21,3 +21,26 @@ let tokenchainBlockModel = {
 }
 
 module.exports = tokenchainBlockModel
+
+/*
+given:
+  Number
+  TransactionsRoot
+  ReceiptRoot
+  LogsBloom
+  MixHash
+  StateRoot
+  TimeStamp
+  ParentHash
+  Difficulty
+  GasUsed
+  GasLimit
+  ExtraData
+  Nonce
+  Hash
+  Beneficiary
+  Transactions
+
+calculated:
+not sure:
+*/
