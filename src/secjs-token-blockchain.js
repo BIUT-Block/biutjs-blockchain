@@ -20,6 +20,7 @@ class SECTokenBlockChain {
     if (typeof block === 'string') {
       block = JSON.parse(block)
     }
+    block = JSON.parse(JSON.stringify(block))
 
     let txs = block.Transactions
     txs.forEach((tx) => {
