@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@sec-block/secjs-solc-compiler": "^1.0.2",
-    "@sec-block/secjs-util": "^1.1.15",
+    "@sec-block/secjs-util": "^1.1.22",
     "chai": "^4.1.2",
     "describe": "^1.2.0",
     "mocha": "^5.2.0",
@@ -18,7 +18,7 @@
     "test": "test"
   },
   "devDependencies": {
-    "@sec-block/secjs-datahandler": "^1.1.8",
+    "@sec-block/secjs-datahandler": "^1.1.28",
     "fs-extra": "^7.0.0"
   },
   "repository": {
