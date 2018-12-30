@@ -20,10 +20,9 @@ class SECTokenBlockChain {
     if (typeof block === 'string') {
       block = JSON.parse(block)
     }
-    block = JSON.parse(JSON.stringify(block))
 
-    let txs = block.Transactions
-    txs.forEach((tx) => {
+    block = JSON.parse(JSON.stringify(block))
+    block.Transactions.forEach((tx) => {
       this.tokenTx[tx.TxHash] = [tx.TxFrom, tx.TxTo, parseFloat(tx.Value), parseFloat(tx.TxFee)]
     })
   }
@@ -70,13 +69,30 @@ class SECTokenBlockChain {
    * @param {callback} callback
    */
   putBlockToDB (block, callback) {
-    if (block.Number <= this.tokenBlockChain.length) {
+    // write a new block to DB
+    if (block.Number === this.tokenBlockChain.length) {
+      this.tokenBlockChain[block.Number] = JSON.parse(JSON.stringify(block))
+      this._updateTokenTxBuffer(block)
+      this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
+        if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
+        callback()
+      })
+    } else if (block.Number < this.tokenBlockChain.length) {
+      // overwrite forked blocks
       if (this.tokenBlockChain.filter(_block => (_block.Hash === block.Hash)).length === 0) {
+        let overwrittenTxArray = []
+        this.tokenBlockChain[block.Number].Transactions.forEach((tx) => {
+          delete this.tokenTx[tx.TxHash]
+          if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
+            overwrittenTxArray.push(tx)
+          }
+        })
+
         this.tokenBlockChain[block.Number] = JSON.parse(JSON.stringify(block))
         this._updateTokenTxBuffer(block)
         this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
           if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
-          callback()
+          callback(overwrittenTxArray)
         })
       }
     } else {
