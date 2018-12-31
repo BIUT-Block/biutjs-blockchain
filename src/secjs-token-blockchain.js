@@ -83,6 +83,7 @@ class SECTokenBlockChain {
         let overwrittenTxArray = []
         this.tokenBlockChain[block.Number].Transactions.forEach((tx) => {
           delete this.tokenTx[tx.TxHash]
+          tx.TxReceiptStatus = 'pending'
           if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
             overwrittenTxArray.push(tx)
           }
