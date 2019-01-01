@@ -269,10 +269,11 @@ class SECTokenBlock {
     let powHeaderBuffer = [
       this.blockBuffer[0], // Number
       this.blockBuffer[5], // StateRoot
-      this.blockBuffer[8], // Difficulty
+      this.blockBuffer[6], // Timestamp
+      this.blockBuffer[7], // ParentHash
+      this.blockBuffer[9], // GasUsed
       this.blockBuffer[10], // GasLimit
-      this.blockBuffer[11], // ExtraData
-      this.blockBuffer[12] // Nonce
+      this.blockBuffer[11] // ExtraData
     ]
     return powHeaderBuffer
   }
