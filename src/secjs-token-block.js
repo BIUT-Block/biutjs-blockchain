@@ -163,7 +163,7 @@ class SECTokenBlock {
       this.blockBuffer[10], // GasLimit
       this.blockBuffer[11], // ExtraData
       this.blockBuffer[12], // Nonce
-      this.blockBuffer[13] // Beneficiary
+      this.blockBuffer[14] // Beneficiary
     ]
     return headerBuffer
   }

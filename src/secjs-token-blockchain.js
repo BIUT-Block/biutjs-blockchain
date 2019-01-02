@@ -85,7 +85,6 @@ class SECTokenBlockChain {
       // overwrite forked blocks
       if (this.tokenBlockChain.filter(_block => (_block.Hash === block.Hash)).length === 0) {
         this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
-          
           if (err) {
             throw new Error('Something wrong with write Single TokenBlock To DB function')
           } else {
