@@ -4,6 +4,7 @@
     "@sec-block/secjs-util": "^1.1.22",
     "chai": "^4.1.2",
     "describe": "^1.2.0",
+    "lodash": "^4.17.11",
     "mocha": "^5.2.0",
     "standard": "^11.0.1"
   },
