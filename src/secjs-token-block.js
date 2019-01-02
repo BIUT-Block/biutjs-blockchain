@@ -138,7 +138,8 @@ class SECTokenBlock {
       GasUsed: this.block.GasUsed,
       GasLimit: this.block.GasLimit,
       ExtraData: this.block.ExtraData,
-      Nonce: this.block.Nonce
+      Nonce: this.block.Nonce,
+      Beneficiary: this.block.Beneficiary
     }
     return header
   }
@@ -161,7 +162,8 @@ class SECTokenBlock {
       this.blockBuffer[9], // GasUsed
       this.blockBuffer[10], // GasLimit
       this.blockBuffer[11], // ExtraData
-      this.blockBuffer[12] // Nonce
+      this.blockBuffer[12], // Nonce
+      this.blockBuffer[14] // Beneficiary
     ]
     return headerBuffer
   }
@@ -190,6 +192,7 @@ class SECTokenBlock {
     this.block.GasLimit = blockHeaderBuffer[10].toString()
     this.block.ExtraData = blockHeaderBuffer[11].toString()
     this.block.Nonce = blockHeaderBuffer[12].toString('hex')
+    this.block.Beneficiary = blockHeaderBuffer[13].toString('hex')
 
     // update this.blockBuffer
     this.setBlock(this.block)
@@ -209,7 +212,8 @@ class SECTokenBlock {
       Buffer.from(this.block.GasUsed),
       Buffer.from(this.block.GasLimit),
       Buffer.from(this.block.ExtraData),
-      Buffer.from(this.block.Nonce, 'hex')
+      Buffer.from(this.block.Nonce, 'hex'),
+      Buffer.from(this.block.Beneficiary, 'hex')
     ]
 
     return SECUtils.rlphash(headerBuffer).toString('hex')
