@@ -1,5 +1,6 @@
 const SECUtils = require('@sec-block/secjs-util')
 const SECTokenBlockModel = require('../model/tokenchain-block-model')
+const SECMerkleTree = require('@sec-block/secjs-merkle-tree')
 
 const tokenBufferLength = 16
 
@@ -54,17 +55,27 @@ class SECTokenBlock {
       self.block[key] = block[key]
     })
 
-    // calculate GasUsed, GasLimit, Hash and TransactionsRoot
-    // TBD: LogsBloom, ReceiptRoot, StateRoot
+    // GasUsed, GasLimit
     this.block['GasUsed'] = 0
     this.block['GasLimit'] = 0
+    let txHashArray = []
     this.block['Transactions'].forEach(tx => {
       self.block['GasUsed'] += parseFloat(tx.GasUsedByTxn)
       self.block['GasLimit'] += parseFloat(tx.GasLimit)
-      // self.block['TransactionsRoot'] = ''
+      txHashArray.push(self.block['Hash'])
     })
     this.block['GasUsed'] = this.block['GasUsed'].toString()
     this.block['GasLimit'] = this.block['GasLimit'].toString()
+
+    // TransactionsRoot
+    if (txHashArray.length === 0) {
+      this.block['TransactionsRoot'] = SECUtils.KECCAK256_RLP.toString('hex')
+    } else {
+      let merkleTree = new SECMerkleTree(txHashArray, 'sha256')
+      this.block['TransactionsRoot'] = merkleTree.getRoot().toString('hex')
+    }
+
+    // Hash
     this.block['Hash'] = this.getHeaderHash()
 
     // set this.blockBuffer
@@ -256,11 +267,6 @@ class SECTokenBlock {
     })
   }
 
-  getBodyHash () {
-    let bodyBuffer = this.getBodyBuffer()
-    return SECUtils.rlphash(bodyBuffer).toString('hex')
-  }
-
   // --------------------------------------------------------------------------- //
   // ---------------------------  POW Header Buffer  --------------------------- //
   // --------------------------------------------------------------------------- //
@@ -282,9 +288,14 @@ class SECTokenBlock {
     return powHeaderBuffer
   }
 
-  getPowHeaderHashBuffer () {
-    let powHeaderBuffer = this.getPowHeaderBuffer()
-    return SECUtils.rlphash(powHeaderBuffer)
+  verifyBlock () {
+    let header = this.getHeaderBuffer()
+    let headerHash = SECUtils.rlphash(header).toString('hex')
+    if (headerHash === this.block.Hash) {
+      return true
+    }
+
+    return false
   }
 }
 
