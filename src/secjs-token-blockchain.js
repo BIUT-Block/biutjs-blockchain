@@ -69,10 +69,17 @@ class SECTokenBlockChain {
    * @param {SECTokenBlock} block the block object in json formation
    * @param {callback} callback
    */
-  putBlockToDB (block, callback) {
+  putBlockToDB (_block, callback) {
     // write a new block to DB
+    let block = JSON.parse(JSON.stringify(_block))
+    block.Transactions.forEach((tx, index) => {
+      if (typeof tx === 'string') {
+        block.Transactions[index] = JSON.parse(tx)
+      }
+    })
+
     if (block.Number === this.tokenBlockChain.length) {
-      this.tokenBlockChain[block.Number] = JSON.parse(JSON.stringify(block))
+      this.tokenBlockChain[block.Number] = block
       this._updateTokenTxBuffer(block)
       this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
         if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
@@ -80,7 +87,7 @@ class SECTokenBlockChain {
       })
     } else if (block.Number < this.tokenBlockChain.length) {
       // overwrite forked blocks
-      if (this.tokenBlockChain.filter(_block => (_block.Hash === block.Hash)).length === 0) {
+      if (this.tokenBlockChain.filter(tokenBlock => (tokenBlock.Hash === block.Hash)).length === 0) {
         let overwrittenTxArray = []
         this.tokenBlockChain[block.Number].Transactions.forEach((tx) => {
           delete this.tokenTx[tx.TxHash]
@@ -90,7 +97,7 @@ class SECTokenBlockChain {
           }
         })
 
-        this.tokenBlockChain[block.Number] = JSON.parse(JSON.stringify(block))
+        this.tokenBlockChain[block.Number] = block
         this._updateTokenTxBuffer(block)
         this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
           if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
