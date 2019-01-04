@@ -1,5 +1,5 @@
 const _ = require('lodash')
-const SECUtil = require('@sec-block/secjs-util')
+const SECUtils = require('@sec-block/secjs-util')
 const SECTokenBlock = require('./secjs-token-block')
 
 class SECTokenBlockChain {
@@ -34,17 +34,17 @@ class SECTokenBlockChain {
   _generateGenesisBlock () {
     return new SECTokenBlock({
       Number: 0,
-      TransactionsRoot: SECUtil.KECCAK256_RLP.toString('hex'),
-      ReceiptRoot: SECUtil.KECCAK256_RLP.toString('hex'),
-      LogsBloom: SECUtil.zeros(256).toString('hex'),
-      MixHash: SECUtil.zeros(32).toString('hex'),
-      StateRoot: SECUtil.KECCAK256_RLP.toString('hex'),
+      TransactionsRoot: SECUtils.KECCAK256_RLP.toString('hex'),
+      ReceiptRoot: SECUtils.KECCAK256_RLP.toString('hex'),
+      LogsBloom: SECUtils.zeros(256).toString('hex'),
+      MixHash: SECUtils.zeros(32).toString('hex'),
+      StateRoot: SECUtils.KECCAK256_RLP.toString('hex'),
       TimeStamp: 1537222090,
-      ParentHash: SECUtil.zeros(32).toString('hex'),
-      Beneficiary: SECUtil.zeros(20).toString('hex'),
+      ParentHash: SECUtils.zeros(32).toString('hex'),
+      Beneficiary: SECUtils.zeros(20).toString('hex'),
       Difficulty: '1',
       ExtraData: 'SEC Hello World',
-      Nonce: SECUtil.zeros(8).toString('hex'),
+      Nonce: SECUtils.zeros(8).toString('hex'),
       Transactions: []
     }).getBlock()
   }
@@ -69,8 +69,9 @@ class SECTokenBlockChain {
    * @param {SECTokenBlock} block the block object in json formation
    * @param {callback} callback
    */
-  putBlockToDB (block, callback) {
+  putBlockToDB (_block, callback) {
     // write a new block to DB
+    let block = JSON.parse(JSON.stringify(_block))
     if (block.Number === this.tokenBlockChain.length) {
       this.tokenBlockChain[block.Number] = JSON.parse(JSON.stringify(block))
       this._updateTokenTxBuffer(block)

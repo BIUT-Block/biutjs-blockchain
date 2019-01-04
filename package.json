@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@sec-block/secjs-merkle-tree": "^1.0.10",
     "@sec-block/secjs-solc-compiler": "^1.0.2",
     "@sec-block/secjs-util": "^1.1.22",
     "chai": "^4.1.2",
