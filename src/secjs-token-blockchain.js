@@ -32,6 +32,10 @@ class SECTokenBlockChain {
    * generate genesis token block
    */
   _generateGenesisBlock () {
+    let extraData = 'SEC Hello World'
+    if (process.env.test) {
+      extraData = 'SEC Test Network Genesis Block'
+    }
     return new SECTokenBlock({
       Number: 0,
       TransactionsRoot: SECUtil.KECCAK256_RLP.toString('hex'),
@@ -43,7 +47,7 @@ class SECTokenBlockChain {
       ParentHash: SECUtil.zeros(32).toString('hex'),
       Beneficiary: SECUtil.zeros(20).toString('hex'),
       Difficulty: '1',
-      ExtraData: 'SEC Hello World',
+      ExtraData: extraData,
       Nonce: SECUtil.zeros(8).toString('hex'),
       Transactions: []
     }).getBlock()
