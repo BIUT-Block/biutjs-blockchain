@@ -32,6 +32,10 @@ class SECTokenBlockChain {
    * generate genesis token block
    */
   _generateGenesisBlock () {
+    let extraData = 'SEC Hello World'
+    if (process.env.test) {
+      extraData = 'SEC Test Network Genesis Block'
+    }
     return new SECTokenBlock({
       Number: 0,
       TransactionsRoot: SECUtils.KECCAK256_RLP.toString('hex'),
@@ -43,7 +47,7 @@ class SECTokenBlockChain {
       ParentHash: SECUtils.zeros(32).toString('hex'),
       Beneficiary: SECUtils.zeros(20).toString('hex'),
       Difficulty: '1',
-      ExtraData: 'SEC Hello World',
+      ExtraData: extraData,
       Nonce: SECUtils.zeros(8).toString('hex'),
       Transactions: []
     }).getBlock()
@@ -72,8 +76,14 @@ class SECTokenBlockChain {
   putBlockToDB (_block, callback) {
     // write a new block to DB
     let block = JSON.parse(JSON.stringify(_block))
+    block.Transactions.forEach((tx, index) => {
+      if (typeof tx === 'string') {
+        block.Transactions[index] = JSON.parse(tx)
+      }
+    })
+
     if (block.Number === this.tokenBlockChain.length) {
-      this.tokenBlockChain[block.Number] = JSON.parse(JSON.stringify(block))
+      this.tokenBlockChain[block.Number] = block
       this._updateTokenTxBuffer(block)
       this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
         if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
@@ -81,7 +91,7 @@ class SECTokenBlockChain {
       })
     } else if (block.Number < this.tokenBlockChain.length) {
       // overwrite forked blocks
-      if (this.tokenBlockChain.filter(_block => (_block.Hash === block.Hash)).length === 0) {
+      if (this.tokenBlockChain.filter(tokenBlock => (tokenBlock.Hash === block.Hash)).length === 0) {
         let overwrittenTxArray = []
         this.tokenBlockChain[block.Number].Transactions.forEach((tx) => {
           delete this.tokenTx[tx.TxHash]
@@ -91,7 +101,7 @@ class SECTokenBlockChain {
           }
         })
 
-        this.tokenBlockChain[block.Number] = JSON.parse(JSON.stringify(block))
+        this.tokenBlockChain[block.Number] = block
         this._updateTokenTxBuffer(block)
         this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
           if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
