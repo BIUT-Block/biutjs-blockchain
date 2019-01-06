@@ -33,7 +33,7 @@ class SECTokenBlockChain {
    */
   _generateGenesisBlock () {
     let extraData = 'SEC Hello World'
-    if (process.env.test) {
+    if (process.env.secTest) {
       extraData = 'SEC Test Network Genesis Block'
     }
     return new SECTokenBlock({
