@@ -38,7 +38,6 @@ class SECTokenBlockChain {
     }
     return new SECTokenBlock({
       Number: 0,
-      TransactionsRoot: SECUtils.KECCAK256_RLP.toString('hex'),
       ReceiptRoot: SECUtils.KECCAK256_RLP.toString('hex'),
       LogsBloom: SECUtils.zeros(256).toString('hex'),
       MixHash: SECUtils.zeros(32).toString('hex'),

@@ -62,7 +62,7 @@ class SECTokenBlock {
     this.block['Transactions'].forEach(tx => {
       self.block['GasUsed'] += parseFloat(tx.GasUsedByTxn)
       self.block['GasLimit'] += parseFloat(tx.GasLimit)
-      txHashArray.push(self.block['Hash'])
+      txHashArray.push(tx.TxHash)
     })
     this.block['GasUsed'] = this.block['GasUsed'].toString()
     this.block['GasLimit'] = this.block['GasLimit'].toString()
@@ -288,13 +288,35 @@ class SECTokenBlock {
     return powHeaderBuffer
   }
 
-  verifyBlock () {
+  verifyHeaderHash () {
+    // verify block header hash
     let header = this.getHeaderBuffer()
     let headerHash = SECUtils.rlphash(header).toString('hex')
     if (headerHash === this.block.Hash) {
       return true
     }
 
+    return false
+  }
+
+  verifyTxRoot () {
+    // verify block header transaction root
+    let txHashArray = []
+    this.block['Transactions'].forEach(tx => {
+      txHashArray.push(tx.TxHash)
+    })
+
+    let txRoot = ''
+    if (txHashArray.length === 0) {
+      txRoot = SECUtils.KECCAK256_RLP.toString('hex')
+    } else {
+      let merkleTree = new SECMerkleTree(txHashArray, 'sha256')
+      txRoot = merkleTree.getRoot().toString('hex')
+    }
+
+    if (txRoot === this.block['TransactionsRoot']) {
+      return true
+    }
     return false
   }
 }

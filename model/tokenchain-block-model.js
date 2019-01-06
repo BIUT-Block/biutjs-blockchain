@@ -35,12 +35,12 @@ given:
   Transactions
 
 calculated:
+  TransactionsRoot
   GasUsed
   GasLimit
   Hash
 
 To be implemented:
-  TransactionsRoot
   StateRoot
   ReceiptRoot
   LogsBloom
