@@ -55,6 +55,12 @@ class SECTokenBlock {
       self.block[key] = block[key]
     })
 
+    this.block.Transactions.forEach((tx, index) => {
+      if (typeof tx === 'string') {
+        block.Transactions[index] = JSON.parse(tx)
+      }
+    })
+
     // GasUsed, GasLimit
     this.block['GasUsed'] = 0
     this.block['GasLimit'] = 0
