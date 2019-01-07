@@ -180,6 +180,7 @@ class SECTokenBlock {
       this.blockBuffer[10], // GasLimit
       this.blockBuffer[11], // ExtraData
       this.blockBuffer[12], // Nonce
+      this.blockBuffer[13], // Hash
       this.blockBuffer[14] // Beneficiary
     ]
     return headerBuffer
@@ -188,31 +189,46 @@ class SECTokenBlock {
   setHeader (header) {
     if (!(Array.isArray(header))) {
       // set header from json data
-      this.setBlock(header)
+      this._setHeaderFromJson(header)
     } else {
       // set header from headerBuffer data
       this._setHeaderFromBuffer(header)
     }
   }
 
-  _setHeaderFromBuffer (blockHeaderBuffer) {
-    this.block.Number = SECUtils.bufferToInt(blockHeaderBuffer[0])
-    this.block.TransactionsRoot = blockHeaderBuffer[1].toString('hex')
-    this.block.ReceiptRoot = blockHeaderBuffer[2].toString('hex')
-    this.block.LogsBloom = blockHeaderBuffer[3].toString('hex')
-    this.block.MixHash = blockHeaderBuffer[4].toString('hex')
-    this.block.StateRoot = blockHeaderBuffer[5].toString('hex')
-    this.block.TimeStamp = SECUtils.bufferToInt(blockHeaderBuffer[6])
-    this.block.ParentHash = blockHeaderBuffer[7].toString('hex')
-    this.block.Difficulty = blockHeaderBuffer[8].toString()
-    this.block.GasUsed = blockHeaderBuffer[9].toString()
-    this.block.GasLimit = blockHeaderBuffer[10].toString()
-    this.block.ExtraData = blockHeaderBuffer[11].toString()
-    this.block.Nonce = blockHeaderBuffer[12].toString('hex')
-    this.block.Beneficiary = blockHeaderBuffer[13].toString('hex')
+  _setHeaderFromJson (header) {
+    this.block.Number = header.Number
+    this.block.TransactionsRoot = header.TransactionsRoot
+    this.block.ReceiptRoot = header.ReceiptRoot
+    this.block.LogsBloom = header.LogsBloom
+    this.block.MixHash = header.MixHash
+    this.block.StateRoot = header.StateRoot
+    this.block.TimeStamp = header.TimeStamp
+    this.block.ParentHash = header.ParentHash
+    this.block.Difficulty = header.Difficulty
+    this.block.GasUsed = header.GasUsed
+    this.block.GasLimit = header.GasLimit
+    this.block.ExtraData = header.ExtraData
+    this.block.Nonce = header.Nonce
+    this.block.Beneficiary = header.Beneficiary
+  }
 
-    // update this.blockBuffer
-    this.setBlock(this.block)
+  _setHeaderFromBuffer (headerBuffer) {
+    this.block.Number = SECUtils.bufferToInt(headerBuffer[0])
+    this.block.TransactionsRoot = headerBuffer[1].toString('hex')
+    this.block.ReceiptRoot = headerBuffer[2].toString('hex')
+    this.block.LogsBloom = headerBuffer[3].toString('hex')
+    this.block.MixHash = headerBuffer[4].toString('hex')
+    this.block.StateRoot = headerBuffer[5].toString('hex')
+    this.block.TimeStamp = SECUtils.bufferToInt(headerBuffer[6])
+    this.block.ParentHash = headerBuffer[7].toString('hex')
+    this.block.Difficulty = headerBuffer[8].toString()
+    this.block.GasUsed = headerBuffer[9].toString()
+    this.block.GasLimit = headerBuffer[10].toString()
+    this.block.ExtraData = headerBuffer[11].toString()
+    this.block.Nonce = headerBuffer[12].toString('hex')
+    this.block.Hash = headerBuffer[13].toString('hex')
+    this.block.Beneficiary = headerBuffer[14].toString('hex')
   }
 
   getHeaderHash () {
