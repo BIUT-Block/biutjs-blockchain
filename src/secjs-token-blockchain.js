@@ -24,6 +24,9 @@ class SECTokenBlockChain {
 
     block = JSON.parse(JSON.stringify(block))
     block.Transactions.forEach((tx) => {
+      if (typeof tx === 'string') {
+        tx = JSON.parse(tx)
+      }
       this.tokenTx[tx.TxHash] = [tx.TxFrom, tx.TxTo, parseFloat(tx.Value), parseFloat(tx.TxFee)]
     })
   }
@@ -92,7 +95,11 @@ class SECTokenBlockChain {
       // overwrite forked blocks
       if (this.tokenBlockChain.filter(tokenBlock => (tokenBlock.Hash === block.Hash)).length === 0) {
         let overwrittenTxArray = []
-        this.tokenBlockChain[block.Number].Transactions.forEach((tx) => {
+        this.tokenBlockChain[block.Number].Transactions.forEach((tx, index) => {
+          if (typeof tx === 'string') {
+            tx = JSON.parse(tx)
+            this.tokenBlockChain[block.Number].Transactions[index] = tx
+          }
           delete this.tokenTx[tx.TxHash]
           tx.TxReceiptStatus = 'pending'
           if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
