@@ -81,7 +81,8 @@ class SECTokenBlockChain {
 
     // check parent hash
     if (block.Number !== 0) {
-      if (block.ParentHash !== this.getLastBlockHash()) {
+      let lastBlockHash = this.tokenBlockChain[block.Number - 1].Hash
+      if (block.ParentHash !== lastBlockHash) {
         throw new Error(`Invalid Parent Hash: ${block.ParentHash}, which should be ${this.getLastBlockHash()}`)
       }
     }
