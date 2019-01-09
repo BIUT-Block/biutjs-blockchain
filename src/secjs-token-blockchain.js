@@ -80,8 +80,10 @@ class SECTokenBlockChain {
     let block = JSON.parse(JSON.stringify(_block))
 
     // check parent hash
-    if (block.ParentHash !== this.getLastBlockHash()) {
-      throw new Error(`Invalid Parent Hash: ${block.ParentHash}, which should be ${this.getLastBlockHash()}`)
+    if (block.Number !== 0) {
+      if (block.ParentHash !== this.getLastBlockHash()) {
+        throw new Error(`Invalid Parent Hash: ${block.ParentHash}, which should be ${this.getLastBlockHash()}`)
+      }
     }
 
     // parse block.Transactions
