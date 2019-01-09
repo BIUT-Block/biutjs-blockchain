@@ -78,6 +78,13 @@ class SECTokenBlockChain {
   putBlockToDB (_block, callback) {
     // write a new block to DB
     let block = JSON.parse(JSON.stringify(_block))
+
+    // check parent hash
+    if (block.ParentHash !== this.getLastBlockHash()) {
+      throw new Error(`Invalid Parent Hash: ${block.ParentHash}, which should be ${this.getLastBlockHash()}`)
+    }
+
+    // parse block.Transactions
     block.Transactions.forEach((tx, index) => {
       if (typeof tx === 'string') {
         block.Transactions[index] = JSON.parse(tx)
