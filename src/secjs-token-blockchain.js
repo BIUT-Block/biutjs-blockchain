@@ -1,4 +1,5 @@
 const _ = require('lodash')
+const AccTreeDB = require('./secjs-accTree.js')
 const SECUtils = require('@sec-block/secjs-util')
 const SECTokenBlock = require('./secjs-token-block')
 
@@ -13,8 +14,19 @@ class SECTokenBlockChain {
       throw new Error('Can not find SECDataHandler Instance')
     }
     this.SECDataHandler = SECDataHandler
+
     this.tokenBlockChain = []
     this.tokenTx = {}
+
+    this._constructAccTree()
+  }
+
+  _constructAccTree () {
+    let dbPath = this.SECDataHandler.getDBPath()
+    let config = {
+      DBPath: dbPath
+    }
+    this.accTree = new AccTreeDB(config)
   }
 
   _updateTokenTxBuffer (block) {
@@ -64,6 +76,7 @@ class SECTokenBlockChain {
       if (err) throw new Error('Could not check db content')
       if (isEmpty) {
         this.putBlockToDB(this._generateGenesisBlock(), callback)
+        // this.accTree.
       } else {
         this._getAllBlockChainFromDB(callback)
       }

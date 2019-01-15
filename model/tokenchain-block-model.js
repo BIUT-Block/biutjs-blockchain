@@ -39,9 +39,9 @@ calculated:
   GasUsed
   GasLimit
   Hash
+  StateRoot
 
 To be implemented:
-  StateRoot
   ReceiptRoot
   LogsBloom
 */
