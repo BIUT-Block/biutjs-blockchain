@@ -75,8 +75,17 @@ class SECTokenBlockChain {
     this.SECDataHandler.isTokenBlockChainDBEmpty((err, isEmpty) => {
       if (err) throw new Error('Could not check db content')
       if (isEmpty) {
-        this.putBlockToDB(this._generateGenesisBlock(), callback)
-        // this.accTree.
+        let geneBlock = this._generateGenesisBlock()
+        this.putBlockToDB(geneBlock, () => {
+          // clear accTree db and write genesis block to the db
+          this.accTree.clearDB((err) => {
+            if (err) {
+              throw err
+            } else {
+              this.accTree.updateWithBlock(geneBlock, callback)
+            }
+          })
+        })
       } else {
         this._getAllBlockChainFromDB(callback)
       }
