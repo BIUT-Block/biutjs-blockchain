@@ -50,42 +50,6 @@ describe('Block Tester', () => {
     })
   })
 
-  // describe('SEC Transaction Blockchain', () => {
-  //   let transactionBlockChain
-  //   beforeEach(() => {
-  //     transactionBlockChain = new SECBlockchain.SECTransactionBlockChain(TxBlockchainDataHandler)
-  //   })
-
-  //   after(() => {
-  //     fs.remove(process.cwd() + '/data/')
-  //   })
-
-  //   it('instance', () => {
-  //     assert.typeOf(transactionBlockChain, 'Object')
-  //   })
-
-  //   it('init Transaction BlockChain Object', () => {
-  //     transactionBlockChain.init(() => {
-  //       should.exist(transactionBlockChain.getBlockChain())
-  //       assert.equal(transactionBlockChain.getGenesisBlockHash(), 'be44ec287a0e3fb7b8a1ad0432b7f9004e399826a34b4cb9fffe17abddfccf5e')
-  //       assert.equal(transactionBlockChain.getGenesisBlockDifficulty(), 1)
-  //       assert.equal(transactionBlockChain.getCurrentHeight(), 0)
-  //     })
-  //   })
-
-  //   it('Add Block to Transaction BlockChain', () => {
-  //     transactionBlockChain.init(() => {
-  //       transactionBlockChain.putBlockToDB(mockData.transactionBlock, () => {
-  //         assert.equal(transactionBlockChain.getCurrentHeight(), 1)
-  //         assert.equal(transactionBlockChain.getLastBlockHash(), mockData.transactionBlock.Hash)
-  //         assert.equal(transactionBlockChain.getLastBlockDifficulty(), mockData.transactionBlock.Difficulty)
-  //         assert.equal(transactionBlockChain.getLastBlockTimeStamp(), mockData.transactionBlock.TimeStamp)
-  //         assert.equal(transactionBlockChain.getLastBlock(), mockData.transactionBlock)
-  //       })
-  //     })
-  //   })
-  // })
-
   describe('SEC Token Block', () => {
     it('getBlock should work', () => {
       let tokenBlock = new SECBlockchain.SECTokenBlock(mockDataStr.tokenBlock)

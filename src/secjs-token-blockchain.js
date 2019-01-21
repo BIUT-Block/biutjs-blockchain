@@ -121,33 +121,39 @@ class SECTokenBlockChain {
       this._updateTokenTxBuffer(block)
       this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
         if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
-        callback()
+        this.accTree.updateWithBlock(block, () => { callback() })
       })
     } else if (block.Number < this.tokenBlockChain.length) {
       // overwrite forked blocks
       if (this.tokenBlockChain.filter(tokenBlock => (tokenBlock.Hash === block.Hash)).length === 0) {
         let overwrittenTxArray = []
-        this.tokenBlockChain[block.Number].Transactions.forEach((tx, index) => {
-          if (typeof tx === 'string') {
-            tx = JSON.parse(tx)
-            this.tokenBlockChain[block.Number].Transactions[index] = tx
-          }
-          delete this.tokenTx[tx.TxHash]
-          tx.TxReceiptStatus = 'pending'
-          if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
-            overwrittenTxArray.push(tx)
-          }
-        })
+        this.accTree.revertWithBlock(this.tokenBlockChain[block.Number], (err) => {
+          if (err) throw new Error(err)
+          else {
+            this.tokenBlockChain[block.Number].Transactions.forEach((tx, index) => {
+              if (typeof tx === 'string') {
+                tx = JSON.parse(tx)
+                this.tokenBlockChain[block.Number].Transactions[index] = tx
+              }
+              delete this.tokenTx[tx.TxHash]
+              tx.TxReceiptStatus = 'pending'
+              if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
+                overwrittenTxArray.push(tx)
+              }
+            })
 
-        this.tokenBlockChain[block.Number] = block
-        this._updateTokenTxBuffer(block)
-        this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
-          if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
+            this.tokenBlockChain[block.Number] = block
+            this._updateTokenTxBuffer(block)
+            this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
+              if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
 
-          _.remove(overwrittenTxArray, (tx) => {
-            return tx.TxHash in this.tokenTx
-          })
-          callback(overwrittenTxArray)
+              _.remove(overwrittenTxArray, (tx) => {
+                return tx.TxHash in this.tokenTx
+              })
+
+              this.accTree.updateWithBlock(block, () => { callback(overwrittenTxArray) })
+            })
+          }
         })
       }
     } else {
