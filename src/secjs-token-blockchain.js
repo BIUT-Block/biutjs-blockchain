@@ -87,7 +87,16 @@ class SECTokenBlockChain {
           })
         })
       } else {
-        this._getAllBlockChainFromDB(callback)
+        this._getAllBlockChainFromDB(() => {
+          // parse this.tokenBlockChain
+          this.tokenBlockChain.forEach((block, index) => {
+            if (typeof block === 'string') {
+              this.tokenBlockChain[index] = JSON.parse(block)
+            }
+          })
+
+          this.accTree.updateWithBlock(this.tokenBlockChain, callback)
+        })
       }
     })
   }
