@@ -95,7 +95,7 @@ class SECTokenBlockChain {
             }
           })
 
-          this.accTree.updateWithBlock(this.tokenBlockChain, callback)
+          this.accTree.updateWithBlockChain(this.tokenBlockChain, callback)
         })
       }
     })

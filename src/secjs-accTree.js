@@ -22,6 +22,14 @@ class SECAccTree {
     return this.accTree.getRoot()
   }
 
+  updateWithBlockChain (blockchain, callback) {
+    this.accTree.updateWithBlockChain(blockchain).then(() => {
+      callback()
+    }).catch((err) => {
+      callback(err)
+    })
+  }
+
   updateWithBlock (block, callback) {
     this.accTree.updateWithBlock(block).then(() => {
       callback()
