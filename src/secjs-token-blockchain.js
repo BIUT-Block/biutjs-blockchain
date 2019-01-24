@@ -146,7 +146,9 @@ class SECTokenBlockChain {
       this._updateTokenTxBuffer(block)
       this.SECDataHandler.writeTokenBlockToDB(block, (err) => {
         if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
-        this.accTree.updateWithBlock(block, () => { callback() })
+        else {
+          this.accTree.updateWithBlock(block, () => { callback() })
+        }
       })
     } else if (block.Number < this.tokenBlockChain.length) {
       // overwrite forked blocks

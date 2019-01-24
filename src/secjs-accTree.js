@@ -18,8 +18,8 @@ class SECAccTree {
     this.accTree.clearDB(callback)
   }
 
-  checkRoot (callback) {
-    this.accTree.checkRoot(callback)
+  checkRoot (root, callback) {
+    this.accTree.checkRoot(root, callback)
   }
 
   getStateRoot () {
