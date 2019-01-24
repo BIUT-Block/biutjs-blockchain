@@ -14,19 +14,10 @@ class SECTokenBlockChain {
       throw new Error('Can not find SECDataHandler Instance')
     }
     this.SECDataHandler = SECDataHandler
+    this.dbPath = this.SECDataHandler.getDBPath()
 
     this.tokenBlockChain = []
     this.tokenTx = {}
-
-    this._constructAccTree()
-  }
-
-  _constructAccTree () {
-    let dbPath = this.SECDataHandler.getDBPath()
-    let config = {
-      DBPath: dbPath
-    }
-    this.accTree = new AccTreeDB(config)
   }
 
   _updateTokenTxBuffer (block) {
@@ -67,6 +58,43 @@ class SECTokenBlockChain {
     }).getBlock()
   }
 
+  _rebuildAccTreeDB (callback) {
+    // clear accTree db and write genesis block to the db
+    this.accTree.clearDB((err) => {
+      if (err) {
+        throw err
+      } else {
+        // parse this.tokenBlockChain
+        this.tokenBlockChain.forEach((block, index) => {
+          if (typeof block === 'string') {
+            this.tokenBlockChain[index] = JSON.parse(block)
+          }
+        })
+        this.accTree.updateWithBlockChain(this.tokenBlockChain, callback)
+      }
+    })
+  }
+
+  _initAccTree (root = undefined, callback) {
+    let config = {
+      DBPath: this.dbPath,
+      StateRoot: root
+    }
+
+    try {
+      this.accTree = new AccTreeDB(config)
+    } catch (err) {
+      return callback(err)
+    }
+
+    this.accTree.checkRoot(root, (err, result) => {
+      if (err) callback(err)
+      else if (!result) {
+        this._rebuildAccTreeDB(callback)
+      }
+    })
+  }
+
   /**
    * Initialize the class token-blockchain
    * @param {callback} callback - The callback that handles the response.
@@ -77,25 +105,13 @@ class SECTokenBlockChain {
       if (isEmpty) {
         let geneBlock = this._generateGenesisBlock()
         this.putBlockToDB(geneBlock, () => {
-          // clear accTree db and write genesis block to the db
-          this.accTree.clearDB((err) => {
-            if (err) {
-              throw err
-            } else {
-              this.accTree.updateWithBlock(geneBlock, callback)
-            }
-          })
+          let root = this.getGenesisBlock().StateRoot
+          this._initAccTree(root, callback)
         })
       } else {
         this._getAllBlockChainFromDB(() => {
-          // parse this.tokenBlockChain
-          this.tokenBlockChain.forEach((block, index) => {
-            if (typeof block === 'string') {
-              this.tokenBlockChain[index] = JSON.parse(block)
-            }
-          })
-
-          this.accTree.updateWithBlockChain(this.tokenBlockChain, callback)
+          let root = this.getLastBlock().StateRoot
+          this._initAccTree(root, callback)
         })
       }
     })
