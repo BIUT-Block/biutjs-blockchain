@@ -18,6 +18,8 @@ class SECTokenBlockChain {
 
     this.tokenBlockChain = []
     this.tokenTx = {}
+
+    this.accTree = new AccTreeDB({ DBPath: this.dbPath })
   }
 
   _updateTokenTxBuffer (block) {
@@ -58,43 +60,6 @@ class SECTokenBlockChain {
     }).getBlock()
   }
 
-  _rebuildAccTreeDB (callback) {
-    // clear accTree db and write genesis block to the db
-    this.accTree.clearDB((err) => {
-      if (err) {
-        throw err
-      } else {
-        // parse this.tokenBlockChain
-        this.tokenBlockChain.forEach((block, index) => {
-          if (typeof block === 'string') {
-            this.tokenBlockChain[index] = JSON.parse(block)
-          }
-        })
-        this.accTree.updateWithBlockChain(this.tokenBlockChain, callback)
-      }
-    })
-  }
-
-  _initAccTree (root = undefined, callback) {
-    let config = {
-      DBPath: this.dbPath,
-      StateRoot: root
-    }
-
-    try {
-      this.accTree = new AccTreeDB(config)
-    } catch (err) {
-      return callback(err)
-    }
-
-    this.accTree.checkRoot(root, (err, result) => {
-      if (err) callback(err)
-      else if (!result) {
-        this._rebuildAccTreeDB(callback)
-      }
-    })
-  }
-
   /**
    * Initialize the class token-blockchain
    * @param {callback} callback - The callback that handles the response.
@@ -103,15 +68,26 @@ class SECTokenBlockChain {
     this.SECDataHandler.isTokenBlockChainDBEmpty((err, isEmpty) => {
       if (err) throw new Error('Could not check db content')
       if (isEmpty) {
-        let geneBlock = this._generateGenesisBlock()
-        this.putBlockToDB(geneBlock, () => {
-          let root = this.getGenesisBlock().StateRoot
-          this._initAccTree(root, callback)
+        // if tokenDB is empty, then firstly clear the account tree DB
+        this.accTree.clearDB((err) => {
+          if (err) callback(err)
+          else {
+            // then write genesis block to both tokenDB and account tree DB
+            let geneBlock = this._generateGenesisBlock()
+            this.putBlockToDB(geneBlock, callback)
+          }
         })
       } else {
+        // if tokenDB is not empty, then firstly get the state root of the last block
         this._getAllBlockChainFromDB(() => {
           let root = this.getLastBlock().StateRoot
-          this._initAccTree(root, callback)
+          // then create a new merkle tree which starts from the given root
+          this.accTree.newTree(root)
+          // TBD:
+          // 1. check if the given root exists
+          // 2. if it doesnt exist:
+          //     2.1 clear DB
+          //     2.2 update account tree db with whole token block chain
         })
       }
     })

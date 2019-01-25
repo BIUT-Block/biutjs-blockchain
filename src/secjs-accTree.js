@@ -14,6 +14,10 @@ class SECAccTree {
     }
   }
 
+  newTree (root) {
+    this.accTree.constructNewTree(root)
+  }
+
   clearDB (callback) {
     this.accTree.clearDB(callback)
   }
@@ -22,8 +26,12 @@ class SECAccTree {
     this.accTree.checkRoot(root, callback)
   }
 
-  getStateRoot () {
+  getRoot () {
     return this.accTree.getRoot()
+  }
+
+  getRoots (callback) {
+    this.accTree.getRoots(callback)
   }
 
   updateWithBlockChain (blockchain, callback) {
