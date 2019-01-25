@@ -83,6 +83,7 @@ class SECTokenBlockChain {
           let root = this.getLastBlock().StateRoot
           // then create a new merkle tree which starts from the given root
           this.accTree.newTree(root)
+          callback()
           // TBD:
           // 1. check if the given root exists
           // 2. if it doesnt exist:
