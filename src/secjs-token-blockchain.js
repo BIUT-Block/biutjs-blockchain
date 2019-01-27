@@ -101,7 +101,7 @@ class SECTokenBlockChain {
       }
     })
 
-    this.verifyParentHash((err) => {
+    this.verifyParentHash(block, (err) => {
       if (err) callback(err, null)
       else {
         if (block.Number === this.chainLength) {
@@ -181,7 +181,7 @@ class SECTokenBlockChain {
    * return last block's height
    */
   getCurrentHeight () {
-    return this.chainLength
+    return this.chainLength - 1
   }
 
   getBlocksFromDB (minHeight, maxHeight = this.getCurrentHeight(), callback) {
@@ -223,14 +223,18 @@ class SECTokenBlockChain {
    * get last block
    */
   getLastBlock (callback) {
-    this.getBlock(this.chainLength, callback)
+    this.getBlock(this.chainLength - 1, callback)
   }
 
   /**
    * get the second last block
    */
   getSecondLastBlock (callback) {
-    this.getBlock(this.chainLength - 1, callback)
+    if (this.chainLength <= 1) {
+      let err = new Error('this.chainLength <= 1, failed to get second last block')
+      return callback(err, null)
+    }
+    this.getBlock(this.chainLength - 2, callback)
   }
 
   getHashList (callback) {
