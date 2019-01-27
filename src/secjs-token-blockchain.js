@@ -11,7 +11,7 @@ class SECTokenBlockChain {
    */
   constructor (config) {
     this.DB = new SECDatahandler.TokenBlockChainDB(config)
-    this.tokenBlockChain = []
+    this.chainLength = 0
     this.tokenTx = {}
   }
 
@@ -68,6 +68,23 @@ class SECTokenBlockChain {
     })
   }
 
+  verifyParentHash (block, callback) {
+    if (block.Number !== 0) {
+      this.getBlock(block.Number - 1, (err, block) => {
+        if (err) callback(err)
+        else {
+          if (block.ParentHash !== block.Hash) {
+            let err = new Error(`Invalid Parent Hash: ${block.ParentHash}, which should be ${block.Hash}`)
+            return callback(err)
+          }
+          callback(null)
+        }
+      })
+    } else {
+      callback(null)
+    }
+  }
+
   /**
    * Put token block to db
    * @param {SECTokenBlock} block the block object in json formation
@@ -77,14 +94,6 @@ class SECTokenBlockChain {
     // write a new block to DB
     let block = JSON.parse(JSON.stringify(_block))
 
-    // check parent hash
-    if (block.Number !== 0) {
-      let lastBlockHash = this.tokenBlockChain[block.Number - 1].Hash
-      if (block.ParentHash !== lastBlockHash) {
-        throw new Error(`Invalid Parent Hash: ${block.ParentHash}, which should be ${this.getLastBlockHash()}`)
-      }
-    }
-
     // parse block.Transactions
     block.Transactions.forEach((tx, index) => {
       if (typeof tx === 'string') {
@@ -92,50 +101,50 @@ class SECTokenBlockChain {
       }
     })
 
-    if (block.Number === this.tokenBlockChain.length) {
-      this.tokenBlockChain[block.Number] = block
-      this._updateTokenTxBuffer(block)
-      this.DB.writeTokenBlockToDB(block, (err) => {
-        if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
-        callback()
-      })
-    } else if (block.Number < this.tokenBlockChain.length) {
-      // overwrite forked blocks
-      if (this.tokenBlockChain.filter(tokenBlock => (tokenBlock.Hash === block.Hash)).length === 0) {
-        let overwrittenTxArray = []
-        this.tokenBlockChain[block.Number].Transactions.forEach((tx, index) => {
-          if (typeof tx === 'string') {
-            tx = JSON.parse(tx)
-            this.tokenBlockChain[block.Number].Transactions[index] = tx
-          }
-          delete this.tokenTx[tx.TxHash]
-          tx.TxReceiptStatus = 'pending'
-          if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
-            overwrittenTxArray.push(tx)
-          }
-        })
-
-        this.tokenBlockChain[block.Number] = block
-        this._updateTokenTxBuffer(block)
-        this.DB.writeTokenBlockToDB(block, (err) => {
-          if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
-
-          _.remove(overwrittenTxArray, (tx) => {
-            return tx.TxHash in this.tokenTx
+    this.verifyParentHash((err) => {
+      if (err) callback(err, null)
+      else {
+        if (block.Number === this.chainLength) {
+          this._updateTokenTxBuffer(block)
+          this.DB.writeTokenBlockToDB(block, (err) => {
+            if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
+            else {
+              this.chainLength++
+              callback()
+            }
           })
-          callback(overwrittenTxArray)
-        })
-      }
-    } else {
-      throw new Error('Can not add token Block, token Block Number is false.')
-    }
-  }
+        } else if (block.Number < this.chainLength) {
+          this.getBlock(block.Number, (err, dbBlock) => {
+            if (err) callback(err, null)
+            else {
+              // overwrite forked blocks
+              if (block.Hash !== dbBlock.Hash) {
+                let overwrittenTxArray = []
+                dbBlock.Transactions.forEach((tx) => {
+                  delete this.tokenTx[tx.TxHash]
+                  tx.TxReceiptStatus = 'pending'
+                  if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
+                    overwrittenTxArray.push(tx)
+                  }
+                })
 
-  /**
-   * get blockchain from cache
-   */
-  getBlockChain () {
-    return this.tokenBlockChain
+                this._updateTokenTxBuffer(block)
+                this.DB.writeTokenBlockToDB(block, (err) => {
+                  if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
+
+                  _.remove(overwrittenTxArray, (tx) => {
+                    return tx.TxHash in this.tokenTx
+                  })
+                  callback(overwrittenTxArray)
+                })
+              }
+            }
+          })
+        } else {
+          throw new Error('Can not add token Block, token Block Number is false.')
+        }
+      }
+    })
   }
 
   getTxBuffer () {
@@ -159,9 +168,9 @@ class SECTokenBlockChain {
       if (err) {
         throw new Error('Can not get whole token block chain data from database')
       } else {
+        this.chainLength = blockchain.length
         blockchain.forEach((block) => {
           this._updateTokenTxBuffer(block)
-          this.tokenBlockChain[block.Number] = block
         })
         callback()
       }
@@ -169,111 +178,63 @@ class SECTokenBlockChain {
   }
 
   /**
-   * get Token Chain from DB
-   * @param {number} minHeight
-   * @param {number} maxHeight
-   * @param {function} callback
-   */
-  getBlockChainFromDB (minHeight, maxHeight, callback) {
-    this.DB.getTokenChain(minHeight, maxHeight, callback)
-  }
-
-  /**
    * return last block's height
    */
   getCurrentHeight () {
-    return this.tokenBlockChain.length - 1
+    return this.chainLength
   }
 
-  /**
-   * get genius block from buffer
-   */
-  getGenesisBlock () {
-    if (typeof this.tokenBlockChain[0] === 'string') {
-      this.tokenBlockChain[0] = JSON.parse(this.tokenBlockChain[0])
-    }
-    return this.tokenBlockChain[0]
+  getBlocksFromDB (minHeight, maxHeight = this.getCurrentHeight(), callback) {
+    this.DB.getTokenChain(minHeight, maxHeight, callback)
   }
 
-  /**
-   * get the dificulty of blockchain
-   */
-  getGenesisBlockDifficulty () {
-    if (typeof this.tokenBlockChain[0] === 'string') {
-      this.tokenBlockChain[0] = JSON.parse(this.tokenBlockChain[0])
-    }
-    return this.tokenBlockChain[0].Difficulty
-  }
+  getBlock (num, callback) {
+    this.DB.getBlock(num, (err, block) => {
+      if (err) {
+        callback(err, null)
+      } else {
+        if (typeof block === 'string') {
+          block = JSON.parse(block)
+        }
+        if (typeof block.Transactions === 'string') {
+          block.Transactions = JSON.parse(block.Transactions)
+        }
 
-  /**
-   * get the genesis block hash
-   */
-  getGenesisBlockHash () {
-    if (typeof this.tokenBlockChain[0] === 'string') {
-      this.tokenBlockChain[0] = JSON.parse(this.tokenBlockChain[0])
-    }
-    return this.tokenBlockChain[0].Hash
-  }
+        // parse block.Transactions
+        block.Transactions.forEach((tx, index) => {
+          if (typeof tx === 'string') {
+            block.Transactions[index] = JSON.parse(tx)
+          }
+        })
 
-  /**
-   * get the second last block from buffer
-   */
-  getSecondLastBlock () {
-    if (typeof this.tokenBlockChain[this.getCurrentHeight() - 1] === 'string') {
-      this.tokenBlockChain[this.getCurrentHeight() - 1] = JSON.parse(this.tokenBlockChain[this.getCurrentHeight() - 1])
-    }
-    return this.tokenBlockChain[this.getCurrentHeight() - 1]
-  }
-
-  /**
-   * get last block from buffer
-   */
-  getLastBlock () {
-    if (typeof this.tokenBlockChain[this.getCurrentHeight()] === 'string') {
-      this.tokenBlockChain[this.getCurrentHeight()] = JSON.parse(this.tokenBlockChain[this.getCurrentHeight()])
-    }
-    return this.tokenBlockChain[this.getCurrentHeight()]
-  }
-
-  /**
-   * return last block's hash value
-   */
-  getLastBlockHash () {
-    if (typeof this.tokenBlockChain[this.getCurrentHeight()] === 'string') {
-      this.tokenBlockChain[this.getCurrentHeight()] = JSON.parse(this.tokenBlockChain[this.getCurrentHeight()])
-    }
-    return this.tokenBlockChain[this.getCurrentHeight()].Hash
-  }
-
-  /**
-   * return last block's timestamp
-   */
-  getLastBlockTimeStamp () {
-    if (typeof this.tokenBlockChain[this.getCurrentHeight()] === 'string') {
-      this.tokenBlockChain[this.getCurrentHeight()] = JSON.parse(this.tokenBlockChain[this.getCurrentHeight()])
-    }
-    return this.tokenBlockChain[this.getCurrentHeight()].TimeStamp
-  }
-
-  /**
-   * get the dificulty of the last blockchain
-   */
-  getLastBlockDifficulty () {
-    if (typeof this.tokenBlockChain[this.getCurrentHeight()] === 'string') {
-      this.tokenBlockChain[this.getCurrentHeight()] = JSON.parse(this.tokenBlockChain[this.getCurrentHeight()])
-    }
-    return this.tokenBlockChain[this.getCurrentHeight()].Difficulty
-  }
-
-  getHashList () {
-    let hashList = []
-    this.tokenBlockChain.forEach(block => {
-      hashList.push({
-        Number: block.Number,
-        Hash: block.Hash
-      })
+        callback(null, block)
+      }
     })
-    return hashList
+  }
+
+  /**
+   * get genesis block
+   */
+  getGenesisBlock (callback) {
+    this.getBlock(0, callback)
+  }
+
+  /**
+   * get last block
+   */
+  getLastBlock (callback) {
+    this.getBlock(this.chainLength, callback)
+  }
+
+  /**
+   * get the second last block
+   */
+  getSecondLastBlock (callback) {
+    this.getBlock(this.chainLength - 1, callback)
+  }
+
+  getHashList (callback) {
+    this.DB.getHashList(callback)
   }
 }
 
