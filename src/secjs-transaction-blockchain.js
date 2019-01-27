@@ -1,16 +1,14 @@
 const SECUtil = require('@sec-block/secjs-util')
 const SECTransactionBlock = require('./secjs-transaction-block')
+const SECDatahandler = require('@sec-block/secjs-datahandler')
 
 class SECTransactionBlockChain {
   /**
    * create a transaction chain block chain with config
-   * @param {SECDataHandler} SECDataHandler
+   * @param {config} config
    */
-  constructor (SECDataHandler) {
-    if (!SECDataHandler) {
-      throw new Error('Can not find SECDataHandler Instance')
-    }
-    this.SECDataHandler = SECDataHandler
+  constructor (config) {
+    this.DB = new SECDatahandler.TokenBlockChainDB(config)
     this.txBlockChain = []
   }
 
@@ -36,7 +34,7 @@ class SECTransactionBlockChain {
    * @param {callback} callback - The callback that handles the response.
    */
   init (callback) {
-    this.SECDataHandler.isTxBlockChainDBEmpty((err, isEmpty) => {
+    this.DB.isTxBlockChainDBEmpty((err, isEmpty) => {
       if (err) throw new Error('Could not check db content')
       if (isEmpty) {
         this.putBlockToDB(this._generateGenesisBlock(), callback)
@@ -54,7 +52,7 @@ class SECTransactionBlockChain {
   putBlockToDB (block, callback) {
     if (block.Number === this.txBlockChain.length) {
       this.txBlockChain.push(JSON.parse(JSON.stringify(block)))
-      this.SECDataHandler.writeTxBlockToDB(block, (err) => {
+      this.DB.writeTxBlockToDB(block, (err) => {
         if (err) throw new Error('Something wrong with writeTxChainToDB function')
         callback()
       })
@@ -70,7 +68,7 @@ class SECTransactionBlockChain {
    */
   putBlocksToDB (blocks, callback) {
     this.txBlockChain = this.txBlockChain.concat(blocks)
-    this.SECDataHandler.writeTxBlockToDB(blocks, (err) => {
+    this.DB.writeTxBlockToDB(blocks, (err) => {
       if (err) throw new Error('Can not put tx blocks into database')
       callback()
     })
@@ -89,14 +87,14 @@ class SECTransactionBlockChain {
    * @param {function} callback
    */
   getBlocksWithHashFromDB (hashArray, callback) {
-    this.SECDataHandler.getTxBlockFromDB(hashArray, callback)
+    this.DB.getTxBlockFromDB(hashArray, callback)
   }
 
   /**
    * get all blockchain data
    */
   _getAllBlockChainFromDB (callback) {
-    this.SECDataHandler.getTxBlockChainDB((err, blockchain) => {
+    this.DB.getTxBlockChainDB((err, blockchain) => {
       if (err) {
         throw new Error('Can not get whole transaction block chain data from database')
       } else {
@@ -122,7 +120,7 @@ class SECTransactionBlockChain {
    * @param {function} callback
    */
   getBlockChainFromDB (minHeight, maxHeight, cb) {
-    this.SECDataHandler.getTxChain(minHeight, maxHeight, cb)
+    this.DB.getTxChain(minHeight, maxHeight, cb)
   }
 
   /**
@@ -216,7 +214,7 @@ class SECTransactionBlockChain {
   }
 
   updateBlockchain (position, BlockArray, callback) {
-    this.SECDataHandler.addUpdateBlock(position, BlockArray, (err) => {
+    this.DB.addUpdateBlock(position, BlockArray, (err) => {
       if (err) callback(err)
       this._getAllBlockChainFromDB(() => {
         callback()
