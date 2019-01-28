@@ -70,11 +70,11 @@ class SECTokenBlockChain {
 
   verifyParentHash (block, callback) {
     if (block.Number !== 0) {
-      this.getBlock(block.Number - 1, (err, block) => {
+      this.getBlock(block.Number - 1, (err, lastblock) => {
         if (err) callback(err)
         else {
-          if (block.ParentHash !== block.Hash) {
-            let err = new Error(`Invalid Parent Hash: ${block.ParentHash}, which should be ${block.Hash}`)
+          if (block.ParentHash !== lastblock.Hash) {
+            let err = new Error(`Invalid Parent Hash: ${block.ParentHash}, which should be ${lastblock.Hash}`)
             return callback(err)
           }
           callback(null)
