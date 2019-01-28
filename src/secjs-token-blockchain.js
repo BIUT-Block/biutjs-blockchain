@@ -1,4 +1,3 @@
-const _ = require('lodash')
 const AccTreeDB = require('./secjs-accTree.js')
 const SECUtils = require('@sec-block/secjs-util')
 const SECTokenBlock = require('./secjs-token-block')
@@ -14,7 +13,7 @@ class SECTokenBlockChain {
   constructor (config) {
     this.chainDB = new SECDatahandler.TokenBlockChainDB(config)
     this.txDB = new SECDatahandler.TokenTxDB(config)
-    this.accTree = new AccTreeDB({ DBPath: config.dbPath.DBPath })
+    this.accTree = new AccTreeDB(config)
     this.chainLength = 0
   }
 
@@ -59,7 +58,6 @@ class SECTokenBlockChain {
             this.putBlockToDB(geneBlock, callback)
           }
         })
-
       } else {
         // if tokenDB is not empty, then firstly get the state root of the last block
         this._getAllBlockChainFromDB(() => {
