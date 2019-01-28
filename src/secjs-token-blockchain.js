@@ -10,23 +10,9 @@ class SECTokenBlockChain {
    *
    */
   constructor (config) {
-    this.DB = new SECDatahandler.TokenBlockChainDB(config)
+    this.chainDB = new SECDatahandler.TokenBlockChainDB(config)
+    this.txDB = new SECDatahandler.TokenTxDB(config)
     this.chainLength = 0
-    this.tokenTx = {}
-  }
-
-  _updateTokenTxBuffer (block) {
-    if (typeof block === 'string') {
-      block = JSON.parse(block)
-    }
-
-    block = JSON.parse(JSON.stringify(block))
-    block.Transactions.forEach((tx) => {
-      if (typeof tx === 'string') {
-        tx = JSON.parse(tx)
-      }
-      this.tokenTx[tx.TxHash] = [tx.TxFrom, tx.TxTo, parseFloat(tx.Value), parseFloat(tx.TxFee)]
-    })
   }
 
   /**
@@ -58,9 +44,9 @@ class SECTokenBlockChain {
    * @param {callback} callback - The callback that handles the response.
    */
   init (callback) {
-    this.DB.isTokenBlockChainDBEmpty((err, isEmpty) => {
-      if (err) throw new Error('Could not check db content')
-      if (isEmpty) {
+    this.chainDB.isTokenBlockChainDBEmpty((err, isEmpty) => {
+      if (err) callback(new Error('Could not check db content'))
+      else if (isEmpty) {
         this.putBlockToDB(this._generateGenesisBlock(), callback)
       } else {
         this._getAllBlockChainFromDB(callback)
@@ -105,13 +91,17 @@ class SECTokenBlockChain {
       if (err) callback(err, null)
       else {
         if (block.Number === this.chainLength) {
-          this._updateTokenTxBuffer(block)
-          this.DB.writeTokenBlockToDB(block, (err) => {
-            if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
-            else {
-              this.chainLength++
-              callback()
-            }
+          // update tokenTxDB
+          this.txDB.writeBlock(block, (err) => {
+            if (err) callback(err, null)
+            // update token blockchain DB
+            this.chainDB.writeTokenBlockToDB(block, (err) => {
+              if (err) callback(err, null)
+              else {
+                this.chainLength++
+                callback()
+              }
+            })
           })
         } else if (block.Number < this.chainLength) {
           this.getBlock(block.Number, (err, dbBlock) => {
@@ -120,28 +110,35 @@ class SECTokenBlockChain {
               // overwrite forked blocks
               if (block.Hash !== dbBlock.Hash) {
                 let overwrittenTxArray = []
-                dbBlock.Transactions.forEach((tx) => {
-                  delete this.tokenTx[tx.TxHash]
-                  tx.TxReceiptStatus = 'pending'
-                  if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
-                    overwrittenTxArray.push(tx)
+                this.txDB.delBlock((err) => {
+                  if (err) callback(err)
+                  else {
+                    dbBlock.Transactions.forEach((tx) => {
+                      tx.TxReceiptStatus = 'pending'
+                      if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
+                        overwrittenTxArray.push(tx)
+                      }
+                    })
+
+                    this.txDB.writeBlock((err) => {
+                      if (err) callback(err)
+                      this.chainDB.writeTokenBlockToDB(block, (err) => {
+                        if (err) callback(err)
+                        else {
+                          // _.remove(overwrittenTxArray, (tx) => {
+                          //   return tx.TxHash in this.tokenTx
+                          // })
+                          callback(null, overwrittenTxArray)
+                        }
+                      })
+                    })
                   }
-                })
-
-                this._updateTokenTxBuffer(block)
-                this.DB.writeTokenBlockToDB(block, (err) => {
-                  if (err) throw new Error('Something wrong with write Single TokenBlock To DB function')
-
-                  _.remove(overwrittenTxArray, (tx) => {
-                    return tx.TxHash in this.tokenTx
-                  })
-                  callback(overwrittenTxArray)
                 })
               }
             }
           })
         } else {
-          throw new Error('Can not add token Block, token Block Number is false.')
+          callback(new Error('Can not add token Block, token Block Number is false.'), null)
         }
       }
     })
@@ -157,21 +154,18 @@ class SECTokenBlockChain {
    * @param {function} callback
    */
   getBlocksWithHash (hashArray, callback) {
-    this.DB.getTokenBlockFromDB(hashArray, callback)
+    this.chainDB.getTokenBlockFromDB(hashArray, callback)
   }
 
   /**
    * get all blockchain data
    */
   _getAllBlockChainFromDB (callback) {
-    this.DB.getTokenBlockChainDB((err, blockchain) => {
+    this.chainDB.getTokenBlockChainDB((err, blockchain) => {
       if (err) {
-        throw new Error('Can not get whole token block chain data from database')
+        callback(err)
       } else {
         this.chainLength = blockchain.length
-        blockchain.forEach((block) => {
-          this._updateTokenTxBuffer(block)
-        })
         callback()
       }
     })
@@ -185,11 +179,11 @@ class SECTokenBlockChain {
   }
 
   getBlocksFromDB (minHeight, maxHeight = this.getCurrentHeight(), callback) {
-    this.DB.getTokenChain(minHeight, maxHeight, callback)
+    this.chainDB.getTokenChain(minHeight, maxHeight, callback)
   }
 
   getBlock (num, callback) {
-    this.DB.getBlock(num, (err, block) => {
+    this.chainDB.getBlock(num, (err, block) => {
       if (err) {
         callback(err, null)
       } else {
@@ -238,7 +232,7 @@ class SECTokenBlockChain {
   }
 
   getHashList (callback) {
-    this.DB.getHashList(callback)
+    this.chainDB.getHashList(callback)
   }
 }
 
