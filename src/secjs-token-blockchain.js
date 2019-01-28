@@ -1,4 +1,5 @@
 const _ = require('lodash')
+const AccTreeDB = require('./secjs-accTree.js')
 const SECUtils = require('@sec-block/secjs-util')
 const SECTokenBlock = require('./secjs-token-block')
 const SECDatahandler = require('@sec-block/secjs-datahandler')
@@ -9,9 +10,11 @@ class SECTokenBlockChain {
    * @param {config} config
    *
    */
+
   constructor (config) {
     this.chainDB = new SECDatahandler.TokenBlockChainDB(config)
     this.txDB = new SECDatahandler.TokenTxDB(config)
+    this.accTree = new AccTreeDB({ DBPath: config.dbPath.DBPath })
     this.chainLength = 0
   }
 
@@ -45,11 +48,31 @@ class SECTokenBlockChain {
    */
   init (callback) {
     this.chainDB.isTokenBlockChainDBEmpty((err, isEmpty) => {
-      if (err) callback(new Error('Could not check db content'))
+      if (err) throw new Error('Could not check db content')
       else if (isEmpty) {
-        this.putBlockToDB(this._generateGenesisBlock(), callback)
+        // if tokenDB is empty, then firstly clear the account tree DB
+        this.accTree.clearDB((err) => {
+          if (err) callback(err)
+          else {
+            // then write genesis block to both tokenDB and account tree DB
+            let geneBlock = this._generateGenesisBlock()
+            this.putBlockToDB(geneBlock, callback)
+          }
+        })
+
       } else {
-        this._getAllBlockChainFromDB(callback)
+        // if tokenDB is not empty, then firstly get the state root of the last block
+        this._getAllBlockChainFromDB(() => {
+          let root = this.getLastBlock().StateRoot
+          // then create a new merkle tree which starts from the given root
+          this.accTree.newTree(root)
+          callback()
+          // TBD:
+          // 1. check if the given root exists
+          // 2. if it doesnt exist:
+          //     2.1 clear DB
+          //     2.2 update account tree db with whole token block chain
+        })
       }
     })
   }
@@ -99,7 +122,7 @@ class SECTokenBlockChain {
               if (err) callback(err, null)
               else {
                 this.chainLength++
-                callback()
+                this.accTree.updateWithBlock(block, () => { callback() })
               }
             })
           })
@@ -110,27 +133,32 @@ class SECTokenBlockChain {
               // overwrite forked blocks
               if (block.Hash !== dbBlock.Hash) {
                 let overwrittenTxArray = []
-                this.txDB.delBlock((err) => {
+                this.txDB.delBlock(dbBlock, (err) => {
                   if (err) callback(err)
                   else {
-                    dbBlock.Transactions.forEach((tx) => {
-                      tx.TxReceiptStatus = 'pending'
-                      if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
-                        overwrittenTxArray.push(tx)
-                      }
-                    })
-
-                    this.txDB.writeBlock((err) => {
+                    this.accTree.revertWithBlock(this.tokenBlockChain[block.Number], (err) => {
                       if (err) callback(err)
-                      this.chainDB.writeTokenBlockToDB(block, (err) => {
-                        if (err) callback(err)
-                        else {
-                          // _.remove(overwrittenTxArray, (tx) => {
-                          //   return tx.TxHash in this.tokenTx
-                          // })
-                          callback(null, overwrittenTxArray)
-                        }
-                      })
+                      else {
+                        dbBlock.Transactions.forEach((tx) => {
+                          tx.TxReceiptStatus = 'pending'
+                          if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
+                            overwrittenTxArray.push(tx)
+                          }
+                        })
+
+                        this.txDB.writeBlock(block, (err) => {
+                          if (err) callback(err)
+                          this.chainDB.writeTokenBlockToDB(block, (err) => {
+                            if (err) callback(err)
+                            else {
+                              // _.remove(overwrittenTxArray, (tx) => {
+                              //   return tx.TxHash in this.tokenTx
+                              // })
+                              this.accTree.updateWithBlock(block, () => { callback(null, overwrittenTxArray) })
+                            }
+                          })
+                        })
+                      }
                     })
                   }
                 })
