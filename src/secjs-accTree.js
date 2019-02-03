@@ -1,5 +1,7 @@
 const SECDatahandler = require('@sec-block/secjs-datahandler')
 
+const INIT_BALANCE = 1000
+
 class SECAccTree {
   /**
    * create a token chain block chain with config
@@ -26,7 +28,12 @@ class SECAccTree {
     this.getAccInfo(accAddr, (err, info) => {
       if (err) callback(err, null)
       else {
-        callback(null, parseFloat(info[0]))
+        let balance = info[0]
+        if (balance === null) {
+          callback(err, INIT_BALANCE)
+        } else {
+          callback(null, parseFloat(balance))
+        }
       }
     })
   }
