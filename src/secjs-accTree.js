@@ -28,12 +28,7 @@ class SECAccTree {
     this.getAccInfo(accAddr, (err, info) => {
       if (err) callback(err, null)
       else {
-        let balance = info[0]
-        if (balance === null) {
-          callback(err, INIT_BALANCE)
-        } else {
-          callback(null, parseFloat(balance))
-        }
+        callback(null, parseFloat(info[0]))
       }
     })
   }
