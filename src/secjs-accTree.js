@@ -18,6 +18,28 @@ class SECAccTree {
     this.accTree.constructNewTree(root)
   }
 
+  getAccInfo (accAddr, callback) {
+    this.accTree.getAccInfo(accAddr, callback)
+  }
+
+  getBalance (accAddr, callback) {
+    this.getAccInfo(accAddr, (err, info) => {
+      if (err) callback(err, null)
+      else {
+        callback(null, parseFloat(info[0]))
+      }
+    })
+  }
+
+  getNonce (accAddr, callback) {
+    this.getAccInfo(accAddr, (err, info) => {
+      if (err) callback(err, null)
+      else {
+        callback(null, info[1])
+      }
+    })
+  }
+
   clearDB (callback) {
     this.accTree.clearDB(callback)
   }

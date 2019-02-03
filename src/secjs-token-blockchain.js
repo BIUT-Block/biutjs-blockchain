@@ -170,10 +170,6 @@ class SECTokenBlockChain {
     })
   }
 
-  getTxBuffer () {
-    return this.tokenTx
-  }
-
   /**
    * get Token Block from db
    * @param {Array} hashArray
