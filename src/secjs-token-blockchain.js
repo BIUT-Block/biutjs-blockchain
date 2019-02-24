@@ -65,14 +65,36 @@ class SECTokenBlockChain {
             if (err) callback(err)
             else {
               let root = block.StateRoot
-              // then create a new merkle tree which starts from the given root
-              this.accTree.newTree(root)
-              callback()
-              // TBD:
-              // 1. check if the given root exists
-              // 2. if it doesnt exist:
-              //     2.1 clear DB
-              //     2.2 update account tree db with whole token block chain
+              // check if the given root exists
+              this.accTree.checkRoot((err, result) => {
+                // if it doesnt exist or error occurs:
+                if (err || !result) {
+                  // clear DB
+                  this.accTree.clearDB((err) => {
+                    if (err) callback(err)
+                    else {
+                      // update account tree db with whole token block chain
+                      this.getBlocksFromDB(0, this.chainLength, (err, chain) => {
+                        if (err) {
+                          callback(err)
+                        } else {
+                          this.accTree.updateWithBlockChain(chain, (err) => {
+                            if (err) {
+                              callback(err)
+                            } else {
+                              callback()
+                            }
+                          })
+                        }
+                      })
+                    }
+                  })
+                } else {
+                  // otherwise, create a new merkle tree which starts from the given root
+                  this.accTree.newTree(root)
+                  callback()
+                }
+              })
             }
           })
         })
