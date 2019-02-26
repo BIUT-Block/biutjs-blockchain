@@ -66,7 +66,7 @@ class SECTokenBlockChain {
             else {
               let root = block.StateRoot
               // check if the given root exists
-              this.accTree.checkRoot((err, result) => {
+              this.accTree.checkRoot(root, (err, result) => {
                 // if it doesnt exist or error occurs:
                 if (err || !result) {
                   // clear DB
@@ -74,7 +74,7 @@ class SECTokenBlockChain {
                     if (err) callback(err)
                     else {
                       // update account tree db with whole token block chain
-                      this.getBlocksFromDB(0, this.chainLength, (err, chain) => {
+                      this.chainDB.getTokenBlockChainDB((err, chain) => {
                         if (err) {
                           callback(err)
                         } else {
