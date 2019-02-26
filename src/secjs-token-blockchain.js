@@ -1,3 +1,4 @@
+const _ = require('lodash')
 const AccTreeDB = require('./secjs-accTree.js')
 const SECUtils = require('@sec-block/secjs-util')
 const SECTokenBlock = require('./secjs-token-block')
@@ -105,17 +106,17 @@ class SECTokenBlockChain {
   verifyParentHash (block, callback) {
     if (block.Number !== 0) {
       this.getBlock(block.Number - 1, (err, lastblock) => {
-        if (err) callback(err)
+        if (err) callback(err, null)
         else {
           if (block.ParentHash !== lastblock.Hash) {
-            let err = new Error(`Invalid Parent Hash: ${block.ParentHash}, which should be ${lastblock.Hash}`)
-            return callback(err)
+            console.log(`Invalid Parent Hash: ${block.ParentHash}, which should be ${lastblock.Hash}`)
+            return callback(null, false)
           }
-          callback(null)
+          callback(null, true)
         }
       })
     } else {
-      callback(null)
+      callback(null, true)
     }
   }
 
@@ -135,11 +136,14 @@ class SECTokenBlockChain {
       }
     })
 
-    this.verifyParentHash(block, (err) => {
+    // verify parent hash
+    this.verifyParentHash(block, (err, result) => {
       if (err) callback(err, null)
       else {
-        if (block.Number === this.chainLength) {
-          // update tokenTxDB
+        if (!result) {
+          // do nothing if failed to verify parent hash
+        } else if (block.Number === this.chainLength) {
+          // new block received, update tokenTxDB
           this.txDB.writeBlock(block, (err) => {
             if (err) callback(err, null)
             // update token blockchain DB
@@ -152,6 +156,7 @@ class SECTokenBlockChain {
             })
           })
         } else if (block.Number < this.chainLength) {
+          // fork found or block already exists
           this.getBlock(block.Number, (err, dbBlock) => {
             if (err) callback(err, null)
             else {
@@ -176,9 +181,14 @@ class SECTokenBlockChain {
                           this.chainDB.writeTokenBlockToDB(block, (err) => {
                             if (err) callback(err)
                             else {
-                              // _.remove(overwrittenTxArray, (tx) => {
-                              //   return tx.TxHash in this.tokenTx
-                              // })
+                              _.remove(overwrittenTxArray, (tx) => {
+                                this.txDB.isTxExist(tx.TxHash, (err, result) => {
+                                  if (err) callback(err)
+                                  else {
+                                    return result
+                                  }
+                                })
+                              })
                               this.accTree.updateWithBlock(block, () => { callback(null, overwrittenTxArray) })
                             }
                           })
@@ -191,6 +201,8 @@ class SECTokenBlockChain {
             }
           })
         } else {
+          console.log(`block.Number: ${block.Number}`)
+          console.log(`this.chainLength: ${this.chainLength}`)
           callback(new Error('Can not add token Block, token Block Number is false.'), null)
         }
       }
