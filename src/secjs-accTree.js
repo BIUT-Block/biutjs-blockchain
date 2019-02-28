@@ -1,7 +1,5 @@
 const SECDatahandler = require('@sec-block/secjs-datahandler')
 
-const INIT_BALANCE = 1000
-
 class SECAccTree {
   /**
    * create a token chain block chain with config
