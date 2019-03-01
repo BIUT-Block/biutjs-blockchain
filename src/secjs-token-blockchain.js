@@ -244,6 +244,9 @@ class SECTokenBlockChain {
   }
 
   getBlocksFromDB (minHeight, maxHeight = this.getCurrentHeight(), callback) {
+    if (maxHeight > this.getCurrentHeight()) {
+      maxHeight = this.getCurrentHeight()
+    }
     this.chainDB.getTokenChain(minHeight, maxHeight, callback)
   }
 
