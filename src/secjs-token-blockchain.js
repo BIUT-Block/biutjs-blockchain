@@ -168,39 +168,44 @@ class SECTokenBlockChain {
                 this.txDB.delBlock(dbBlock, (err) => {
                   if (err) callback(err)
                   else {
-                    this.accTree.revertWithBlock(dbBlock, (err) => {
-                      if (err) callback(err)
-                      else {
-                        dbBlock.Transactions.forEach((tx) => {
-                          tx.TxReceiptStatus = 'pending'
-                          if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
-                            overwrittenTxArray.push(tx)
-                          }
-                        })
+                    this.chainDB.delBlocksFromHeight(dbBlock.Number, (err) => {
+                      if (err) return callback(err)
+                      this.accTree.revertWithBlock(dbBlock, (err) => {
+                        if (err) callback(err)
+                        else {
+                          dbBlock.Transactions.forEach((tx) => {
+                            tx.TxReceiptStatus = 'pending'
+                            if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
+                              overwrittenTxArray.push(tx)
+                            }
+                          })
 
-                        this.txDB.writeBlock(block, (err) => {
-                          if (err) callback(err)
-                          else {
-                            this.chainDB.writeTokenBlockToDB(block, (err) => {
-                              if (err) callback(err)
-                              else {
-                                _.remove(overwrittenTxArray, (tx) => {
-                                  this.txDB.isTxExist(tx.TxHash, (err, result) => {
-                                    if (err) callback(err)
-                                    else {
-                                      return result
-                                    }
+                          this.txDB.writeBlock(block, (err) => {
+                            if (err) callback(err)
+                            else {
+                              this.chainDB.writeTokenBlockToDB(block, (err) => {
+                                if (err) callback(err)
+                                else {
+                                  _.remove(overwrittenTxArray, (tx) => {
+                                    this.txDB.isTxExist(tx.TxHash, (err, result) => {
+                                      if (err) callback(err)
+                                      else {
+                                        return result
+                                      }
+                                    })
                                   })
-                                })
-                                this.accTree.updateWithBlock(block, (err) => { callback(err, overwrittenTxArray) })
-                              }
-                            })
-                          }
-                        })
-                      }
+                                  this.accTree.updateWithBlock(block, (err) => { callback(err, overwrittenTxArray) })
+                                }
+                              })
+                            }
+                          })
+                        }
+                      })
                     })
                   }
                 })
+              } else {
+                callback()
               }
             }
           })
