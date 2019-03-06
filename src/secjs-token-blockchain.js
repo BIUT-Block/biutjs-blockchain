@@ -138,82 +138,66 @@ class SECTokenBlockChain {
 
     // verify parent hash
     this.verifyParentHash(block, (err, result) => {
-      if (err) callback(err, null)
-      else {
-        if (!result) {
-          // do nothing if failed to verify parent hash
-        } else if (block.Number === this.chainLength) {
-          // new block received, update tokenTxDB
-          this.txDB.writeBlock(block, (err) => {
-            if (err) callback(err, null)
-            // update token blockchain DB
-            else {
-              this.chainDB.writeTokenBlockToDB(block, (err) => {
-                if (err) callback(err, null)
-                else {
-                  this.chainLength++
-                  this.accTree.updateWithBlock(block, (err) => { callback(err) })
-                }
-              })
-            }
+      if (err) return callback(err, null)
+      if (!result) {
+        // do nothing if failed to verify parent hash
+      } else if (block.Number === this.chainLength) {
+        // new block received, update tokenTxDB
+        this.txDB.writeBlock(block, (err) => {
+          if (err) return callback(err, null)
+          // update token blockchain DB
+          this.chainDB.writeTokenBlockToDB(block, (err) => {
+            if (err) return callback(err, null)
+            this.chainLength++
+            this.accTree.updateWithBlock(block, (err) => { callback(err) })
           })
-        } else if (block.Number < this.chainLength) {
-          // fork found or block already exists
-          this.getBlock(block.Number, (err, dbBlock) => {
-            if (err) callback(err, null)
-            else {
-              // overwrite forked blocks
-              if (block.Hash !== dbBlock.Hash) {
-                let overwrittenTxArray = []
-                this.txDB.delBlock(dbBlock, (err) => {
-                  if (err) callback(err)
-                  else {
-                    this.chainDB.delBlockHash(dbBlock.Hash, (err) => {
-                      if (err) return callback(err)
-                      this.accTree.revertWithBlock(dbBlock, (err) => {
-                        if (err) callback(err)
-                        else {
-                          dbBlock.Transactions.forEach((tx) => {
-                            tx.TxReceiptStatus = 'pending'
-                            if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
-                              overwrittenTxArray.push(tx)
-                            }
-                          })
+        })
+      } else if (block.Number < this.chainLength) {
+        // fork found or block already exists
+        this.getBlock(block.Number, (err, dbBlock) => {
+          if (err) return callback(err, null)
+          // overwrite forked blocks
+          if (block.Hash !== dbBlock.Hash) {
+            let overwrittenTxArray = []
+            this.txDB.delBlock(dbBlock, (err) => {
+              if (err) return callback(err)
+              this.chainDB.delBlockHash(dbBlock.Hash, (err) => {
+                if (err) return callback(err)
+                this.accTree.revertWithBlock(dbBlock, (err) => {
+                  if (err) return callback(err)
+                  dbBlock.Transactions.forEach((tx) => {
+                    tx.TxReceiptStatus = 'pending'
+                    if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
+                      overwrittenTxArray.push(tx)
+                    }
+                  })
 
-                          this.txDB.writeBlock(block, (err) => {
-                            if (err) callback(err)
-                            else {
-                              this.chainDB.writeTokenBlockToDB(block, (err) => {
-                                if (err) callback(err)
-                                else {
-                                  _.remove(overwrittenTxArray, (tx) => {
-                                    this.txDB.isTxExist(tx.TxHash, (err, result) => {
-                                      if (err) callback(err)
-                                      else {
-                                        return result
-                                      }
-                                    })
-                                  })
-                                  this.accTree.updateWithBlock(block, (err) => { callback(err, overwrittenTxArray) })
-                                }
-                              })
-                            }
-                          })
-                        }
+                  this.txDB.writeBlock(block, (err) => {
+                    if (err) return callback(err)
+                    this.chainDB.writeTokenBlockToDB(block, (err) => {
+                      if (err) return callback(err)
+                      _.remove(overwrittenTxArray, (tx) => {
+                        this.txDB.isTxExist(tx.TxHash, (err, result) => {
+                          if (err) return callback(err)
+                          else {
+                            return result
+                          }
+                        })
                       })
+                      this.accTree.updateWithBlock(block, (err) => { callback(err, overwrittenTxArray) })
                     })
-                  }
+                  })
                 })
-              } else {
-                callback()
-              }
-            }
-          })
-        } else {
-          console.log(`block.Number: ${block.Number}`)
-          console.log(`this.chainLength: ${this.chainLength}`)
-          callback(new Error('Can not add token Block, token Block Number is false.'), null)
-        }
+              })
+            })
+          } else {
+            callback()
+          }
+        })
+      } else {
+        console.log(`block.Number: ${block.Number}`)
+        console.log(`this.chainLength: ${this.chainLength}`)
+        callback(new Error('Can not add token Block, token Block Number is false.'), null)
       }
     })
   }
