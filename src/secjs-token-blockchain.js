@@ -168,7 +168,7 @@ class SECTokenBlockChain {
                 this.txDB.delBlock(dbBlock, (err) => {
                   if (err) callback(err)
                   else {
-                    this.chainDB.delBlocksFromHeight(dbBlock.Number, (err) => {
+                    this.chainDB.delBlockHash(dbBlock.Hash, (err) => {
                       if (err) return callback(err)
                       this.accTree.revertWithBlock(dbBlock, (err) => {
                         if (err) callback(err)
