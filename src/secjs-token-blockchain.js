@@ -152,7 +152,7 @@ class SECTokenBlockChain {
             this.accTree.updateWithBlock(block, (err) => { callback(err) })
           })
         })
-      } else if (block.Number < this.chainLength) {
+      } else if (block.Number < this.chainLength - 1) {
         // fork found or block already exists
         this.getBlock(block.Number, (err, dbBlock) => {
           if (err) return callback(err, null)
