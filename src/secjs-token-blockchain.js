@@ -196,6 +196,7 @@ class SECTokenBlockChain {
         })
       } else if (block.Number === this.chainLength - 1) {
         // do nothing if fork has the same height as local blockchain
+        callback()
       } else {
         console.log(`block.Number: ${block.Number}`)
         console.log(`this.chainLength: ${this.chainLength}`)
