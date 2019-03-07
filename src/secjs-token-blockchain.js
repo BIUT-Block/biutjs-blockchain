@@ -141,6 +141,7 @@ class SECTokenBlockChain {
       if (err) return callback(err, null)
       if (!result) {
         // do nothing if failed to verify parent hash
+        callback()
       } else if (block.Number === this.chainLength) {
         // new block received, update tokenTxDB
         this.txDB.writeBlock(block, (err) => {
