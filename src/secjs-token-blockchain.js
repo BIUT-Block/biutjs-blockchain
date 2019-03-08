@@ -1,4 +1,5 @@
 const _ = require('lodash')
+const async = require('async')
 const AccTreeDB = require('./secjs-accTree.js')
 const SECUtils = require('@sec-block/secjs-util')
 const SECTokenBlock = require('./secjs-token-block')
@@ -138,70 +139,78 @@ class SECTokenBlockChain {
 
     // verify parent hash
     this.verifyParentHash(block, (err, result) => {
-      if (err) return callback(err, null)
+      if (err) return callback(err)
       if (!result) {
         // do nothing if failed to verify parent hash
         callback()
       } else if (block.Number === this.chainLength) {
         // new block received, update tokenTxDB
         this.txDB.writeBlock(block, (err) => {
-          if (err) return callback(err, null)
+          if (err) return callback(err)
           // update token blockchain DB
           this.chainDB.writeTokenBlockToDB(block, (err) => {
-            if (err) return callback(err, null)
+            if (err) return callback(err)
             this.chainLength++
             this.accTree.updateWithBlock(block, (err) => { callback(err) })
           })
         })
-      } else if (block.Number < this.chainLength - 1) {
-        // fork found or block already exists
-        this.getBlock(block.Number, (err, dbBlock) => {
-          if (err) return callback(err, null)
-          // overwrite forked blocks
-          if (block.Hash !== dbBlock.Hash) {
-            let overwrittenTxArray = []
-            this.txDB.delBlock(dbBlock, (err) => {
-              if (err) return callback(err)
-              this.chainDB.delBlockHash(dbBlock.Hash, (err) => {
-                if (err) return callback(err)
-                this.accTree.revertWithBlock(dbBlock, (err) => {
-                  if (err) return callback(err)
-                  dbBlock.Transactions.forEach((tx) => {
-                    tx.TxReceiptStatus = 'pending'
-                    if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
-                      overwrittenTxArray.push(tx)
-                    }
-                  })
-
-                  this.txDB.writeBlock(block, (err) => {
-                    if (err) return callback(err)
-                    this.chainDB.writeTokenBlockToDB(block, (err) => {
-                      if (err) return callback(err)
-                      _.remove(overwrittenTxArray, (tx) => {
-                        this.txDB.isTxExist(tx.TxHash, (err, result) => {
-                          if (err) return callback(err)
-                          else {
-                            return result
-                          }
-                        })
-                      })
-                      this.accTree.updateWithBlock(block, (err) => { callback(err, overwrittenTxArray) })
-                    })
-                  })
-                })
-              })
-            })
-          } else {
-            callback()
-          }
-        })
-      } else if (block.Number === this.chainLength - 1) {
-        // do nothing if fork has the same height as local blockchain
-        callback()
       } else {
         console.log(`block.Number: ${block.Number}`)
         console.log(`this.chainLength: ${this.chainLength}`)
-        callback(new Error('Can not add token Block, token Block Number is false.'), null)
+        callback(new Error('Can not add token Block, token Block Number is false.'))
+      }
+    })
+  }
+
+  delBlockFromHeight (height, callback) {
+    let indexArray = []
+    let overwrittenTxArray = []
+    let localHeight = this.getCurrentHeight()
+    for (let i = height; i <= localHeight; i++) {
+      indexArray.push(i)
+    }
+
+    async.eachSeries(indexArray, (i, cb) => {
+      // get block from db
+      this.getBlock(i, (err, dbBlock) => {
+        if (err) {
+          let e = new Error(`Error occurs when try to get block, block number is ${i}`)
+          return cb(e, null)
+        }
+
+        // update tx DB
+        this.txDB.delBlock(dbBlock, (err) => {
+          if (err) return cb(err)
+          // update token chain DB
+          this.chainDB.delBlock(dbBlock, (err) => {
+            if (err) return cb(err)
+            // update account tree DB
+            this.accTree.revertWithBlock(dbBlock, (err) => {
+              if (err) return cb(err)
+              dbBlock.Transactions.forEach((tx) => {
+                tx.TxReceiptStatus = 'pending'
+                if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
+                  overwrittenTxArray.push(tx)
+                }
+              })
+            })
+            this.chainLength = i
+            cb()
+          })
+        })
+      })
+    }, (err) => {
+      if (err) return callback(err, null)
+      else {
+        _.remove(overwrittenTxArray, (tx) => {
+          this.txDB.isTxExist(tx.TxHash, (err, result) => {
+            if (err) return callback(err, null)
+            else {
+              return result
+            }
+          })
+        })
+        callback(err, overwrittenTxArray)
       }
     })
   }

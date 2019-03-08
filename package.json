@@ -3,6 +3,7 @@
     "@sec-block/secjs-merkle-tree": "^1.0.10",
     "@sec-block/secjs-solc-compiler": "^1.0.2",
     "@sec-block/secjs-util": "^1.1.22",
+    "async": "^2.6.2",
     "chai": "^4.1.2",
     "describe": "^1.2.0",
     "lodash": "^4.17.11",
