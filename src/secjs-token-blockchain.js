@@ -194,7 +194,6 @@ class SECTokenBlockChain {
                 }
               })
             })
-            this.chainLength = i
             cb()
           })
         })
@@ -210,6 +209,7 @@ class SECTokenBlockChain {
             }
           })
         })
+        this.chainLength = height
         callback(err, overwrittenTxArray)
       }
     })
