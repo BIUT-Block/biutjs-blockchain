@@ -142,7 +142,7 @@ class SECTokenBlockChain {
       if (err) return callback(err)
       if (!result) {
         // do nothing if failed to verify parent hash
-        callback()
+        callback(new Error('Failed to verify parent hash'))
       } else if (block.Number === this.chainLength) {
         // new block received, update tokenTxDB
         this.txDB.writeBlock(block, (err) => {
@@ -150,14 +150,12 @@ class SECTokenBlockChain {
           // update token blockchain DB
           this.chainDB.writeTokenBlockToDB(block, (err) => {
             if (err) return callback(err)
-            this.chainLength++
+            this.chainLength = block.Number + 1
             this.accTree.updateWithBlock(block, (err) => { callback(err) })
           })
         })
       } else {
-        console.log(`block.Number: ${block.Number}`)
-        console.log(`this.chainLength: ${this.chainLength}`)
-        callback(new Error('Can not add token Block, token Block Number is false.'))
+        callback(new Error(`Can not add token Block, token Block Number is false, block.Number: ${block.Number}, this.chainLength: ${this.chainLength}`))
       }
     })
   }
