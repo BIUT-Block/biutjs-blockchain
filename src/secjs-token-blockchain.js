@@ -328,6 +328,53 @@ class SECTokenBlockChain {
   getHashList (callback) {
     this.chainDB.getHashList(callback)
   }
+
+  // -------------------------  FUNCTIONS FOR SPECIAL PURPOSES  ------------------------
+  // ---------------------------------  DON'T USE THEM  --------------------------------
+  delBlock (height, callback) {
+    // get block from db
+    this.getBlock(height, (err, dbBlock) => {
+      if (err) return callback(err, null)
+
+      // update tx DB
+      this.txDB.delBlock(dbBlock, (err) => {
+        if (err) return callback(err)
+        // update token chain DB
+        this.chainDB.delBlock(dbBlock, (err) => {
+          if (err) return callback(err)
+          // update account tree DB
+          this.accTree.revertWithBlock(dbBlock, (err) => {
+            if (err) return callback(err)
+          })
+          callback()
+        })
+      })
+    })
+  }
+
+  writeBlock (_block, callback) {
+    // write a new block to DB
+    let block = JSON.parse(JSON.stringify(_block))
+
+    // parse block.Transactions
+    block.Transactions.forEach((tx, index) => {
+      if (typeof tx === 'string') {
+        block.Transactions[index] = JSON.parse(tx)
+      }
+    })
+
+    this.delBlock(block.Number, (err) => {
+      if (err) return callback(err)
+      this.txDB.writeBlock(block, (err) => {
+        if (err) return callback(err)
+        // update token blockchain DB
+        this.chainDB.writeTokenBlockToDB(block, (err) => {
+          if (err) return callback(err)
+          this.accTree.updateWithBlock(block, (err) => { callback(err) })
+        })
+      })
+    })
+  }
 }
 
 module.exports = SECTokenBlockChain
