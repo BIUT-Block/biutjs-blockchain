@@ -4,6 +4,7 @@ const AccTreeDB = require('./secjs-accTree.js')
 const SECUtils = require('@sec-block/secjs-util')
 const SECTokenBlock = require('./secjs-token-block')
 const SECDatahandler = require('@sec-block/secjs-datahandler')
+const SECMerkleTree = require('@sec-block/secjs-merkle-tree')
 
 class SECTokenBlockChain {
   /**
@@ -121,6 +122,27 @@ class SECTokenBlockChain {
     }
   }
 
+  verifyTxRoot (block) {
+    // verify block header transaction root
+    let txHashArray = []
+    block['Transactions'].forEach(tx => {
+      txHashArray.push(tx.TxHash)
+    })
+
+    let txRoot = ''
+    if (txHashArray.length === 0) {
+      txRoot = SECUtils.KECCAK256_RLP.toString('hex')
+    } else {
+      let merkleTree = new SECMerkleTree(txHashArray, 'sha256')
+      txRoot = merkleTree.getRoot().toString('hex')
+    }
+
+    if (txRoot === block['TransactionsRoot']) {
+      return true
+    }
+    return false
+  }
+
   /**
    * Put token block to db
    * @param {SECTokenBlock} block the block object in json formation
@@ -136,6 +158,10 @@ class SECTokenBlockChain {
         block.Transactions[index] = JSON.parse(tx)
       }
     })
+
+    if (!this.verifyTxRoot(block)) {
+      return callback(new Error('Failed to verify transaction root'))
+    }
 
     // verify parent hash
     this.verifyParentHash(block, (err, result) => {
