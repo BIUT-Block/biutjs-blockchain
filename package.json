@@ -21,7 +21,7 @@
     "test": "test"
   },
   "devDependencies": {
-    "@sec-block/secjs-datahandler": "^1.1.44",
+    "@sec-block/secjs-datahandler": "^1.1.46",
     "fs-extra": "^7.0.0"
   },
   "repository": {
