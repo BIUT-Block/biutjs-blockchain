@@ -34,7 +34,7 @@ class SECTokenBlockChain {
       LogsBloom: SECUtils.zeros(256).toString('hex'),
       MixHash: SECUtils.zeros(32).toString('hex'),
       StateRoot: SECUtils.KECCAK256_RLP.toString('hex'),
-      TimeStamp: 1537300000,
+      TimeStamp: 1537900000,
       ParentHash: SECUtils.zeros(32).toString('hex'),
       Beneficiary: SECUtils.zeros(20).toString('hex'),
       Difficulty: '1',
