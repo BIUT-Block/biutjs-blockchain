@@ -17,6 +17,7 @@ class SECTokenBlockChain {
     this.chainDB = new SECDatahandler.TokenBlockChainDB(config)
     this.txDB = new SECDatahandler.TokenTxDB(config)
     this.accTree = new AccTreeDB(config)
+    this.smartContractTxDB = new SECDatahandler.SmartContractTxDB(config)
     this.chainLength = 0
   }
 
@@ -327,6 +328,19 @@ class SECTokenBlockChain {
 
   getHashList (callback) {
     this.chainDB.getHashList(callback)
+  }
+
+  // -------------------------  SMART CONTRACT TX DB FUNCTIONS  ------------------------
+  add (tokenName, contractAddress, callback) {
+    this.smartContractTxDB.add(tokenName, contractAddress, callback)
+  }
+
+  getContractAddress (tokenName, callback) {
+    this.smartContractTxDB.getContractAddress(tokenName, callback)
+  }
+
+  getTokenName (contractAddress, callback) {
+    this.smartContractTxDB.getTokenName(contractAddress, callback)
   }
 
   // -------------------------  FUNCTIONS FOR SPECIAL PURPOSES  ------------------------
