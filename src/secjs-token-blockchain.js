@@ -375,6 +375,11 @@ class SECTokenBlockChain {
       })
     })
   }
+
+  // -------------------------  TEST FUNCTIONS  ------------------------
+  getFromAccTree (accAddr, callback) {
+    this.accTree.getAccInfo(accAddr, callback)
+  }
 }
 
 module.exports = SECTokenBlockChain
