@@ -15,11 +15,13 @@ class SECTokenBlockChain {
    */
 
   constructor (config) {
+    console.log('============================')
+    console.log(config)
+
     this.chainName = config.chainName
-    this.config = config.dbconfig
-    this.chainDB = new SECDatahandler.TokenBlockChainDB(config)
-    this.txDB = new SECDatahandler.TokenTxDB(config)
-    this.accTree = new AccTreeDB(config)
+    this.chainDB = new SECDatahandler.TokenBlockChainDB(config.dbconfig)
+    this.txDB = new SECDatahandler.TokenTxDB(config.dbconfig)
+    this.accTree = new AccTreeDB(config.dbconfig)
     this.chainLength = 0
   }
 
