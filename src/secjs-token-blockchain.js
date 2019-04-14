@@ -68,6 +68,7 @@ class SECTokenBlockChain {
             if (err) callback(err)
             else {
               let root = block.StateRoot
+              root = root.substr(2)
               // check if the given root exists
               this.accTree.checkRoot(root, (err, result) => {
                 // if it doesnt exist or error occurs:
@@ -156,6 +157,8 @@ class SECTokenBlockChain {
     block.Transactions.forEach((tx, index) => {
       if (typeof tx === 'string') {
         block.Transactions[index] = JSON.parse(tx)
+        block.Transactions[index].BlockNumber = block.Number
+        block.Transactions[index].BlockHash = block.Hash
       }
     })
 
@@ -360,6 +363,8 @@ class SECTokenBlockChain {
     block.Transactions.forEach((tx, index) => {
       if (typeof tx === 'string') {
         block.Transactions[index] = JSON.parse(tx)
+        block.Transactions[index].BlockNumber = block.Number
+        block.Transactions[index].BlockHash = block.Hash
       }
     })
 
