@@ -360,6 +360,9 @@ class SECTokenBlockChain {
       self.getTokenName(tx.TxTo, (err, tokenName) => {
         if (err) reject(err)
         else {
+          if (typeof(tx) === 'string'){
+            tx = JSON.parse(tx)
+          }
           tx.TokenName = tokenName
           resolve()
         }
@@ -373,7 +376,8 @@ class SECTokenBlockChain {
       promiseList.push(this.setTxTokenName(tx))
     })
 
-    Promise.all(promiseList).then((block) => {
+    Promise.all(promiseList).then((transactionsList) => {
+      block.Transactions = transactionsList
       callback(null, block)
     }).catch((err) => {
       callback(err, null)
