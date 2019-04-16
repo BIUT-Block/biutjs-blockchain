@@ -344,7 +344,7 @@ class SECTokenBlockChain {
   }
 
   getTokenName (addr, callback) {
-    if (this.isSmartContractAddress(addr)) {
+    if (SECUtils.isContractAddr(addr)) {
       this.SECTokenChain.getTokenName(addr, (err, tokenName) => {
         if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
         callback(null, tokenName)
@@ -381,11 +381,6 @@ class SECTokenBlockChain {
     }).catch((err) => {
       callback(err, null)
     })
-  }
-
-  isSmartContractAddress (addr) {
-    // TBD
-    return false
   }
 
   // -------------------------  FUNCTIONS FOR SPECIAL PURPOSES  ------------------------
