@@ -20,12 +20,12 @@ class SECAccTree {
     this.accTree.constructNewTree(root)
   }
 
-  getAccInfo (accAddr, callback) {
-    this.accTree.getAccInfo(accAddr, callback)
+  getAccInfo (accAddr, tokenname, callback) {
+    this.accTree.getAccInfo(accAddr, tokenname, callback)
   }
 
   getBalance (accAddr, tokenName, callback) {
-    this.getAccInfo(accAddr, tokenName, (err, info) => {
+    this.getAccInfo(accAddr, tokenname, (err, info) => {
       if (err) callback(err, null)
       else {
         if (tokenName === 'All') {
@@ -43,7 +43,7 @@ class SECAccTree {
   }
 
   getNonce (accAddr, callback) {
-    this.getAccInfo(accAddr, (err, info) => {
+    this.getAccInfo(accAddr, 'All', (err, info) => {
       if (err) callback(err, null)
       else {
         callback(null, info[1])
