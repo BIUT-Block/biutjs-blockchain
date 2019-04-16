@@ -360,11 +360,10 @@ class SECTokenBlockChain {
       self.getTokenName(tx.TxTo, (err, tokenName) => {
         if (err) reject(err)
         else {
-          if (typeof(tx) === 'string'){
-            tx = JSON.parse(tx)
-          }
+          tx = JSON.parse(tx)
           tx.TokenName = tokenName
-          resolve()
+          tx = JSON.stringify(tx)
+          resolve(tx)
         }
       })
     })
