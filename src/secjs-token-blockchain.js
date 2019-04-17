@@ -345,7 +345,7 @@ class SECTokenBlockChain {
 
   getTokenName (addr, callback) {
     if (SECUtils.isContractAddr(addr)) {
-      this.SECTokenChain.getTokenName(addr, (err, tokenName) => {
+      this.smartContractTxDB.getTokenName(addr, (err, tokenName) => {
         if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
         callback(null, tokenName)
       })
@@ -356,11 +356,11 @@ class SECTokenBlockChain {
 
   setTxTokenName (tx) {
     let self = this
+    tx = JSON.parse(tx)
     return new Promise(function (resolve, reject) {
       self.getTokenName(tx.TxTo, (err, tokenName) => {
         if (err) reject(err)
         else {
-          tx = JSON.parse(tx)
           tx.TokenName = tokenName
           tx = JSON.stringify(tx)
           resolve(tx)
