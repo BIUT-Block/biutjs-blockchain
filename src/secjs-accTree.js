@@ -34,7 +34,7 @@ class SECAccTree {
           }
           callback(null, info[0])
         } else if (tokenName in info[0]) {
-          callback(null, parseFloat(info[0]))
+          callback(null, parseFloat(info[0][tokenName]))
         } else {
           callback(null, INIT_BALANCE)
         }
