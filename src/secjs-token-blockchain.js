@@ -252,10 +252,10 @@ class SECTokenBlockChain {
   _getAllBlockChainFromDB (callback) {
     this.chainDB.getTokenBlockChainDB((err, blockchain) => {
       if (err) {
-        callback(err)
+        callback(err, null)
       } else {
         this.chainLength = blockchain.length
-        callback()
+        callback(null, blockchain)
       }
     })
   }
