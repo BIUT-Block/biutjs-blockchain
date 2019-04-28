@@ -222,30 +222,8 @@ class SECTokenBlockChain {
     }, (err) => {
       if (err) return callback(err, null)
       else {
-        let index = 0
-        let _indexArray = []
-        async.eachSeries(revertTxArray, (tx, cb2) => {
-          this.txDB.isTxExist(tx.TxHash, (err, result) => {
-            if (err) return cb2(err)
-            else {
-              if (result) {
-                _indexArray.push(index)
-              }
-              index++
-              cb2()
-            }
-          })
-          this.chainLength = height
-          cb2(err)
-        }, (err) => {
-          if (err) return callback(err, null)
-          else {
-            _indexArray.reverse().forEach((i) => {
-              revertTxArray.splice(i, 1)
-            })
-            callback(null, revertTxArray)
-          }
-        })
+        this.chainLength = height
+        callback(err, revertTxArray)
       }
     })
   }
