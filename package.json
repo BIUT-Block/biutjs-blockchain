@@ -6,7 +6,6 @@
     "async": "^2.6.2",
     "chai": "^4.1.2",
     "describe": "^1.2.0",
-    "lodash": "^4.17.11",
     "mocha": "^5.2.0",
     "standard": "^11.0.1"
   },
@@ -14,7 +13,7 @@
     "test": "mocha --reporter spec"
   },
   "name": "@sec-block/secjs-blockchain",
-  "version": "1.0.157",
+  "version": "1.0.160",
   "description": "sec blockchain block lib",
   "main": "src/index.js",
   "directories": {

@@ -1,4 +1,3 @@
-const _ = require('lodash')
 const async = require('async')
 const AccTreeDB = require('./secjs-accTree.js')
 const geneData = require('./genesisBlock.js')
@@ -186,7 +185,7 @@ class SECTokenBlockChain {
 
   delBlockFromHeight (height, callback) {
     let indexArray = []
-    let overwrittenTxArray = []
+    let revertTxArray = []
     let localHeight = this.getCurrentHeight()
     for (let i = height; i <= localHeight; i++) {
       indexArray.push(i)
@@ -201,18 +200,18 @@ class SECTokenBlockChain {
         }
 
         // update tx DB
-        this.txDB.delBlock(dbBlock, (err) => {
-          if (err) return cb(err)
+        this.txDB.delBlock(dbBlock, (err1) => {
+          if (err1) return cb(err1)
           // update token chain DB
-          this.chainDB.delBlock(dbBlock, (err) => {
-            if (err) return cb(err)
+          this.chainDB.delBlock(dbBlock, (err2) => {
+            if (err2) return cb(err2)
             // update account tree DB
-            this.accTree.revertWithBlock(dbBlock, (err) => {
-              if (err) return cb(err)
+            this.accTree.revertWithBlock(dbBlock, (err3) => {
+              if (err3) return cb(err3)
               dbBlock.Transactions.forEach((tx) => {
                 tx.TxReceiptStatus = 'pending'
                 if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
-                  overwrittenTxArray.push(tx)
+                  revertTxArray.push(tx)
                 }
               })
             })
@@ -223,16 +222,8 @@ class SECTokenBlockChain {
     }, (err) => {
       if (err) return callback(err, null)
       else {
-        _.remove(overwrittenTxArray, (tx) => {
-          this.txDB.isTxExist(tx.TxHash, (err, result) => {
-            if (err) return callback(err, null)
-            else {
-              return result
-            }
-          })
-        })
         this.chainLength = height
-        callback(err, overwrittenTxArray)
+        callback(err, revertTxArray)
       }
     })
   }
@@ -252,10 +243,10 @@ class SECTokenBlockChain {
   _getAllBlockChainFromDB (callback) {
     this.chainDB.getTokenBlockChainDB((err, blockchain) => {
       if (err) {
-        callback(err)
+        callback(err, null)
       } else {
         this.chainLength = blockchain.length
-        callback()
+        callback(null, blockchain)
       }
     })
   }
