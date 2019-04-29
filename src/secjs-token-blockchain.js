@@ -1,4 +1,5 @@
 const async = require('async')
+const Promise = require('promise')
 const AccTreeDB = require('./secjs-accTree.js')
 const geneData = require('./genesisBlock.js')
 const SECUtils = require('@sec-block/secjs-util')
@@ -85,15 +86,17 @@ class SECTokenBlockChain {
                           })
                         }
                       })
-                    }
+                    }, (err) => {
+                      return callback(err)
+                    })
                   })
-                } else {
-                  // otherwise, create a new merkle tree which starts from the given root
-                  this.accTree.newTree(root)
-                  callback()
-                }
-              })
-            }
+                })
+              } else {
+                // otherwise, create a new merkle tree which starts from the given root
+                this.accTree.newTree(root)
+                callback()
+              }
+            })
           })
         })
       }
@@ -174,7 +177,12 @@ class SECTokenBlockChain {
           this.chainDB.writeTokenBlockToDB(block, (err) => {
             if (err) return callback(err)
             this.chainLength = block.Number + 1
-            this.accTree.updateWithBlock(block, (err) => { callback(err) })
+
+            // update accTree BD
+            this.setBlockTxTokenName(block, (err, _block) => {
+              if (err) return callback(err)
+              this.accTree.updateWithBlock(_block, (err) => { callback(err) })
+            })
           })
         })
       } else {
@@ -214,8 +222,8 @@ class SECTokenBlockChain {
                   revertTxArray.push(tx)
                 }
               })
+              cb()
             })
-            cb()
           })
         })
       })
@@ -318,6 +326,66 @@ class SECTokenBlockChain {
     this.chainDB.getHashList(callback)
   }
 
+  // -------------------------  SMART CONTRACT TX DB FUNCTIONS  ------------------------
+  add (tokenName, contractAddress, callback) {
+    this.smartContractTxDB.add(tokenName, contractAddress, callback)
+  }
+
+  getContractAddress (tokenName, callback) {
+    this.smartContractTxDB.getContractAddress(tokenName, callback)
+  }
+
+  getTokenName (addr, callback) {
+    if (SECUtils.isContractAddr(addr)) {
+      this.smartContractTxDB.getTokenName(addr, (err, tokenName) => {
+        if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
+        callback(null, tokenName)
+      })
+    } else {
+      callback(null, 'SEC')
+    }
+  }
+
+  setTxTokenName (tx) {
+    let self = this
+    tx = JSON.parse(tx)
+    return new Promise(function (resolve, reject) {
+      self.getTokenName(tx.TxTo, (err, tokenName) => {
+        if (err) reject(err)
+        else {
+          if (tokenName === 'SEC'){
+            self.getTokenName(tx.TxFrom, (err, tokenName) => {
+              if (err) reject(err)
+              else {
+                tx.TokenName = tokenName
+                tx = JSON.stringify(tx)
+                resolve(tx)
+              }
+            })
+          } else {
+            tx.TokenName = tokenName
+            tx = JSON.stringify(tx)
+            resolve(tx)
+          }
+        }
+      })
+    })
+  }
+
+  setBlockTxTokenName (block, callback) {
+    let promiseList = []
+    block.Transactions.forEach((tx) => {
+      promiseList.push(this.setTxTokenName(tx))
+    })
+
+    Promise.all(promiseList).then((transactionsList) => {
+      block.Transactions = transactionsList
+      callback(null, block)
+    }).catch((err) => {
+      callback(err, null)
+    })
+  }
+
   // -------------------------  FUNCTIONS FOR SPECIAL PURPOSES  ------------------------
   // ---------------------------------  DON'T USE THEM  --------------------------------
   delBlock (height, callback) {
@@ -332,10 +400,13 @@ class SECTokenBlockChain {
         this.chainDB.delBlock(dbBlock, (err) => {
           if (err) return callback(err)
           // update account tree DB
-          this.accTree.revertWithBlock(dbBlock, (err) => {
+          this.setBlockTxTokenName(dbBlock, (err, _dbblock) => {
             if (err) return callback(err)
+            this.accTree.revertWithBlock(_dbblock, (err) => {
+              if (err) return callback(err)
+            })
+            callback()
           })
-          callback()
         })
       })
     })
@@ -361,7 +432,11 @@ class SECTokenBlockChain {
         // update token blockchain DB
         this.chainDB.writeTokenBlockToDB(block, (err) => {
           if (err) return callback(err)
-          this.accTree.updateWithBlock(block, (err) => { callback(err) })
+          // update accTree BD
+          this.setBlockTxTokenName(block, (err, _block) => {
+            if (err) return callback(err)
+            this.accTree.updateWithBlock(_block, (err) => { callback(err) })
+          })
         })
       })
     })
