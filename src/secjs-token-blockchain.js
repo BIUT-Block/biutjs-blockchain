@@ -86,17 +86,15 @@ class SECTokenBlockChain {
                           })
                         }
                       })
-                    }, (err) => {
-                      return callback(err)
-                    })
+                    }
                   })
-                })
-              } else {
-                // otherwise, create a new merkle tree which starts from the given root
-                this.accTree.newTree(root)
-                callback()
-              }
-            })
+                } else {
+                  // otherwise, create a new merkle tree which starts from the given root
+                  this.accTree.newTree(root)
+                  callback()
+                }
+              })
+            } 
           })
         })
       }
