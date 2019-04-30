@@ -214,8 +214,8 @@ class SECTokenBlockChain {
                   revertTxArray.push(tx)
                 }
               })
+              cb()
             })
-            cb()
           })
         })
       })
