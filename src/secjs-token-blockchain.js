@@ -20,6 +20,7 @@ class SECTokenBlockChain {
     this.txDB = new SECDatahandler.TokenTxDB(config.dbconfig)
     this.accTree = new AccTreeDB(config.dbconfig)
     this.chainLength = 0
+    this.smartContractTxDB = new SECDatahandler.SmartContractTxDB(config)
   }
 
   /**
