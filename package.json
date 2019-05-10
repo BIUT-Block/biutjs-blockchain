@@ -13,7 +13,7 @@
     "test": "mocha --reporter spec"
   },
   "name": "@biut-block/biutjs-blockchain",
-  "version": "1.0.154",
+  "version": "1.0.0",
   "description": "biut blockchain block lib",
   "main": "src/index.js",
   "directories": {
