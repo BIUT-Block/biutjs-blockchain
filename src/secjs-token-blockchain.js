@@ -1,6 +1,6 @@
-const _ = require('lodash')
 const async = require('async')
 const AccTreeDB = require('./secjs-accTree.js')
+const geneData = require('./genesisBlock.js')
 const SECUtils = require('@biut-block/biutjs-util')
 const SECTokenBlock = require('./secjs-token-block')
 const SECDatahandler = require('@biut-block/biutjs-datahandler')
@@ -14,9 +14,10 @@ class SECTokenBlockChain {
    */
 
   constructor (config) {
-    this.chainDB = new SECDatahandler.TokenBlockChainDB(config)
-    this.txDB = new SECDatahandler.TokenTxDB(config)
-    this.accTree = new AccTreeDB(config)
+    this.chainName = config.chainName
+    this.chainDB = new SECDatahandler.TokenBlockChainDB(config.dbconfig)
+    this.txDB = new SECDatahandler.TokenTxDB(config.dbconfig)
+    this.accTree = new AccTreeDB(config.dbconfig)
     this.chainLength = 0
   }
 
@@ -24,24 +25,17 @@ class SECTokenBlockChain {
    * generate genesis token block
    */
   _generateGenesisBlock () {
-    let extraData = 'SEC Hello World'
-    if (process.env.secTest) {
-      extraData = 'SEC Test Network Genesis Block'
+    if (process.env.secTest && this.chainName === 'SEC') {
+      return new SECTokenBlock(geneData.secTestGeneBlock).getBlock()
+    } else if (process.env.secTest && this.chainName === 'SEN') {
+      return new SECTokenBlock(geneData.senTestGeneBlock).getBlock()
+    } else if (process.env.secTest === undefined && this.chainName === 'SEC') {
+      return new SECTokenBlock(geneData.secGeneBlock).getBlock()
+    } else if (process.env.secTest === undefined && this.chainName === 'SEN') {
+      return new SECTokenBlock(geneData.senGeneBlock).getBlock()
+    } else {
+      throw new Error(`Invalid chain name: ${this.chainName}`)
     }
-    return new SECTokenBlock({
-      Number: 0,
-      ReceiptRoot: SECUtils.KECCAK256_RLP.toString('hex'),
-      LogsBloom: SECUtils.zeros(256).toString('hex'),
-      MixHash: SECUtils.zeros(32).toString('hex'),
-      StateRoot: SECUtils.KECCAK256_RLP.toString('hex'),
-      TimeStamp: 1537900000,
-      ParentHash: SECUtils.zeros(32).toString('hex'),
-      Beneficiary: SECUtils.zeros(20).toString('hex'),
-      Difficulty: '1',
-      ExtraData: extraData,
-      Nonce: SECUtils.zeros(8).toString('hex'),
-      Transactions: []
-    }).getBlock()
   }
 
   /**
@@ -68,7 +62,7 @@ class SECTokenBlockChain {
             if (err) callback(err)
             else {
               let root = block.StateRoot
-              root = root.substr(2)
+              root = root.substr(2) // remove 0x
               // check if the given root exists
               this.accTree.checkRoot(root, (err, result) => {
                 // if it doesnt exist or error occurs:
@@ -191,7 +185,7 @@ class SECTokenBlockChain {
 
   delBlockFromHeight (height, callback) {
     let indexArray = []
-    let overwrittenTxArray = []
+    let revertTxArray = []
     let localHeight = this.getCurrentHeight()
     for (let i = height; i <= localHeight; i++) {
       indexArray.push(i)
@@ -206,38 +200,30 @@ class SECTokenBlockChain {
         }
 
         // update tx DB
-        this.txDB.delBlock(dbBlock, (err) => {
-          if (err) return cb(err)
+        this.txDB.delBlock(dbBlock, (err1) => {
+          if (err1) return cb(err1)
           // update token chain DB
-          this.chainDB.delBlock(dbBlock, (err) => {
-            if (err) return cb(err)
+          this.chainDB.delBlock(dbBlock, (err2) => {
+            if (err2) return cb(err2)
             // update account tree DB
-            this.accTree.revertWithBlock(dbBlock, (err) => {
-              if (err) return cb(err)
+            this.accTree.revertWithBlock(dbBlock, (err3) => {
+              if (err3) return cb(err3)
               dbBlock.Transactions.forEach((tx) => {
                 tx.TxReceiptStatus = 'pending'
                 if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
-                  overwrittenTxArray.push(tx)
+                  revertTxArray.push(tx)
                 }
               })
+              cb()
             })
-            cb()
           })
         })
       })
     }, (err) => {
       if (err) return callback(err, null)
       else {
-        _.remove(overwrittenTxArray, (tx) => {
-          this.txDB.isTxExist(tx.TxHash, (err, result) => {
-            if (err) return callback(err, null)
-            else {
-              return result
-            }
-          })
-        })
         this.chainLength = height
-        callback(err, overwrittenTxArray)
+        callback(err, revertTxArray)
       }
     })
   }
@@ -257,10 +243,10 @@ class SECTokenBlockChain {
   _getAllBlockChainFromDB (callback) {
     this.chainDB.getTokenBlockChainDB((err, blockchain) => {
       if (err) {
-        callback(err)
+        callback(err, null)
       } else {
         this.chainLength = blockchain.length
-        callback()
+        callback(null, blockchain)
       }
     })
   }
