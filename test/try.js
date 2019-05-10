@@ -1,4 +1,4 @@
-const SECDataHandler = require('@sec-block/secjs-datahandler')
+const SECDataHandler = require('@biut-block/biutjs-datahandler')
 const SECBlockchain = require('../src/index')
 const dbconfig = {
   DBPath: process.cwd() + '/data',

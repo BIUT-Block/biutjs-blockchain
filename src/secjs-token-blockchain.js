@@ -1,10 +1,10 @@
 const async = require('async')
 const AccTreeDB = require('./secjs-accTree.js')
 const geneData = require('./genesisBlock.js')
-const SECUtils = require('@sec-block/secjs-util')
+const SECUtils = require('@biut-block/biutjs-util')
 const SECTokenBlock = require('./secjs-token-block')
-const SECDatahandler = require('@sec-block/secjs-datahandler')
-const SECMerkleTree = require('@sec-block/secjs-merkle-tree')
+const SECDatahandler = require('@biut-block/biutjs-datahandler')
+const SECMerkleTree = require('@biut-block/biutjs-merkle-tree')
 
 class SECTokenBlockChain {
   /**
