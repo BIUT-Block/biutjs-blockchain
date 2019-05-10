@@ -1,6 +1,6 @@
-const SECUtil = require('@sec-block/secjs-util')
+const SECUtil = require('@biut-block/biutjs-util')
 const SECTransactionBlock = require('./secjs-transaction-block')
-const SECDatahandler = require('@sec-block/secjs-datahandler')
+const SECDatahandler = require('@biut-block/biutjs-datahandler')
 
 class SECTransactionBlockChain {
   /**

@@ -1,4 +1,4 @@
-const SECUtil = require('@sec-block/secjs-util')
+const SECUtil = require('@biut-block/biutjs-util')
 const SECTransactionBlockModel = require('../model/transactionchain-block-model')
 
 class SECTransactionBlock {

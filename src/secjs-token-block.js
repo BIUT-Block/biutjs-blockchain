@@ -1,6 +1,6 @@
-const SECUtils = require('@sec-block/secjs-util')
+const SECUtils = require('@biut-block/biutjs-util')
 const SECTokenBlockModel = require('../model/tokenchain-block-model')
-const SECMerkleTree = require('@sec-block/secjs-merkle-tree')
+const SECMerkleTree = require('@biut-block/biutjs-merkle-tree')
 
 const tokenBufferLength = 16
 
