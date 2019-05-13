@@ -1,8 +1,7 @@
 {
   "dependencies": {
-    "@sec-block/secjs-merkle-tree": "^1.0.10",
-    "@sec-block/secjs-solc-compiler": "^1.0.2",
-    "@sec-block/secjs-util": "^1.1.22",
+    "@biut-block/biutjs-merkle-tree": "^1.0.1",
+    "@biut-block/biutjs-util": "^1.0.0",
     "async": "^2.6.2",
     "chai": "^4.1.2",
     "describe": "^1.2.0",
@@ -12,29 +11,29 @@
   "scripts": {
     "test": "mocha --reporter spec"
   },
-  "name": "@sec-block/secjs-blockchain",
+  "name": "@biut-block/biutjs-blockchain",
   "version": "1.0.160",
-  "description": "sec blockchain block lib",
+  "description": "biut blockchain block lib",
   "main": "src/index.js",
   "directories": {
     "test": "test"
   },
   "devDependencies": {
-    "@sec-block/secjs-datahandler": "^1.1.46",
+    "@biut-block/biutjs-datahandler": "^1.1.46",
     "fs-extra": "^7.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/SEC-block/secjs-blockchain.git"
+    "url": "https://github.com/SEC-block/biutjs-blockchain.git"
   },
   "keywords": [
-    "secjs",
+    "biutjs",
     "block"
   ],
   "author": "Minghao, Weihan, abysmli",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/SEC-block/secjs-blockchain/issues"
+    "url": "https://github.com/SEC-block/biutjs-blockchain/issues"
   },
-  "homepage": "https://github.com/SEC-block/secjs-blockchain#README"
+  "homepage": "https://github.com/SEC-block/biutjs-blockchain#README"
 }

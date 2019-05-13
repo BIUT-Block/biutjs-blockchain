@@ -1,4 +1,4 @@
-const SECDatahandler = require('@sec-block/secjs-datahandler')
+const SECDatahandler = require('@biut-block/biutjs-datahandler')
 
 const INIT_BALANCE = '1000'
 
