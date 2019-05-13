@@ -1,8 +1,8 @@
-const BIUTDatahandler = require('@biut-block/biutjs-datahandler')
+const SECDatahandler = require('@sec-block/secjs-datahandler')
 
 const INIT_BALANCE = '1000'
 
-class BIUTAccTree {
+class SECAccTree {
   /**
    * create a token chain block chain with config
    * @param {}
@@ -10,7 +10,7 @@ class BIUTAccTree {
    */
   constructor (config) {
     try {
-      this.accTree = new BIUTDatahandler.AccTreeDB(config)
+      this.accTree = new SECDatahandler.AccTreeDB(config)
     } catch (e) {
       throw e
     }
@@ -92,4 +92,4 @@ class BIUTAccTree {
   }
 }
 
-module.exports = BIUTAccTree
+module.exports = SECAccTree

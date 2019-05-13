@@ -1,10 +1,10 @@
-const BIUTUtils = require('@biut-block/biutjs-util')
-const BIUTTokenBlockModel = require('../model/tokenchain-block-model')
-const BIUTMerkleTree = require('@biut-block/biutjs-merkle-tree')
+const SECUtils = require('@sec-block/secjs-util')
+const SECTokenBlockModel = require('../model/tokenchain-block-model')
+const SECMerkleTree = require('@sec-block/secjs-merkle-tree')
 
 const tokenBufferLength = 16
 
-class BIUTTokenBlock {
+class SECTokenBlock {
   /**
     * create a token chain block with config
     * @param {*} config
@@ -12,7 +12,7 @@ class BIUTTokenBlock {
     */
   constructor (block = {}) {
     this.blockBuffer = []
-    this.block = BIUTTokenBlockModel
+    this.block = SECTokenBlockModel
 
     if (Object.keys(block).length !== 0) {
       this.setBlock(block)
@@ -45,7 +45,7 @@ class BIUTTokenBlock {
     let self = this
 
     // clear this.block
-    this.block = BIUTTokenBlockModel
+    this.block = SECTokenBlockModel
 
     // set this.block
     Object.keys(block).forEach(function (key) {
@@ -75,9 +75,9 @@ class BIUTTokenBlock {
 
     // TransactionsRoot
     if (txHashArray.length === 0) {
-      this.block['TransactionsRoot'] = BIUTUtils.KECCAK256_RLP.toString('hex')
+      this.block['TransactionsRoot'] = SECUtils.KECCAK256_RLP.toString('hex')
     } else {
-      let merkleTree = new BIUTMerkleTree(txHashArray, 'sha256')
+      let merkleTree = new SECMerkleTree(txHashArray, 'sha256')
       this.block['TransactionsRoot'] = merkleTree.getRoot().toString('hex')
     }
 
@@ -86,13 +86,13 @@ class BIUTTokenBlock {
 
     // set this.blockBuffer
     this.blockBuffer = [
-      BIUTUtils.intToBuffer(this.block.Number),
+      SECUtils.intToBuffer(this.block.Number),
       Buffer.from(this.block.TransactionsRoot, 'hex'),
       Buffer.from(this.block.ReceiptRoot, 'hex'),
       Buffer.from(this.block.LogsBloom, 'hex'),
       Buffer.from(this.block.MixHash, 'hex'),
       Buffer.from(this.block.StateRoot, 'hex'),
-      BIUTUtils.intToBuffer(this.block.TimeStamp),
+      SECUtils.intToBuffer(this.block.TimeStamp),
       Buffer.from(this.block.ParentHash, 'hex'),
       Buffer.from(this.block.Difficulty),
       Buffer.from(this.block.GasUsed),
@@ -107,7 +107,7 @@ class BIUTTokenBlock {
 
   _setBlockFromBuffer (blockBuffer) {
     // clear this.block
-    this.block = BIUTTokenBlockModel
+    this.block = SECTokenBlockModel
 
     if (blockBuffer.length !== tokenBufferLength) {
       throw new Error(`input blockBuffer length(${blockBuffer.length}) mismatch, its length should be: ${tokenBufferLength}`)
@@ -115,13 +115,13 @@ class BIUTTokenBlock {
 
     // set this.block
     this.block = {
-      Number: BIUTUtils.bufferToInt(blockBuffer[0]),
+      Number: SECUtils.bufferToInt(blockBuffer[0]),
       TransactionsRoot: blockBuffer[1].toString('hex'),
       ReceiptRoot: blockBuffer[2].toString('hex'),
       LogsBloom: blockBuffer[3].toString('hex'),
       MixHash: blockBuffer[4].toString('hex'),
       StateRoot: blockBuffer[5].toString('hex'),
-      TimeStamp: BIUTUtils.bufferToInt(blockBuffer[6]),
+      TimeStamp: SECUtils.bufferToInt(blockBuffer[6]),
       ParentHash: blockBuffer[7].toString('hex'),
       Difficulty: blockBuffer[8].toString(),
       GasUsed: blockBuffer[9].toString(),
@@ -214,13 +214,13 @@ class BIUTTokenBlock {
   }
 
   _setHeaderFromBuffer (headerBuffer) {
-    this.block.Number = BIUTUtils.bufferToInt(headerBuffer[0])
+    this.block.Number = SECUtils.bufferToInt(headerBuffer[0])
     this.block.TransactionsRoot = headerBuffer[1].toString('hex')
     this.block.ReceiptRoot = headerBuffer[2].toString('hex')
     this.block.LogsBloom = headerBuffer[3].toString('hex')
     this.block.MixHash = headerBuffer[4].toString('hex')
     this.block.StateRoot = headerBuffer[5].toString('hex')
-    this.block.TimeStamp = BIUTUtils.bufferToInt(headerBuffer[6])
+    this.block.TimeStamp = SECUtils.bufferToInt(headerBuffer[6])
     this.block.ParentHash = headerBuffer[7].toString('hex')
     this.block.Difficulty = headerBuffer[8].toString()
     this.block.GasUsed = headerBuffer[9].toString()
@@ -233,13 +233,13 @@ class BIUTTokenBlock {
 
   getHeaderHash () {
     let headerBuffer = [
-      BIUTUtils.intToBuffer(this.block.Number),
+      SECUtils.intToBuffer(this.block.Number),
       Buffer.from(this.block.TransactionsRoot, 'hex'),
       Buffer.from(this.block.ReceiptRoot, 'hex'),
       Buffer.from(this.block.LogsBloom, 'hex'),
       Buffer.from(this.block.MixHash, 'hex'),
       Buffer.from(this.block.StateRoot, 'hex'),
-      BIUTUtils.intToBuffer(this.block.TimeStamp),
+      SECUtils.intToBuffer(this.block.TimeStamp),
       Buffer.from(this.block.ParentHash, 'hex'),
       Buffer.from(this.block.Difficulty),
       Buffer.from(this.block.GasUsed),
@@ -249,7 +249,7 @@ class BIUTTokenBlock {
       Buffer.from(this.block.Beneficiary, 'hex')
     ]
 
-    return BIUTUtils.rlphash(headerBuffer).toString('hex')
+    return SECUtils.rlphash(headerBuffer).toString('hex')
   }
 
   // ----------------------------------------------------------------------- //
@@ -313,7 +313,7 @@ class BIUTTokenBlock {
   verifyHeaderHash () {
     // verify block header hash
     let header = this.getHeaderBuffer()
-    let headerHash = BIUTUtils.rlphash(header).toString('hex')
+    let headerHash = SECUtils.rlphash(header).toString('hex')
     if (headerHash === this.block.Hash) {
       return true
     }
@@ -330,9 +330,9 @@ class BIUTTokenBlock {
 
     let txRoot = ''
     if (txHashArray.length === 0) {
-      txRoot = BIUTUtils.KECCAK256_RLP.toString('hex')
+      txRoot = SECUtils.KECCAK256_RLP.toString('hex')
     } else {
-      let merkleTree = new BIUTMerkleTree(txHashArray, 'sha256')
+      let merkleTree = new SECMerkleTree(txHashArray, 'sha256')
       txRoot = merkleTree.getRoot().toString('hex')
     }
 
@@ -343,4 +343,4 @@ class BIUTTokenBlock {
   }
 }
 
-module.exports = BIUTTokenBlock
+module.exports = SECTokenBlock

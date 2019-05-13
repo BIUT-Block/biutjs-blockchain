@@ -1,16 +1,16 @@
-const BIUTUtils = require('@biut-block/biutjs-util')
+const SECUtils = require('@sec-block/secjs-util')
 
-exports.biutGeneBlock = {
+exports.secGeneBlock = {
   Number: 0,
-  ReceiptRoot: BIUTUtils.KECCAK256_RLP.toString('hex'),
-  LogsBloom: BIUTUtils.zeros(256).toString('hex'),
+  ReceiptRoot: SECUtils.KECCAK256_RLP.toString('hex'),
+  LogsBloom: SECUtils.zeros(256).toString('hex'),
   MixHash: '',
-  StateRoot: BIUTUtils.KECCAK256_RLP.toString('hex'),
+  StateRoot: SECUtils.KECCAK256_RLP.toString('hex'),
   TimeStamp: 1537900030,
-  ParentHash: BIUTUtils.zeros(32).toString('hex'),
+  ParentHash: SECUtils.zeros(32).toString('hex'),
   Beneficiary: '',
   Difficulty: '',
-  ExtraData: 'BIUT blockchain hello world',
+  ExtraData: 'SEC blockchain hello world',
   Nonce: '',
   Transactions: [{
     TxHash:
@@ -31,17 +31,17 @@ exports.biutGeneBlock = {
   }]
 }
 
-exports.biutTestGeneBlock = {
+exports.secTestGeneBlock = {
   Number: 0,
-  ReceiptRoot: BIUTUtils.KECCAK256_RLP.toString('hex'),
-  LogsBloom: BIUTUtils.zeros(256).toString('hex'),
+  ReceiptRoot: SECUtils.KECCAK256_RLP.toString('hex'),
+  LogsBloom: SECUtils.zeros(256).toString('hex'),
   MixHash: '',
-  StateRoot: BIUTUtils.KECCAK256_RLP.toString('hex'),
+  StateRoot: SECUtils.KECCAK256_RLP.toString('hex'),
   TimeStamp: 1537900030,
-  ParentHash: BIUTUtils.zeros(32).toString('hex'),
+  ParentHash: SECUtils.zeros(32).toString('hex'),
   Beneficiary: '',
   Difficulty: '',
-  ExtraData: 'BIUT blockchain test network',
+  ExtraData: 'SEC blockchain test network',
   Nonce: '',
   Transactions: [{
     TxHash:
@@ -64,30 +64,30 @@ exports.biutTestGeneBlock = {
 
 exports.senGeneBlock = {
   Number: 0,
-  ReceiptRoot: BIUTUtils.KECCAK256_RLP.toString('hex'),
-  LogsBloom: BIUTUtils.zeros(256).toString('hex'),
-  MixHash: BIUTUtils.zeros(32).toString('hex'),
-  StateRoot: BIUTUtils.KECCAK256_RLP.toString('hex'),
+  ReceiptRoot: SECUtils.KECCAK256_RLP.toString('hex'),
+  LogsBloom: SECUtils.zeros(256).toString('hex'),
+  MixHash: SECUtils.zeros(32).toString('hex'),
+  StateRoot: SECUtils.KECCAK256_RLP.toString('hex'),
   TimeStamp: 1537900030,
-  ParentHash: BIUTUtils.zeros(32).toString('hex'),
-  Beneficiary: BIUTUtils.zeros(20).toString('hex'),
+  ParentHash: SECUtils.zeros(32).toString('hex'),
+  Beneficiary: SECUtils.zeros(20).toString('hex'),
   Difficulty: '1',
   ExtraData: 'SEN blockchain hello world',
-  Nonce: BIUTUtils.zeros(8).toString('hex'),
+  Nonce: SECUtils.zeros(8).toString('hex'),
   Transactions: []
 }
 
 exports.senTestGeneBlock = {
   Number: 0,
-  ReceiptRoot: BIUTUtils.KECCAK256_RLP.toString('hex'),
-  LogsBloom: BIUTUtils.zeros(256).toString('hex'),
-  MixHash: BIUTUtils.zeros(32).toString('hex'),
-  StateRoot: BIUTUtils.KECCAK256_RLP.toString('hex'),
+  ReceiptRoot: SECUtils.KECCAK256_RLP.toString('hex'),
+  LogsBloom: SECUtils.zeros(256).toString('hex'),
+  MixHash: SECUtils.zeros(32).toString('hex'),
+  StateRoot: SECUtils.KECCAK256_RLP.toString('hex'),
   TimeStamp: 1537900030,
-  ParentHash: BIUTUtils.zeros(32).toString('hex'),
-  Beneficiary: BIUTUtils.zeros(20).toString('hex'),
+  ParentHash: SECUtils.zeros(32).toString('hex'),
+  Beneficiary: SECUtils.zeros(20).toString('hex'),
   Difficulty: '1',
   ExtraData: 'SEN blockchain test network',
-  Nonce: BIUTUtils.zeros(8).toString('hex'),
+  Nonce: SECUtils.zeros(8).toString('hex'),
   Transactions: []
 }

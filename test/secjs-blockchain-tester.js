@@ -1,23 +1,23 @@
 /* global describe it beforeEach after */
-const BIUTDataHandler = require('@biut-block/biutjs-datahandler')
+const SECDataHandler = require('@sec-block/secjs-datahandler')
 const dbconfig = {
   DBPath: process.cwd() + '/data',
   ID: 'TestID'
 }
 
-const TokenBlockchainDataHandler = new BIUTDataHandler.TokenBlockChainDB(dbconfig)
+const TokenBlockchainDataHandler = new SECDataHandler.TokenBlockChainDB(dbconfig)
 const fs = require('fs-extra')
 const mockData = require('./mock-data')
 const assert = require('chai').assert
 const should = require('chai').should()
-const BIUTBlockchain = require('../src/index')
+const SECBlockchain = require('../src/index')
 const mockDataStr = require('./mock-date-str')
 
 describe('Block Tester', () => {
-  describe('BIUT Token Blockchain', () => {
+  describe('SEC Token Blockchain', () => {
     let tokenBlockChain
     beforeEach(() => {
-      tokenBlockChain = new BIUTBlockchain.BIUTTokenBlockChain(TokenBlockchainDataHandler)
+      tokenBlockChain = new SECBlockchain.SECTokenBlockChain(TokenBlockchainDataHandler)
     })
 
     after(() => {
@@ -50,25 +50,25 @@ describe('Block Tester', () => {
     })
   })
 
-  describe('BIUT Token Block', () => {
+  describe('SEC Token Block', () => {
     it('getBlock should work', () => {
-      let tokenBlock = new BIUTBlockchain.BIUTTokenBlock(mockDataStr.tokenBlock)
+      let tokenBlock = new SECBlockchain.SECTokenBlock(mockDataStr.tokenBlock)
       assert.equal(tokenBlock.getBlock().Number, 1)
       assert.equal(tokenBlock.getBlockBuffer().length, 16)
     })
     it('getHeader should work', () => {
-      let tokenBlock = new BIUTBlockchain.BIUTTokenBlock(mockDataStr.tokenBlock)
+      let tokenBlock = new SECBlockchain.SECTokenBlock(mockDataStr.tokenBlock)
       // assert.equal(tokenBlock.getHeader().TransactionsRoot, mockDataStr.tokenBlock.TransactionsRoot)
       assert.equal(tokenBlock.getHeaderBuffer().length, 15)
       assert.equal(tokenBlock.getHeaderHash(), 'd008cf61ad881d70ed379a7e4cce7503d1948639b50e2e5594860cfe17456aff')
     })
     it('getBody should work', () => {
-      let tokenBlock = new BIUTBlockchain.BIUTTokenBlock(mockDataStr.tokenBlock)
+      let tokenBlock = new SECBlockchain.SECTokenBlock(mockDataStr.tokenBlock)
       assert.equal(tokenBlock.getBody(), mockDataStr.tokenBlock.Transactions)
       assert.equal(tokenBlock.getBodyBuffer().length, 3)
     })
     it('getPOW should work', () => {
-      let tokenBlock = new BIUTBlockchain.BIUTTokenBlock(mockDataStr.tokenBlock)
+      let tokenBlock = new SECBlockchain.SECTokenBlock(mockDataStr.tokenBlock)
       assert.equal(tokenBlock.getPowHeaderBuffer().length, 7)
     })
   })

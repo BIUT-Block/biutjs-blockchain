@@ -1,7 +1,7 @@
-const BIUTTokenBlock = require('./biutjs-token-block')
-const BIUTTokenBlockChain = require('./biutjs-token-blockchain')
+const SECTokenBlock = require('./secjs-token-block')
+const SECTokenBlockChain = require('./secjs-token-blockchain')
 
 module.exports = {
-  BIUTTokenBlock: BIUTTokenBlock,
-  BIUTTokenBlockChain: BIUTTokenBlockChain
+  SECTokenBlock: SECTokenBlock,
+  SECTokenBlockChain: SECTokenBlockChain
 }
