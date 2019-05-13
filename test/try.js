@@ -1,12 +1,12 @@
-const SECDataHandler = require('@sec-block/secjs-datahandler')
-const SECBlockchain = require('../src/index')
+const BIUTDataHandler = require('@biut-block/biutjs-datahandler')
+const BIUTBlockchain = require('../src/index')
 const dbconfig = {
   DBPath: process.cwd() + '/data',
   ID: 'TestID'
 }
 
-const tokenDH = new SECDataHandler.TokenBlockChainDB(dbconfig)
-const tokenBlockChain = new SECBlockchain.SECTokenBlockChain(tokenDH)
+const tokenDH = new BIUTDataHandler.TokenBlockChainDB(dbconfig)
+const tokenBlockChain = new BIUTBlockchain.BIUTTokenBlockChain(tokenDH)
 
 tokenBlockChain.init((e) => {
   if (e) {
@@ -25,7 +25,7 @@ tokenBlockChain.init((e) => {
 //   DBPath: '../data/test/tokenBlockChain'
 // }
 
-// let accTree = new SECDataHandler.AccTreeDB(accConfig)
+// let accTree = new BIUTDataHandler.AccTreeDB(accConfig)
 
 // accTree.getRoot((e, data) => {
 //   console.log(data)

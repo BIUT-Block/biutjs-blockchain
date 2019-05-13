@@ -1,13 +1,13 @@
 const async = require('async')
 const Promise = require('promise')
-const AccTreeDB = require('./secjs-accTree.js')
+const AccTreeDB = require('./biutjs-accTree.js')
 const geneData = require('./genesisBlock.js')
-const SECUtils = require('@sec-block/secjs-util')
-const SECTokenBlock = require('./secjs-token-block')
-const SECDatahandler = require('@sec-block/secjs-datahandler')
-const SECMerkleTree = require('@sec-block/secjs-merkle-tree')
+const BIUTUtils = require('@biut-block/biutjs-util')
+const BIUTTokenBlock = require('./biutjs-token-block')
+const BIUTDatahandler = require('@biut-block/biutjs-datahandler')
+const BIUTMerkleTree = require('@biut-block/biutjs-merkle-tree')
 
-class SECTokenBlockChain {
+class BIUTTokenBlockChain {
   /**
    * create a token chain block chain with config
    * @param {config} config
@@ -16,25 +16,25 @@ class SECTokenBlockChain {
 
   constructor (config) {
     this.chainName = config.chainName
-    this.chainDB = new SECDatahandler.TokenBlockChainDB(config.dbconfig)
-    this.txDB = new SECDatahandler.TokenTxDB(config.dbconfig)
+    this.chainDB = new BIUTDatahandler.TokenBlockChainDB(config.dbconfig)
+    this.txDB = new BIUTDatahandler.TokenTxDB(config.dbconfig)
     this.accTree = new AccTreeDB(config.dbconfig)
     this.chainLength = 0
-    this.smartContractTxDB = new SECDatahandler.SmartContractTxDB(config)
+    this.smartContractTxDB = new BIUTDatahandler.SmartContractTxDB(config)
   }
 
   /**
    * generate genesis token block
    */
   _generateGenesisBlock () {
-    if (process.env.secTest && this.chainName === 'SEC') {
-      return new SECTokenBlock(geneData.secTestGeneBlock).getBlock()
-    } else if (process.env.secTest && this.chainName === 'SEN') {
-      return new SECTokenBlock(geneData.senTestGeneBlock).getBlock()
-    } else if (process.env.secTest === undefined && this.chainName === 'SEC') {
-      return new SECTokenBlock(geneData.secGeneBlock).getBlock()
-    } else if (process.env.secTest === undefined && this.chainName === 'SEN') {
-      return new SECTokenBlock(geneData.senGeneBlock).getBlock()
+    if (process.env.biutTest && this.chainName === 'BIUT') {
+      return new BIUTTokenBlock(geneData.biutTestGeneBlock).getBlock()
+    } else if (process.env.biutTest && this.chainName === 'SEN') {
+      return new BIUTTokenBlock(geneData.senTestGeneBlock).getBlock()
+    } else if (process.env.biutTest === undefined && this.chainName === 'BIUT') {
+      return new BIUTTokenBlock(geneData.biutGeneBlock).getBlock()
+    } else if (process.env.biutTest === undefined && this.chainName === 'SEN') {
+      return new BIUTTokenBlock(geneData.senGeneBlock).getBlock()
     } else {
       throw new Error(`Invalid chain name: ${this.chainName}`)
     }
@@ -128,9 +128,9 @@ class SECTokenBlockChain {
 
     let txRoot = ''
     if (txHashArray.length === 0) {
-      txRoot = SECUtils.KECCAK256_RLP.toString('hex')
+      txRoot = BIUTUtils.KECCAK256_RLP.toString('hex')
     } else {
-      let merkleTree = new SECMerkleTree(txHashArray, 'sha256')
+      let merkleTree = new BIUTMerkleTree(txHashArray, 'sha256')
       txRoot = merkleTree.getRoot().toString('hex')
     }
 
@@ -142,7 +142,7 @@ class SECTokenBlockChain {
 
   /**
    * Put token block to db
-   * @param {SECTokenBlock} block the block object in json formation
+   * @param {BIUTTokenBlock} block the block object in json formation
    * @param {callback} callback
    */
   putBlockToDB (_block, callback) {
@@ -311,11 +311,11 @@ class SECTokenBlockChain {
   }
 
   /**
-   * get the second last block
+   * get the biutond last block
    */
-  getSecondLastBlock (callback) {
+  getBiutondLastBlock (callback) {
     if (this.chainLength <= 1) {
-      let err = new Error('this.chainLength <= 1, failed to get second last block')
+      let err = new Error('this.chainLength <= 1, failed to get biutond last block')
       return callback(err, null)
     }
     this.getBlock(this.chainLength - 2, callback)
@@ -335,13 +335,13 @@ class SECTokenBlockChain {
   }
 
   getTokenName (addr, callback) {
-    if (SECUtils.isContractAddr(addr)) {
+    if (BIUTUtils.isContractAddr(addr)) {
       this.smartContractTxDB.getTokenName(addr, (err, tokenName) => {
         if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
         callback(null, tokenName)
       })
     } else {
-      callback(null, 'SEC')
+      callback(null, 'BIUT')
     }
   }
 
@@ -352,7 +352,7 @@ class SECTokenBlockChain {
       self.getTokenName(tx.TxTo, (err, tokenName) => {
         if (err) reject(err)
         else {
-          if (tokenName === 'SEC'){
+          if (tokenName === 'BIUT'){
             self.getTokenName(tx.TxFrom, (err, tokenName) => {
               if (err) reject(err)
               else {
@@ -447,4 +447,4 @@ class SECTokenBlockChain {
   }
 }
 
-module.exports = SECTokenBlockChain
+module.exports = BIUTTokenBlockChain

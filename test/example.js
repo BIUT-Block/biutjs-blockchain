@@ -1,7 +1,7 @@
-const SECBlockchain = require('../src/index')
+const BIUTBlockchain = require('../src/index')
 const mockData = require('./mock-date-str')
 
-let tokenBlock = new SECBlockchain.SECTokenBlock(mockData.tokenBlock)
+let tokenBlock = new BIUTBlockchain.BIUTTokenBlock(mockData.tokenBlock)
 // console.log(tokenBlock.getBlock().Number)
 // let buffer = tokenBlock.getBlockBuffer()
 // console.log(buffer.length)
