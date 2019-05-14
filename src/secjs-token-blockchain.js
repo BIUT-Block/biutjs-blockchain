@@ -78,11 +78,17 @@ class SECTokenBlockChain {
                         if (err) {
                           callback(err)
                         } else {
-                          this.accTree.updateWithBlockChain(chain, (err) => {
+                          this._initAccTree(chain, (err) => {
                             if (err) {
                               callback(err)
                             } else {
-                              callback()
+                              this.accTree.updateWithBlockChain(chain, (err1) => {
+                                if (err1) {
+                                  callback(err1)
+                                } else {
+                                  callback()
+                                }
+                              })
                             }
                           })
                         }
@@ -99,6 +105,35 @@ class SECTokenBlockChain {
           })
         })
       }
+    })
+  }
+
+  _initAccTree(chain, callback) {
+    async.eachSeries(chain, (block, cb) => {
+      let count = 0
+      let txLength = block.Transactions.length
+      if(txLength === 0) {
+        cb()
+      } else {
+        block.Transactions.forEach((tx) => {
+          let contractAddr = ''
+          if (SECUtils.isContractAddr(tx.TxTo)) {
+            contractAddr = tx.TxTo
+          } else {
+            contractAddr = tx.TxFrom
+          }
+          this.getTokenName(contractAddr, (err1, tokenName) => {
+            if (err1) return cb(err1)
+            tx.TokenName = tokenName
+            count++
+            if (count >= txLength) {
+              return cb()
+            }
+          })
+        })
+      }
+    }, (err2) => {
+      callback(err2)
     })
   }
 
