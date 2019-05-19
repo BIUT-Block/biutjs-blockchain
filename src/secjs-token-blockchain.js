@@ -492,6 +492,34 @@ class SECTokenBlockChain {
     })
   }
 
+  getTxForUser (addr, callback) {
+    this.accTree.getAccInfo(addr, (err, info) => {
+      if (err) return callback(err, null)
+      else {
+        let txList = []
+        let txHashList = info[2]['From'].concat(info[2]['To'])
+        let length = txHashList.length
+        if (length === 0) {
+          return callback(null, [])
+        } else {
+          let count = 0
+          txHashList.forEach((txHash) => {
+            this.txDB.getTx(txHash, (err, data) => {
+              if (err) {
+                return callback(err, null)
+              } else {
+                txList.push(data)
+                count++
+                if (count >= length) {
+                  return callback(null, txList)
+                }
+              }
+            })
+          })
+        }
+      }
+    })
+  }
   // -------------------------  TEST FUNCTIONS  ------------------------
   getFromAccTree (accAddr, callback) {
     this.accTree.getAccInfo(accAddr, callback)
