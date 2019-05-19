@@ -89,5 +89,20 @@ exports.senTestGeneBlock = {
   Difficulty: '1',
   ExtraData: 'SEN blockchain test network',
   Nonce: SECUtils.zeros(8).toString('hex'),
-  Transactions: []
+  Transactions: [    
+    { TxHash: '5ff3974b1b85c29a0b719332be5b74633b752baf40c69fb4fc0a3848955bb88e',
+      TxReceiptStatus: 'success',
+      Version: '0.1',
+      TimeStamp: 1558252961165,
+      TxFrom: '0000000000000000000000000000000000000000',
+      TxTo: '000000000000000000000000000000000001',
+      Value: '0',
+      GasLimit: '0',
+      GasUsedByTxn: '0',
+      GasPrice: '0',
+      TxFee: '0',
+      Nonce: '0',
+      InputData: 'dHJhbnNmZXJGbGFnID0gZmFsc2UNCg0KZnVuY3Rpb24gdHJhbnNmZXIoYWRkcmVzcywgYW1vdW50KSB7DQogICAgaWYoYW1vdW50PjEwKXsNCiAgICAgICAgYW1vdW50ID0gYW1vdW50IC0gMQ0KICAgICAgICB0cmFuc2ZlckZsYWcgPSB0cnVlDQogICAgfQ0KICAgIHJldHVybiB7J0FkZHJlc3MnOiBhZGRyZXNzLCAnQW1vdW50JzogYW1vdW50fQ0KfQ0KDQpmdW5jdGlvbiBzdW1OdW1iZXIoYSxiKXsNCiAgICByZXR1cm4gYSArIGINCn0=',
+      Signature: {}
+    }]
 }

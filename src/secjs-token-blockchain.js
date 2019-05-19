@@ -30,7 +30,23 @@ class SECTokenBlockChain {
     if (process.env.secTest && this.chainName === 'SEC') {
       return new SECTokenBlock(geneData.secTestGeneBlock).getBlock()
     } else if (process.env.secTest && this.chainName === 'SEN') {
-      return new SECTokenBlock(geneData.senTestGeneBlock).getBlock()
+      /*
+      this.add('MToken', 'd7751df2524c6fe665c8ba8ec8c40170af98', (err)=>{
+        if(err){
+          console.log('SenTestInit Error', err)
+          return
+        }
+        else {
+          return new SECTokenBlock(geneData.senTestGeneBlock).getBlock()
+        }
+      })
+      */
+     this.smartContractTxDB.add('MToken', '000000000000000000000000000000000001', (err)=>{
+      if(err){
+          console.log('SenTestInit Error', err)
+        }
+      })
+     return new SECTokenBlock(geneData.senTestGeneBlock).getBlock()
     } else if (process.env.secTest === undefined && this.chainName === 'SEC') {
       return new SECTokenBlock(geneData.secGeneBlock).getBlock()
     } else if (process.env.secTest === undefined && this.chainName === 'SEN') {
