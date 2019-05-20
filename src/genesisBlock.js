@@ -19,7 +19,7 @@ exports.secGeneBlock = {
     Version: '0.1',
     TimeStamp: 1537900040,
     TxFrom: '0000000000000000000000000000000000000000',
-    TxTo: '0000000000000000000000000000000000000001',
+    TxTo: 'c4be3c8093fd7acdcdf415331040fc974f8b2ad5',
     Value: '1500000000',
     GasLimit: '0',
     GasUsedByTxn: '0',
