@@ -323,6 +323,9 @@ class SECTokenBlockChain {
   // -------------------------  FUNCTIONS FOR SPECIAL PURPOSES  ------------------------
   // ---------------------------------  DON'T USE THEM  --------------------------------
   delBlock (height, callback) {
+    if (height >= this.chainLength) {
+      return callback(null)
+    }
     // get block from db
     this.getBlock(height, (err, dbBlock) => {
       if (err) return callback(err, null)
@@ -363,7 +366,10 @@ class SECTokenBlockChain {
         // update token blockchain DB
         this.chainDB.writeTokenBlockToDB(block, (err) => {
           if (err) return callback(err)
-          this.accTree.updateWithBlock(block, (err) => { callback(err) })
+          this.accTree.updateWithBlock(block, (err) => {
+            this.chainLength = block.Number + 1
+            callback(err)
+          })
         })
       })
     })
