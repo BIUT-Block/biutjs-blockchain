@@ -25,16 +25,18 @@ class SECTokenBlockChain {
    * generate genesis token block
    */
   _generateGenesisBlock () {
-    if (process.env.secTest && this.chainName === 'SEC') {
+    if (process.env.netType === 'test' && this.chainName === 'SEC') {
       return new SECTokenBlock(geneData.secTestGeneBlock).getBlock()
-    } else if (process.env.secTest && this.chainName === 'SEN') {
+    } else if (process.env.netType === 'test' && this.chainName === 'SEN') {
       return new SECTokenBlock(geneData.senTestGeneBlock).getBlock()
-    } else if (process.env.secTest === undefined && this.chainName === 'SEC') {
+    } else if (process.env.netType === 'develop' && this.chainName === 'SEC') {
+      return new SECTokenBlock(geneData.secDevGeneBlock).getBlock()
+    } else if (process.env.netType === 'develop' && this.chainName === 'SEN') {
+      return new SECTokenBlock(geneData.senDevGeneBlock).getBlock()
+    } else if (this.chainName === 'SEC') {
       return new SECTokenBlock(geneData.secGeneBlock).getBlock()
-    } else if (process.env.secTest === undefined && this.chainName === 'SEN') {
+    } else if (this.chainName === 'SEN') {
       return new SECTokenBlock(geneData.senGeneBlock).getBlock()
-    } else {
-      throw new Error(`Invalid chain name: ${this.chainName}`)
     }
   }
 
