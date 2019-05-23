@@ -39,11 +39,6 @@ class SECTokenBlockChain {
     } else if (process.env.netType === 'develop' && this.chainName === 'SEC') {
       return new SECTokenBlock(geneData.secDevGeneBlock).getBlock()
     } else if (process.env.netType === 'develop' && this.chainName === 'SEN') {
-      this.smartContractTxDB.add('MToken', '000000000000000000000000000000000001', (err)=>{
-        if(err){
-            console.log('SenTestInit Error', err)
-          }
-        })
       return new SECTokenBlock(geneData.senDevGeneBlock).getBlock()
     } else if (this.chainName === 'SEC') {
       return new SECTokenBlock(geneData.secGeneBlock).getBlock()
