@@ -27,32 +27,28 @@ class SECTokenBlockChain {
    * generate genesis token block
    */
   _generateGenesisBlock () {
-    if (process.env.secTest && this.chainName === 'SEC') {
+    if (process.env.netType === 'test' && this.chainName === 'SEC') {
       return new SECTokenBlock(geneData.secTestGeneBlock).getBlock()
-    } else if (process.env.secTest && this.chainName === 'SEN') {
-      /*
-      this.add('MToken', 'd7751df2524c6fe665c8ba8ec8c40170af98', (err)=>{
+    } else if (process.env.netType === 'test' && this.chainName === 'SEN') {
+      this.smartContractTxDB.add('MToken', '000000000000000000000000000000000001', (err)=>{
         if(err){
-          console.log('SenTestInit Error', err)
-          return
-        }
-        else {
-          return new SECTokenBlock(geneData.senTestGeneBlock).getBlock()
-        }
-      })
-      */
-     this.smartContractTxDB.add('MToken', '000000000000000000000000000000000001', (err)=>{
-      if(err){
-          console.log('SenTestInit Error', err)
-        }
-      })
-     return new SECTokenBlock(geneData.senTestGeneBlock).getBlock()
-    } else if (process.env.secTest === undefined && this.chainName === 'SEC') {
+            console.log('SenTestInit Error', err)
+          }
+        })
+      return new SECTokenBlock(geneData.senTestGeneBlock).getBlock()
+    } else if (process.env.netType === 'develop' && this.chainName === 'SEC') {
+      return new SECTokenBlock(geneData.secDevGeneBlock).getBlock()
+    } else if (process.env.netType === 'develop' && this.chainName === 'SEN') {
+      this.smartContractTxDB.add('MToken', '000000000000000000000000000000000001', (err)=>{
+        if(err){
+            console.log('SenTestInit Error', err)
+          }
+        })
+      return new SECTokenBlock(geneData.senDevGeneBlock).getBlock()
+    } else if (this.chainName === 'SEC') {
       return new SECTokenBlock(geneData.secGeneBlock).getBlock()
-    } else if (process.env.secTest === undefined && this.chainName === 'SEN') {
+    } else if (this.chainName === 'SEN') {
       return new SECTokenBlock(geneData.senGeneBlock).getBlock()
-    } else {
-      throw new Error(`Invalid chain name: ${this.chainName}`)
     }
   }
 
@@ -439,6 +435,9 @@ class SECTokenBlockChain {
   // -------------------------  FUNCTIONS FOR SPECIAL PURPOSES  ------------------------
   // ---------------------------------  DON'T USE THEM  --------------------------------
   delBlock (height, callback) {
+    if (height >= this.chainLength) {
+      return callback(null)
+    }
     // get block from db
     this.getBlock(height, (err, dbBlock) => {
       if (err) return callback(err, null)
@@ -485,7 +484,10 @@ class SECTokenBlockChain {
           // update accTree BD
           this.setBlockTxTokenName(block, (err, _block) => {
             if (err) return callback(err)
-            this.accTree.updateWithBlock(_block, (err) => { callback(err) })
+            this.accTree.updateWithBlock(block, (err) => {
+              this.chainLength = block.Number + 1
+              callback(err)
+            })
           })
         })
       })
