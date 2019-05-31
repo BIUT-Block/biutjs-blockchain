@@ -7,7 +7,7 @@ exports.secGeneBlock = {
   LogsBloom: SECUtils.zeros(256).toString('hex'),
   MixHash: '',
   StateRoot: SECUtils.KECCAK256_RLP.toString('hex'),
-  TimeStamp: 1537900000,
+  TimeStamp: 1537900020,
   ParentHash: SECUtils.zeros(32).toString('hex'),
   Beneficiary: '',
   Difficulty: '',
@@ -15,10 +15,10 @@ exports.secGeneBlock = {
   Nonce: '',
   Transactions: [{
     TxHash:
-    '4931dc83cb7eafb8367e5d933de24216a159337f54a2d7025d8e48c0ac73b75f',
+    'b5b4c85a81706e4742bbf82808809f2e5b922dbd381f7b70a2b81674c258a8c9',
     TxReceiptStatus: 'success',
     Version: '0.1',
-    TimeStamp: 1537900000,
+    TimeStamp: 1537900020,
     TxFrom: '0000000000000000000000000000000000000000',
     TxTo: 'c4be3c8093fd7acdcdf415331040fc974f8b2ad5',
     Value: '1500000000',
@@ -38,13 +38,29 @@ exports.senGeneBlock = {
   LogsBloom: SECUtils.zeros(256).toString('hex'),
   MixHash: SECUtils.zeros(32).toString('hex'),
   StateRoot: SECUtils.KECCAK256_RLP.toString('hex'),
-  TimeStamp: 1537900000,
+  TimeStamp: 1537900020,
   ParentHash: SECUtils.zeros(32).toString('hex'),
   Beneficiary: SECUtils.zeros(20).toString('hex'),
   Difficulty: '1',
   ExtraData: 'Main Network BIU blockchain Gensis Block',
   Nonce: SECUtils.zeros(8).toString('hex'),
-  Transactions: []
+  Transactions: [{
+    TxHash:
+    '050654e254e5514fa4104c783f2940a40e526c9614ca9e7f5d476adac6739591',
+    TxReceiptStatus: 'success',
+    Version: '0.1',
+    TimeStamp: 1537900020,
+    TxFrom: '0000000000000000000000000000000000000000',
+    TxTo: 'c4be3c8093fd7acdcdf415331040fc974f8b2ad5',
+    Value: '100000000',
+    GasLimit: '0',
+    GasUsedByTxn: '0',
+    GasPrice: '0',
+    TxFee: '0',
+    Nonce: '0',
+    InputData: '100 million initial tokens',
+    Signature: {}
+  }]
 }
 
 // -------------------------  Test network genesis blocks  ------------------------
@@ -54,7 +70,7 @@ exports.secTestGeneBlock = {
   LogsBloom: SECUtils.zeros(256).toString('hex'),
   MixHash: '',
   StateRoot: SECUtils.KECCAK256_RLP.toString('hex'),
-  TimeStamp: 1537900000,
+  TimeStamp: 1537900020,
   ParentHash: SECUtils.zeros(32).toString('hex'),
   Beneficiary: '',
   Difficulty: '',
@@ -62,10 +78,10 @@ exports.secTestGeneBlock = {
   Nonce: '',
   Transactions: [{
     TxHash:
-    '4931dc83cb7eafb8367e5d933de24216a159337f54a2d7025d8e48c0ac73b75f',
+    'b5b4c85a81706e4742bbf82808809f2e5b922dbd381f7b70a2b81674c258a8c9',
     TxReceiptStatus: 'success',
     Version: '0.1',
-    TimeStamp: 1537900000,
+    TimeStamp: 1537900020,
     TxFrom: '0000000000000000000000000000000000000000',
     TxTo: 'c4be3c8093fd7acdcdf415331040fc974f8b2ad5',
     Value: '1500000000',
@@ -85,13 +101,29 @@ exports.senTestGeneBlock = {
   LogsBloom: SECUtils.zeros(256).toString('hex'),
   MixHash: SECUtils.zeros(32).toString('hex'),
   StateRoot: SECUtils.KECCAK256_RLP.toString('hex'),
-  TimeStamp: 1537900000,
+  TimeStamp: 1537900020,
   ParentHash: SECUtils.zeros(32).toString('hex'),
   Beneficiary: SECUtils.zeros(20).toString('hex'),
   Difficulty: '1',
   ExtraData: 'Test Network BIU blockchain Gensis Block',
   Nonce: SECUtils.zeros(8).toString('hex'),
-  Transactions: [    
+  Transactions: [{
+      TxHash:
+      '050654e254e5514fa4104c783f2940a40e526c9614ca9e7f5d476adac6739591',
+      TxReceiptStatus: 'success',
+      Version: '0.1',
+      TimeStamp: 1537900020,
+      TxFrom: '0000000000000000000000000000000000000000',
+      TxTo: 'c4be3c8093fd7acdcdf415331040fc974f8b2ad5',
+      Value: '100000000',
+      GasLimit: '0',
+      GasUsedByTxn: '0',
+      GasPrice: '0',
+      TxFee: '0',
+      Nonce: '0',
+      InputData: '100 million initial tokens',
+      Signature: {}
+    },   
     { TxHash: '5ff3974b1b85c29a0b719332be5b74633b752baf40c69fb4fc0a3848955bb88e',
       TxReceiptStatus: 'success',
       Version: '0.1',
@@ -116,7 +148,7 @@ exports.secDevGeneBlock = {
   LogsBloom: SECUtils.zeros(256).toString('hex'),
   MixHash: '',
   StateRoot: SECUtils.KECCAK256_RLP.toString('hex'),
-  TimeStamp: 1537900000,
+  TimeStamp: 1537900020,
   ParentHash: SECUtils.zeros(32).toString('hex'),
   Beneficiary: '',
   Difficulty: '',
@@ -124,10 +156,10 @@ exports.secDevGeneBlock = {
   Nonce: '',
   Transactions: [{
     TxHash:
-    '4931dc83cb7eafb8367e5d933de24216a159337f54a2d7025d8e48c0ac73b75f',
+    'b5b4c85a81706e4742bbf82808809f2e5b922dbd381f7b70a2b81674c258a8c9',
     TxReceiptStatus: 'success',
     Version: '0.1',
-    TimeStamp: 1537900000,
+    TimeStamp: 1537900020,
     TxFrom: '0000000000000000000000000000000000000000',
     TxTo: 'c4be3c8093fd7acdcdf415331040fc974f8b2ad5',
     Value: '1500000000',
@@ -147,11 +179,27 @@ exports.senDevGeneBlock = {
   LogsBloom: SECUtils.zeros(256).toString('hex'),
   MixHash: SECUtils.zeros(32).toString('hex'),
   StateRoot: SECUtils.KECCAK256_RLP.toString('hex'),
-  TimeStamp: 1537900000,
+  TimeStamp: 1537900020,
   ParentHash: SECUtils.zeros(32).toString('hex'),
   Beneficiary: SECUtils.zeros(20).toString('hex'),
   Difficulty: '1',
   ExtraData: 'Develop Network BIU blockchain Gensis Block',
   Nonce: SECUtils.zeros(8).toString('hex'),
-  Transactions: []
+  Transactions: [{
+    TxHash:
+    '050654e254e5514fa4104c783f2940a40e526c9614ca9e7f5d476adac6739591',
+    TxReceiptStatus: 'success',
+    Version: '0.1',
+    TimeStamp: 1537900020,
+    TxFrom: '0000000000000000000000000000000000000000',
+    TxTo: 'c4be3c8093fd7acdcdf415331040fc974f8b2ad5',
+    Value: '100000000',
+    GasLimit: '0',
+    GasUsedByTxn: '0',
+    GasPrice: '0',
+    TxFee: '0',
+    Nonce: '0',
+    InputData: '100 million initial tokens',
+    Signature: {}
+  }]
 }
