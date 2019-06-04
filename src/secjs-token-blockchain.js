@@ -61,7 +61,16 @@ class SECTokenBlockChain {
           else {
             // then write genesis block to both tokenDB and account tree DB
             let geneBlock = this._generateGenesisBlock()
-            this.putBlockToDB(geneBlock, callback)
+            if (process.env.netType === 'test' && this.chainName === 'SEN'){
+              this.smartContractTxDB.add('MToken', '000000000000000000000000000000000001', (err)=>{
+                if(err){
+                    console.log('SenTestInit Error', err)
+                }
+                this.putBlockToDB(geneBlock, callback)                
+              }) 
+            } else {
+              this.putBlockToDB(geneBlock, callback)                
+            }
           }
         })
       } else {
