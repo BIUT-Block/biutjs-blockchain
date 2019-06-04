@@ -197,8 +197,8 @@ class SECTokenBlockChain {
       // get block from db
       this.getBlock(i, (err, dbBlock) => {
         if (err) {
-          let e = new Error(`Error occurs when try to get block, block number is ${i}`)
-          return cb(e, null)
+          console.error(`delBlockFromHeight function: Error occurs when try to get block, block number is ${i}`)
+          return cb()
         }
 
         // update tx DB
