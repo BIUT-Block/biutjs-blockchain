@@ -240,6 +240,8 @@ class SECTokenBlockChain {
                 if (err) return callback(err)
                 if (errPosition !== -1) {
                   this.delBlockFromHeight(errPosition, callback)
+                } else {
+                  callback()
                 }
               })
             })
