@@ -63,10 +63,6 @@ class SECAccTree {
     return this.accTree.getRoot()
   }
 
-  getRoots (callback) {
-    this.accTree.getRoots(callback)
-  }
-
   updateWithBlockChain (blockchain, callback) {
     this.accTree.updateWithBlockChain(blockchain).then(() => {
       callback()
