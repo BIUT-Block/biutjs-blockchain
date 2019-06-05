@@ -119,6 +119,32 @@ class SECTokenBlockChain {
     }
   }
 
+  verifyDifficulty (block, callback) {
+    let difficulty = parseFloat(block.Difficulty)
+    if (block.Number > 1) {
+      if (difficulty < 2048) {
+        let e = new Error(`Invalid difficulty value(${difficulty}), must be larger than 2048`)
+        return callback(e)
+      }
+
+      this.getBlock(block.Number - 1, (err, lastblock) => {
+        if (err) callback(err)
+        else {
+          let lastDiff = parseFloat(lastblock.Difficulty)
+          let adjustDiff = Math.round(Math.pow(2, (Math.floor(lastblock.Number / 100000) - 2)))
+          let difference = lastDiff + Math.floor(lastDiff / 2048) + adjustDiff
+          if (Math.abs(difficulty - lastDiff) > difference) {
+            let e = new Error(`Invalid block difficulty, difficulty difference is ${Math.abs(difficulty - lastDiff)}, but should be smaller than ${difference}`)
+            return callback(e)
+          }
+          callback()
+        }
+      })
+    } else {
+      callback()
+    }
+  }
+
   verifyTxRoot (block) {
     // verify block header transaction root
     let txHashArray = []
@@ -165,23 +191,26 @@ class SECTokenBlockChain {
     // verify parent hash
     this.verifyParentHash(block, (err, result) => {
       if (err) return callback(err)
-      if (!result) {
-        // do nothing if failed to verify parent hash
-        callback(new Error('Failed to verify parent hash'))
-      } else if (block.Number === this.chainLength) {
-        // new block received, update tokenTxDB
-        this.txDB.writeBlock(block, (err) => {
-          if (err) return callback(err)
-          // update token blockchain DB
-          this.chainDB.writeTokenBlockToDB(block, (err) => {
+      this.verifyDifficulty(block, (err) => {
+        if (err) return callback(err)
+        if (!result) {
+          // do nothing if failed to verify parent hash
+          callback(new Error('Failed to verify parent hash'))
+        } else if (block.Number === this.chainLength) {
+          // new block received, update tokenTxDB
+          this.txDB.writeBlock(block, (err) => {
             if (err) return callback(err)
-            this.chainLength = block.Number + 1
-            this.accTree.updateWithBlock(block, (err) => { callback(err) })
+            // update token blockchain DB
+            this.chainDB.writeTokenBlockToDB(block, (err) => {
+              if (err) return callback(err)
+              this.chainLength = block.Number + 1
+              this.accTree.updateWithBlock(block, (err) => { callback(err) })
+            })
           })
-        })
-      } else {
-        callback(new Error(`Can not add token Block, token Block Number is false, block.Number: ${block.Number}, this.chainLength: ${this.chainLength}`))
-      }
+        } else {
+          callback(new Error(`Can not add token Block, token Block Number is false, block.Number: ${block.Number}, this.chainLength: ${this.chainLength}`))
+        }
+      })
     })
   }
 
