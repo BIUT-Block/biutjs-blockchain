@@ -221,34 +221,34 @@ class SECTokenBlockChain {
     // verify parent hash
     this.verifyParentHash(block, (err, result) => {
       if (err) return callback(err)
-      this.verifyDifficulty(block, (err) => {
-        if (err) return callback(err)
-        if (!result) {
-          // do nothing if failed to verify parent hash
-          callback(new Error('Failed to verify parent hash'))
-        } else if (block.Number === this.chainLength) {
-          // new block received, update tokenTxDB
-          this.txDB.writeBlock(block, (err) => {
+      // this.verifyDifficulty(block, (err) => {
+      //   if (err) return callback(err)
+      if (!result) {
+        // do nothing if failed to verify parent hash
+        callback(new Error('Failed to verify parent hash'))
+      } else if (block.Number === this.chainLength) {
+        // new block received, update tokenTxDB
+        this.txDB.writeBlock(block, (err) => {
+          if (err) return callback(err)
+          // update token blockchain DB
+          this.chainDB.writeTokenBlockToDB(block, (err) => {
             if (err) return callback(err)
-            // update token blockchain DB
-            this.chainDB.writeTokenBlockToDB(block, (err) => {
+            this.chainLength = block.Number + 1
+            this.accTree.updateWithBlock(block, (err) => {
               if (err) return callback(err)
-              this.chainLength = block.Number + 1
-              this.accTree.updateWithBlock(block, (err) => {
+              this._consistentCheck((err, errPosition) => {
                 if (err) return callback(err)
-                this._consistentCheck((err, errPosition) => {
-                  if (err) return callback(err)
-                  if (errPosition !== -1) {
-                    this.delBlockFromHeight(errPosition, callback)
-                  }
-                })
+                if (errPosition !== -1) {
+                  this.delBlockFromHeight(errPosition, callback)
+                }
               })
             })
           })
-        } else {
-          callback(new Error(`Can not add token Block, token Block Number is false, block.Number: ${block.Number}, this.chainLength: ${this.chainLength}`))
-        }
-      })
+        })
+      } else {
+        callback(new Error(`Can not add token Block, token Block Number is false, block.Number: ${block.Number}, this.chainLength: ${this.chainLength}`))
+      }
+      // })
     })
   }
 
