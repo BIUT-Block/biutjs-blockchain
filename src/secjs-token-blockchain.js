@@ -166,6 +166,36 @@ class SECTokenBlockChain {
     return false
   }
 
+  _consistentCheck (callback) {
+    this.getHashList((err, hashList) => {
+      if (err) {
+        return callback(err, 1)
+      } else {
+        hashList.forEach((data, index) => {
+          if (data === undefined) {
+            return callback(null, index)
+          }
+          if (data.Number === undefined || data.Hash === undefined || data.ParentHash === undefined) {
+            return callback(null, index)
+          }
+
+          // block number consistent check
+          if (data.Number !== index) {
+            return callback(null, index)
+          }
+
+          // parent hash consistent check
+          if (index > 0) {
+            if (data.ParentHash !== hashList[index - 1].Hash) {
+              return callback(null, index)
+            }
+          }
+        })
+        return callback(null, -1)
+      }
+    })
+  }
+
   /**
    * Put token block to db
    * @param {SECTokenBlock} block the block object in json formation
@@ -191,26 +221,34 @@ class SECTokenBlockChain {
     // verify parent hash
     this.verifyParentHash(block, (err, result) => {
       if (err) return callback(err)
-      // this.verifyDifficulty(block, (err) => {
-        // if (err) return callback(err)
-      if (!result) {
-        // do nothing if failed to verify parent hash
-        callback(new Error('Failed to verify parent hash'))
-      } else if (block.Number === this.chainLength) {
-        // new block received, update tokenTxDB
-        this.txDB.writeBlock(block, (err) => {
-          if (err) return callback(err)
-          // update token blockchain DB
-          this.chainDB.writeTokenBlockToDB(block, (err) => {
+      this.verifyDifficulty(block, (err) => {
+        if (err) return callback(err)
+        if (!result) {
+          // do nothing if failed to verify parent hash
+          callback(new Error('Failed to verify parent hash'))
+        } else if (block.Number === this.chainLength) {
+          // new block received, update tokenTxDB
+          this.txDB.writeBlock(block, (err) => {
             if (err) return callback(err)
-            this.chainLength = block.Number + 1
-            this.accTree.updateWithBlock(block, (err) => { callback(err) })
+            // update token blockchain DB
+            this.chainDB.writeTokenBlockToDB(block, (err) => {
+              if (err) return callback(err)
+              this.chainLength = block.Number + 1
+              this.accTree.updateWithBlock(block, (err) => {
+                if (err) return callback(err)
+                this._consistentCheck((err, errPosition) => {
+                  if (err) return callback(err)
+                  if (errPosition !== -1) {
+                    this.delBlockFromHeight(errPosition, callback)
+                  }
+                })
+              })
+            })
           })
-        })
-      } else {
-        callback(new Error(`Can not add token Block, token Block Number is false, block.Number: ${block.Number}, this.chainLength: ${this.chainLength}`))
-      }
-      // })
+        } else {
+          callback(new Error(`Can not add token Block, token Block Number is false, block.Number: ${block.Number}, this.chainLength: ${this.chainLength}`))
+        }
+      })
     })
   }
 
@@ -254,7 +292,14 @@ class SECTokenBlockChain {
       if (err) return callback(err, null)
       else {
         this.chainLength = height
-        callback(err, revertTxArray)
+        this._consistentCheck((err, errPosition) => {
+          if (err) return callback(err, null)
+          if (errPosition !== -1) {
+            this.delBlockFromHeight(errPosition, callback)
+          } else {
+            callback(err, revertTxArray)
+          }
+        })
       }
     })
   }
