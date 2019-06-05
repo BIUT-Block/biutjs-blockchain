@@ -95,7 +95,7 @@ exports.secTestGeneBlock = {
   }]
 }
 
-exports.secestGeneBlock = {
+exports.senTestGeneBlock = {
   Number: 0,
   ReceiptRoot: SECUtils.KECCAK256_RLP.toString('hex'),
   LogsBloom: SECUtils.zeros(256).toString('hex'),
