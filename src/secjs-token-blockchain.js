@@ -300,11 +300,11 @@ class SECTokenBlockChain {
         })
       })
     }, (err) => {
-      if (err) return callback(err, null)
+      if (err) return callback(err, [])
       else {
         this.chainLength = height
         this._consistentCheck((err, errPosition) => {
-          if (err) return callback(err, null)
+          if (err) return callback(err, [])
           if (errPosition !== -1) {
             this.delBlockFromHeight(errPosition, callback)
           } else {
