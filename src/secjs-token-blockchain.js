@@ -171,26 +171,35 @@ class SECTokenBlockChain {
       if (err) {
         return callback(err, 1)
       } else {
-        hashList.forEach((data, index) => {
-          if (data === undefined) {
-            return callback(null, index)
-          }
-          if (data.Number === undefined || data.Hash === undefined || data.ParentHash === undefined) {
-            return callback(null, index)
-          }
-
-          // block number consistent check
-          if (data.Number !== index) {
-            return callback(null, index)
-          }
-
-          // parent hash consistent check
-          if (index > 0) {
-            if (data.ParentHash !== hashList[index - 1].Hash) {
-              return callback(null, index)
+        let errPosition = -1
+        try {
+          hashList.forEach((data, index) => {
+            if (data === undefined) {
+              errPosition = index
+              throw new Error(`HashList data undefined, consistentcheck Failed, Error Position: ${errPosition}`)
             }
-          }
-        })
+            if (data.Number === undefined || data.Hash === undefined || data.ParentHash === undefined) {
+              errPosition = index
+              throw new Error(`HashList data subobject undefined, consistentcheck Failed, Error Position: ${errPosition}`)
+            }
+
+            // block number consistent check
+            if (data.Number !== index) {
+              errPosition = index
+              throw new Error(`HashList data.Number not right, consistentcheck Failed, Error Position: ${errPosition}`)
+            }
+
+            // parent hash consistent check
+            if (index > 0) {
+              if (data.ParentHash !== hashList[index - 1].Hash) {
+                errPosition = index
+                throw new Error(`HashList Hash and ParentHash not right, consistentcheck Failed, Error Position: ${errPosition}`)
+              }
+            }
+          })
+        } catch (err) {
+          return callback(err, errPosition)
+        }
         return callback(null, -1)
       }
     })
