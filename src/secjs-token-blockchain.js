@@ -30,11 +30,6 @@ class SECTokenBlockChain {
     if (process.env.netType === 'test' && this.chainName === 'SEC') {
       return new SECTokenBlock(geneData.secTestGeneBlock).getBlock()
     } else if (process.env.netType === 'test' && this.chainName === 'SEN') {
-      this.smartContractTxDB.add('MToken', '000000000000000000000000000000000001', (err)=>{
-        if(err){
-            console.log('SenTestInit Error', err)
-          }
-        })
       return new SECTokenBlock(geneData.senTestGeneBlock).getBlock()
     } else if (process.env.netType === 'develop' && this.chainName === 'SEC') {
       return new SECTokenBlock(geneData.secDevGeneBlock).getBlock()
@@ -116,11 +111,17 @@ class SECTokenBlockChain {
                   if (err) {
                     callback(err)
                   } else {
-                    this.accTree.updateWithBlockChain(chain, (err) => {
+                    this._initAccTree(chain, (err) => {
                       if (err) {
                         callback(err)
                       } else {
-                        callback()
+                        this.accTree.updateWithBlockChain(chain, (err1) => {
+                          if (err1) {
+                            callback(err1)
+                          } else {
+                            callback()
+                          }
+                        })
                       }
                     })
                   }
@@ -307,17 +308,20 @@ class SECTokenBlockChain {
           this.chainDB.writeTokenBlockToDB(block, (err) => {
             if (err) return callback(err)
             this.chainLength = block.Number + 1
-            this.accTree.updateWithBlock(block, (err) => {
+            this.setBlockTxTokenName(block, (err, _block) => {
               if (err) return callback(err)
-              this._consistentCheck((err, errPosition) => {
-                if (err) {
-                  // do nothing
-                }
-                if (errPosition !== -1) {
-                  this.delBlockFromHeight(errPosition, callback)
-                } else {
-                  callback()                  
-                }
+              this.accTree.updateWithBlock(_block, (err) => {
+                if (err) return callback(err)
+                this._consistentCheck((err, errPosition) => {
+                  if (err) {
+                    // do nothing
+                  }
+                  if (errPosition !== -1) {
+                    this.delBlockFromHeight(errPosition, callback)
+                  } else {
+                    callback()                  
+                  }
+                })
               })
             })
           })
@@ -498,7 +502,7 @@ class SECTokenBlockChain {
         callback(null, tokenName)
       })
     } else {
-      callback(null, 'SEC')
+      callback(null, this.chainName)
     }
   }
 
@@ -509,7 +513,16 @@ class SECTokenBlockChain {
       self.getTokenName(tx.TxTo, (err, tokenName) => {
         if (err) reject(err)
         else {
-          if (tokenName === 'SEC'){
+          if (tokenName === 'SEC' && self.chainName === 'SEC'){
+            self.getTokenName(tx.TxFrom, (err, tokenName) => {
+              if (err) reject(err)
+              else {
+                tx.TokenName = tokenName
+                tx = JSON.stringify(tx)
+                resolve(tx)
+              }
+            })
+          } else if (tokenName === 'SEN' && self.chainName === 'SEN') {
             self.getTokenName(tx.TxFrom, (err, tokenName) => {
               if (err) reject(err)
               else {
