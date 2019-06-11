@@ -74,51 +74,64 @@ class SECTokenBlockChain {
           }
         })
       } else {
-        // if tokenDB is not empty, then firstly get the state root of the last block
+        // if tokenDB is not empty, then firstly get the chain length
         this._getAllBlockChainFromDB(() => {
-          this.getLastBlock((err, block) => {
-            if (err) callback(err)
-            else {
-              let root = block.StateRoot
-              root = root.substr(2) // remove 0x
-              // check if the given root exists
-              this.accTree.checkRoot(root, (err, result) => {
-                // if it doesnt exist or error occurs:
-                if (err || !result) {
-                  // clear DB
-                  this.accTree.clearDB((err) => {
-                    if (err) callback(err)
-                    else {
-                      // update account tree db with whole token block chain
-                      this.chainDB.getTokenBlockChainDB((err, chain) => {
-                        if (err) {
-                          callback(err)
-                        } else {
-                          this._initAccTree(chain, (err) => {
-                            if (err) {
-                              callback(err)
-                            } else {
-                              this.accTree.updateWithBlockChain(chain, (err1) => {
-                                if (err1) {
-                                  callback(err1)
-                                } else {
-                                  callback()
-                                }
-                              })
-                            }
-                          })
-                        }
-                      })
-                    }
-                  })
-                } else {
-                  // otherwise, create a new merkle tree which starts from the given root
-                  this.accTree.newTree(root)
-                  callback()
+          // then check consistent of the chain
+          this._consistentCheck((err, errPosition) => {
+            if (err) {
+              // do nothing
+            }
+            if (errPosition !== -1) {
+              this.delBlockFromHeight(errPosition, (err) => {
+                if (err) callback(err)
+                else {
+                  this.verifyStateRoot(callback)
                 }
               })
-            } 
+            } else {
+              this.verifyStateRoot(callback)
+            }
           })
+        })
+      }
+    })
+  }
+
+  verifyStateRoot (callback) { 
+    this.getLastBlock((err, block) => {
+      if (err) callback(err)
+      else {
+        let root = block.StateRoot
+        root = root.substr(2) // remove 0x
+        // check if the given root exists
+        this.accTree.checkRoot(root, (err, result) => {
+          // if it doesnt exist or error occurs:
+          if (err || !result) {
+            // clear DB
+            this.accTree.clearDB((err) => {
+              if (err) callback(err)
+              else {
+                // update account tree db with whole token block chain
+                this.chainDB.getTokenBlockChainDB((err, chain) => {
+                  if (err) {
+                    callback(err)
+                  } else {
+                    this.accTree.updateWithBlockChain(chain, (err) => {
+                      if (err) {
+                        callback(err)
+                      } else {
+                        callback()
+                      }
+                    })
+                  }
+                })
+              }
+            })
+          } else {
+            // otherwise, create a new merkle tree which starts from the given root
+            this.accTree.newTree(root)
+            callback()
+          }
         })
       }
     })
@@ -170,6 +183,32 @@ class SECTokenBlockChain {
     }
   }
 
+  verifyDifficulty (block, callback) {
+    let difficulty = parseFloat(block.Difficulty)
+    if (block.Number > 1) {
+      if (difficulty < 2048) {
+        let e = new Error(`Invalid difficulty value(${difficulty}), must be larger than 2048`)
+        return callback(e)
+      }
+
+      this.getBlock(block.Number - 1, (err, lastblock) => {
+        if (err) callback(err)
+        else {
+          let lastDiff = parseFloat(lastblock.Difficulty)
+          let adjustDiff = Math.round(Math.pow(2, (Math.floor(lastblock.Number / 100000) - 2)))
+          let difference = lastDiff + Math.floor(lastDiff / 2048) + adjustDiff
+          if (Math.abs(difficulty - lastDiff) > difference) {
+            let e = new Error(`Invalid block difficulty, difficulty difference is ${Math.abs(difficulty - lastDiff)}, but should be smaller than ${difference}`)
+            return callback(e)
+          }
+          callback()
+        }
+      })
+    } else {
+      callback()
+    }
+  }
+
   verifyTxRoot (block) {
     // verify block header transaction root
     let txHashArray = []
@@ -189,6 +228,45 @@ class SECTokenBlockChain {
       return true
     }
     return false
+  }
+
+  _consistentCheck (callback) {
+    this.getHashList((err, hashList) => {
+      if (err) {
+        return callback(err, 1)
+      } else {
+        let errPosition = -1
+        try {        
+          hashList.forEach((data, index) => {
+            if (data === undefined) {
+              errPosition = index
+              throw new Error(`HashList data undefined, consistentcheck Failed, Error Position: ${errPosition}`)
+            }
+            if (data.Number === undefined || data.Hash === undefined || data.ParentHash === undefined) {
+              errPosition = index
+              throw new Error(`HashList data subobject undefined, consistentcheck Failed, Error Position: ${errPosition}`)
+            }
+
+            // block number consistent check
+            if (data.Number !== index) {
+              errPosition = index
+              throw new Error(`HashList data.Number not right, consistentcheck Failed, Error Position: ${errPosition}`)
+            }
+
+            // parent hash consistent check
+            if (index > 0) {
+              if (data.ParentHash !== hashList[index - 1].Hash) {
+                errPosition = index
+                throw new Error(`HashList Hash and ParentHash not right, consistentcheck Failed, Error Position: ${errPosition}`)
+              }
+            }
+          })
+          return callback(null, -1)
+        } catch (err) {
+          return callback(err, errPosition)
+        }
+      }
+    })
   }
 
   /**
@@ -216,6 +294,8 @@ class SECTokenBlockChain {
     // verify parent hash
     this.verifyParentHash(block, (err, result) => {
       if (err) return callback(err)
+      // this.verifyDifficulty(block, (err) => {
+      //   if (err) return callback(err)
       if (!result) {
         // do nothing if failed to verify parent hash
         callback(new Error('Failed to verify parent hash'))
@@ -227,61 +307,87 @@ class SECTokenBlockChain {
           this.chainDB.writeTokenBlockToDB(block, (err) => {
             if (err) return callback(err)
             this.chainLength = block.Number + 1
-
-            // update accTree BD
-            this.setBlockTxTokenName(block, (err, _block) => {
+            this.accTree.updateWithBlock(block, (err) => {
               if (err) return callback(err)
-              this.accTree.updateWithBlock(_block, (err) => { callback(err) })
+              this._consistentCheck((err, errPosition) => {
+                if (err) {
+                  // do nothing
+                }
+                if (errPosition !== -1) {
+                  this.delBlockFromHeight(errPosition, callback)
+                } else {
+                  callback()                  
+                }
+              })
             })
           })
         })
       } else {
         callback(new Error(`Can not add token Block, token Block Number is false, block.Number: ${block.Number}, this.chainLength: ${this.chainLength}`))
       }
+      // })
     })
   }
 
   delBlockFromHeight (height, callback) {
     let indexArray = []
     let revertTxArray = []
-    let localHeight = this.getCurrentHeight()
-    for (let i = height; i <= localHeight; i++) {
-      indexArray.push(i)
-    }
 
-    async.eachSeries(indexArray, (i, cb) => {
-      // get block from db
-      this.getBlock(i, (err, dbBlock) => {
-        if (err) {
-          let e = new Error(`Error occurs when try to get block, block number is ${i}`)
-          return cb(e, null)
+    this.getHashList((err, hashList) => {
+      if (err) return callback(err, [])
+      else {
+        for (let i = height; i <= hashList[hashList.length - 1].Number; i++) {
+          if (hashList[i] !== undefined) {
+            if (hashList[i].Number !== undefined) {
+              indexArray.push(hashList[i].Number)
+            }
+          }
         }
 
-        // update tx DB
-        this.txDB.delBlock(dbBlock, (err1) => {
-          if (err1) return cb(err1)
-          // update token chain DB
-          this.chainDB.delBlock(dbBlock, (err2) => {
-            if (err2) return cb(err2)
-            // update account tree DB
-            this.accTree.revertWithBlock(dbBlock, (err3) => {
-              if (err3) return cb(err3)
-              dbBlock.Transactions.forEach((tx) => {
-                tx.TxReceiptStatus = 'pending'
-                if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
-                  revertTxArray.push(tx)
-                }
+        async.eachSeries(indexArray, (i, cb) => {
+          // get block from db
+          this.getBlock(i, (err, dbBlock) => {
+            if (err) {
+              console.error(`delBlockFromHeight function: Error occurs when try to get block, block number is ${i}`)
+              return cb()
+            }
+
+            // update tx DB
+            this.txDB.delBlock(dbBlock, (err1) => {
+              if (err1) return cb(err1)
+              // update token chain DB
+              this.chainDB.delBlock(dbBlock, (err2) => {
+                if (err2) return cb(err2)
+                // update account tree DB
+                this.accTree.revertWithBlock(dbBlock, (err3) => {
+                  if (err3) return cb(err3)
+                  dbBlock.Transactions.forEach((tx) => {
+                    tx.TxReceiptStatus = 'pending'
+                    if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
+                      revertTxArray.push(tx)
+                    }
+                  })
+                  cb()
+                })
               })
-              cb()
             })
           })
+        }, (err) => {
+          if (err) return callback(err, [])
+          else {
+            this.chainLength = height
+            this._consistentCheck((err, errPosition) => {
+              if (err) {
+                // do nothing
+              }
+              if (errPosition !== -1) {
+                this.delBlockFromHeight(errPosition, callback)
+              } else {
+                callback(err, revertTxArray)
+              }
+            })
+          }
         })
-      })
-    }, (err) => {
-      if (err) return callback(err, null)
-      else {
-        this.chainLength = height
-        callback(err, revertTxArray)
       }
     })
   }
