@@ -15,6 +15,7 @@ class SECTokenBlockChain {
    */
 
   constructor (config) {
+    this.deletingFlag = false
     this.chainName = config.chainName
     this.chainDB = new SECDatahandler.TokenBlockChainDB(config.dbconfig)
     this.txDB = new SECDatahandler.TokenTxDB(config.dbconfig)
@@ -77,6 +78,7 @@ class SECTokenBlockChain {
               // do nothing
             }
             if (errPosition !== -1) {
+              this.deletingFlag = true
               this.delBlockFromHeight(errPosition, (err) => {
                 if (err) callback(err)
                 else {
@@ -276,60 +278,64 @@ class SECTokenBlockChain {
    * @param {callback} callback
    */
   putBlockToDB (_block, callback) {
-    // write a new block to DB
-    let block = JSON.parse(JSON.stringify(_block))
-
-    // parse block.Transactions
-    block.Transactions.forEach((tx, index) => {
-      if (typeof tx === 'string') {
-        block.Transactions[index] = JSON.parse(tx)
-        block.Transactions[index].BlockNumber = block.Number
-        block.Transactions[index].BlockHash = block.Hash
+    if (this.deletingFlag) return callback(new Error('Now deleting block, can not write block into database.'))
+    this._consistentCheck((err, errPosition) => {
+      if (err) {
+        console.error(err)
+        return callback(new Error('Put Block to DB, Consistent check error.'))
       }
-    })
+      if (errPosition !== -1) {
+        this.deletingFlag = true
+        this.delBlockFromHeight(errPosition, callback)
+      } else {    
+        // write a new block to DB
+        let block = JSON.parse(JSON.stringify(_block))
 
-    if (!this.verifyTxRoot(block)) {
-      return callback(new Error('Failed to verify transaction root'))
-    }
+        // parse block.Transactions
+        block.Transactions.forEach((tx, index) => {
+          if (typeof tx === 'string') {
+            block.Transactions[index] = JSON.parse(tx)
+            block.Transactions[index].BlockNumber = block.Number
+            block.Transactions[index].BlockHash = block.Hash
+          }
+        })
 
-    // verify parent hash
-    this.verifyParentHash(block, (err, result) => {
-      if (err) return callback(err)
-      // this.verifyDifficulty(block, (err) => {
-      //   if (err) return callback(err)
-      if (!result) {
-        // do nothing if failed to verify parent hash
-        callback(new Error('Failed to verify parent hash'))
-      } else if (block.Number === this.chainLength) {
-        // new block received, update tokenTxDB
-        this.txDB.writeBlock(block, (err) => {
+
+        if (!this.verifyTxRoot(block)) {
+          return callback(new Error('Failed to verify transaction root'))
+        }
+
+        // verify parent hash
+        this.verifyParentHash(block, (err, result) => {
           if (err) return callback(err)
-          // update token blockchain DB
-          this.chainDB.writeTokenBlockToDB(block, (err) => {
-            if (err) return callback(err)
-            this.chainLength = block.Number + 1
-            this.setBlockTxTokenName(block, (err, _block) => {
+          if (this.deletingFlag) return callback(new Error('Now deleting block, can not write block into database.'))
+          // this.verifyDifficulty(block, (err) => {
+          //   if (err) return callback(err)
+          if (!result) {
+            // do nothing if failed to verify parent hash
+            callback(new Error('Failed to verify parent hash'))
+          } else if (block.Number === this.chainLength) {
+            // new block received, update tokenTxDB
+            this.txDB.writeBlock(block, (err) => {
               if (err) return callback(err)
-              this.accTree.updateWithBlock(_block, (err) => {
+              // update token blockchain DB
+              this.chainDB.writeTokenBlockToDB(block, (err) => {
                 if (err) return callback(err)
-                this._consistentCheck((err, errPosition) => {
-                  if (err) {
-                    // do nothing
-                  }
-                  if (errPosition !== -1) {
-                    this.delBlockFromHeight(errPosition, callback)
-                  } else {
-                    callback()                  
-                  }
+                this.chainLength = block.Number + 1
+                this.setBlockTxTokenName(block, (err, _block) => {
+                  if (err) return callback(err)
+                  this.accTree.updateWithBlock(_block, (err) => {
+                    if (err) return callback(err)
+                    callback()
+                  })
                 })
               })
             })
-          })
+          } else {
+            callback(new Error(`Can not add token Block, token Block Number is false, block.Number: ${block.Number}, this.chainLength: ${this.chainLength}`))
+          }
         })
-      } else {
-        callback(new Error(`Can not add token Block, token Block Number is false, block.Number: ${block.Number}, this.chainLength: ${this.chainLength}`))
       }
-      // })
     })
   }
 
@@ -338,8 +344,12 @@ class SECTokenBlockChain {
     let revertTxArray = []
 
     this.getHashList((err, hashList) => {
-      if (err) return callback(err, [])
-      else {
+      if (err) {
+        setTimeout(() => {
+          this.deletingFlag = false
+        }, 1000)
+        return callback(err, [])
+      } else {
         for (let i = height; i <= hashList[hashList.length - 1].Number; i++) {
           if (hashList[i] !== undefined) {
             if (hashList[i].Number !== undefined) {
@@ -377,14 +387,22 @@ class SECTokenBlockChain {
             })
           })
         }, (err) => {
-          if (err) return callback(err, [])
-          else {
+          if (err) {
+            setTimeout(() => {
+              this.deletingFlag = false
+            }, 1000)
+            return callback(err, [])
+          } else {
+            setTimeout(() => {
+              this.deletingFlag = false
+            }, 1000)
             this.chainLength = height
             this._consistentCheck((err, errPosition) => {
               if (err) {
                 // do nothing
               }
               if (errPosition !== -1) {
+                this.deletingFlag = true                
                 this.delBlockFromHeight(errPosition, callback)
               } else {
                 callback(err, revertTxArray)
