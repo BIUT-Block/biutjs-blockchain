@@ -14,6 +14,7 @@ class SECTokenBlockChain {
    */
 
   constructor (config) {
+    this.deletingFlag = false
     this.chainName = config.chainName
     this.chainDB = new SECDatahandler.TokenBlockChainDB(config.dbconfig)
     this.txDB = new SECDatahandler.TokenTxDB(config.dbconfig)
@@ -66,6 +67,7 @@ class SECTokenBlockChain {
               // do nothing
             }
             if (errPosition !== -1) {
+              this.deletingFlag = true
               this.delBlockFromHeight(errPosition, (err) => {
                 if (err) callback(err)
                 else {
@@ -230,6 +232,7 @@ class SECTokenBlockChain {
    * @param {callback} callback
    */
   putBlockToDB (_block, callback) {
+    if (this.deletingFlag) return callback(new Error('Now deleting block, can not write block into database.'))
     // write a new block to DB
     let block = JSON.parse(JSON.stringify(_block))
 
@@ -249,6 +252,7 @@ class SECTokenBlockChain {
     // verify parent hash
     this.verifyParentHash(block, (err, result) => {
       if (err) return callback(err)
+      if (this.deletingFlag) return callback(new Error('Now deleting block, can not write block into database.'))
       // this.verifyDifficulty(block, (err) => {
       //   if (err) return callback(err)
       if (!result) {
@@ -269,6 +273,7 @@ class SECTokenBlockChain {
                   // do nothing
                 }
                 if (errPosition !== -1) {
+                  this.deletingFlag = true
                   this.delBlockFromHeight(errPosition, callback)
                 } else {
                   callback()
@@ -289,8 +294,12 @@ class SECTokenBlockChain {
     let revertTxArray = []
 
     this.getHashList((err, hashList) => {
-      if (err) return callback(err, [])
-      else {
+      if (err) {
+        setTimeout(() => {
+          this.deletingFlag = false
+        }, 1000)
+        return callback(err, [])
+      } else {
         for (let i = height; i <= hashList[hashList.length - 1].Number; i++) {
           if (hashList[i] !== undefined) {
             if (hashList[i].Number !== undefined) {
@@ -328,14 +337,22 @@ class SECTokenBlockChain {
             })
           })
         }, (err) => {
-          if (err) return callback(err, [])
-          else {
+          if (err) {
+            setTimeout(() => {
+              this.deletingFlag = false
+            }, 1000)
+            return callback(err, [])
+          } else {
+            setTimeout(() => {
+              this.deletingFlag = false
+            }, 1000)
             this.chainLength = height
             this._consistentCheck((err, errPosition) => {
               if (err) {
                 // do nothing
               }
               if (errPosition !== -1) {
+                this.deletingFlag = true
                 this.delBlockFromHeight(errPosition, callback)
               } else {
                 callback(err, revertTxArray)
