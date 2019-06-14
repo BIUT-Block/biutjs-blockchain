@@ -104,36 +104,40 @@ class SECTokenBlockChain {
         this.accTree.checkRoot(root, (err, result) => {
           // if it doesnt exist or error occurs:
           if (err || !result) {
-            // clear DB
-            this.accTree.clearDB((err) => {
-              if (err) callback(err)
-              else {
-                // update account tree db with whole token block chain
-                this.chainDB.getTokenBlockChainDB((err, chain) => {
-                  if (err) {
-                    callback(err)
-                  } else {
-                    this._initAccTree(chain, (err) => {
-                      if (err) {
-                        callback(err)
-                      } else {
-                        this.accTree.updateWithBlockChain(chain, (err1) => {
-                          if (err1) {
-                            callback(err1)
-                          } else {
-                            callback()
-                          }
-                        })
-                      }
-                    })
-                  }
-                })
-              }
-            })
+            this.rebuildAccTree(callback)
           } else {
             // otherwise, create a new merkle tree which starts from the given root
             this.accTree.newTree(root)
             callback()
+          }
+        })
+      }
+    })
+  }
+
+  rebuildAccTree (callback) {            
+    // clear DB
+    this.accTree.clearDB((err) => {
+      if (err) callback(err)
+      else {
+        // update account tree db with whole token block chain
+        this.chainDB.getTokenBlockChainDB((err, chain) => {
+          if (err) {
+            callback(err)
+          } else {
+            this._initAccTree(chain, (err) => {
+              if (err) {
+                callback(err)
+              } else {
+                this.accTree.updateWithBlockChain(chain, (err1) => {
+                  if (err1) {
+                    callback(err1)
+                  } else {
+                    callback()
+                  }
+                })
+              }
+            })
           }
         })
       }
