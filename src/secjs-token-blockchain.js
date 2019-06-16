@@ -88,7 +88,6 @@ class SECTokenBlockChain {
       if (err) callback(err)
       else {
         let root = block.StateRoot
-        root = root.substr(2) // remove 0x
         // check if the given root exists
         this.accTree.checkRoot(root, (err, result) => {
           // if it doesnt exist or error occurs:
