@@ -104,6 +104,7 @@ class SECTokenBlockChain {
   }
 
   rebuildAccTree (callback) {
+    console.log('Rebuilding Acctree...')
     // clear DB
     this.accTree.clearDB((err) => {
       if (err) callback(err)
