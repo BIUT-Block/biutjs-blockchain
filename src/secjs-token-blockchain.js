@@ -14,12 +14,14 @@ class SECTokenBlockChain {
    *
    */
 
-  constructor (config) {
+  constructor(config) {
     this.deletingFlag = false
     this.chainName = config.chainName
     this.chainDB = new SECDatahandler.TokenBlockChainDB(config.dbconfig)
     this.txDB = new SECDatahandler.TokenTxDB(config.dbconfig)
-    this.accTree = new AccTreeDB(Object.assign(config.dbconfig, {"chainName": this.chainName}))
+    this.accTree = new AccTreeDB(Object.assign(config.dbconfig, {
+      "chainName": this.chainName
+    }))
     this.chainLength = 0
     this.smartContractTxDB = new SECDatahandler.SmartContractTxDB(config)
   }
@@ -27,7 +29,7 @@ class SECTokenBlockChain {
   /**
    * generate genesis token block
    */
-  _generateGenesisBlock () {
+  _generateGenesisBlock() {
     if (process.env.netType === 'test' && this.chainName === 'SEC') {
       return new SECTokenBlock(geneData.secTestGeneBlock).getBlock()
     } else if (process.env.netType === 'test' && this.chainName === 'SEN') {
@@ -47,7 +49,7 @@ class SECTokenBlockChain {
    * Initialize the class token-blockchain
    * @param {callback} callback - The callback that handles the response.
    */
-  init (callback) {
+  init(callback) {
     this.chainDB.isTokenBlockChainDBEmpty((err, isEmpty) => {
       if (err) throw new Error('Could not check db content')
       else if (isEmpty) {
@@ -57,15 +59,20 @@ class SECTokenBlockChain {
           else {
             // then write genesis block to both tokenDB and account tree DB
             let geneBlock = this._generateGenesisBlock()
-            if (process.env.netType === 'test' && this.chainName === 'SEN'){
-              this.smartContractTxDB.add('MToken', '000000000000000000000000000000000001', (err)=>{
-                if(err){
-                    console.log('SenTestInit Error', err)
+            if (process.env.netType === 'test' && this.chainName === 'SEN') {
+              let tokenInfo = {
+                'tokenName': 'MToken',
+                'sourceCode': '...',
+                'depositBalance': {}
+              }
+              this.smartContractTxDB.addTokenMap(tokenInfo, '000000000000000000000000000000000001', (err) => {
+                if (err) {
+                  console.log('SenTestInit Error', err)
                 }
-                this.putBlockToDB(geneBlock, callback)                
-              }) 
+                this.putBlockToDB(geneBlock, callback)
+              })
             } else {
-              this.putBlockToDB(geneBlock, callback)                
+              this.putBlockToDB(geneBlock, callback)
             }
           }
         })
@@ -94,7 +101,7 @@ class SECTokenBlockChain {
     })
   }
 
-  verifyStateRoot (callback) { 
+  verifyStateRoot(callback) {
     this.getLastBlock((err, block) => {
       if (err) callback(err)
       else {
@@ -114,8 +121,8 @@ class SECTokenBlockChain {
     })
   }
 
-  rebuildAccTree (callback) {      
-    console.log('Rebuilding Acctree...')          
+  rebuildAccTree(callback) {
+    console.log('Rebuilding Acctree...')
     // clear DB
     this.accTree.clearDB((err) => {
       if (err) callback(err)
@@ -148,7 +155,7 @@ class SECTokenBlockChain {
     async.eachSeries(chain, (block, cb) => {
       let count = 0
       let txLength = block.Transactions.length
-      if(txLength === 0) {
+      if (txLength === 0) {
         cb()
       } else {
         block.Transactions.forEach((tx) => {
@@ -173,7 +180,7 @@ class SECTokenBlockChain {
     })
   }
 
-  verifyParentHash (block, callback) {
+  verifyParentHash(block, callback) {
     if (block.Number !== 0) {
       this.getBlock(block.Number - 1, (err, lastblock) => {
         if (err) callback(err, null)
@@ -190,7 +197,7 @@ class SECTokenBlockChain {
     }
   }
 
-  verifyDifficulty (block, callback) {
+  verifyDifficulty(block, callback) {
     let difficulty = parseFloat(block.Difficulty)
     if (block.Number > 1) {
       if (difficulty < 2048) {
@@ -216,7 +223,7 @@ class SECTokenBlockChain {
     }
   }
 
-  verifyTxRoot (block) {
+  verifyTxRoot(block) {
     // verify block header transaction root
     let txHashArray = []
     block['Transactions'].forEach(tx => {
@@ -237,13 +244,13 @@ class SECTokenBlockChain {
     return false
   }
 
-  _consistentCheck (callback) {
+  _consistentCheck(callback) {
     this.getHashList((err, hashList) => {
       if (err) {
         return callback(err, 1)
       } else {
         let errPosition = -1
-        try {        
+        try {
           hashList.forEach((data, index) => {
             if (data === undefined) {
               errPosition = index
@@ -281,7 +288,7 @@ class SECTokenBlockChain {
    * @param {SECTokenBlock} block the block object in json formation
    * @param {callback} callback
    */
-  putBlockToDB (_block, callback) {
+  putBlockToDB(_block, callback) {
     if (this.deletingFlag) return callback(new Error('Now deleting block, can not write block into database.'))
     this._consistentCheck((err, errPosition) => {
       if (err) {
@@ -291,7 +298,7 @@ class SECTokenBlockChain {
       if (errPosition !== -1) {
         this.deletingFlag = true
         this.delBlockFromHeight(errPosition, callback)
-      } else {    
+      } else {
         // write a new block to DB
         let block = JSON.parse(JSON.stringify(_block))
 
@@ -343,7 +350,7 @@ class SECTokenBlockChain {
     })
   }
 
-  delBlockFromHeight (height, callback) {
+  delBlockFromHeight(height, callback) {
     let indexArray = []
     let revertTxArray = []
 
@@ -406,7 +413,7 @@ class SECTokenBlockChain {
                 // do nothing
               }
               if (errPosition !== -1) {
-                this.deletingFlag = true                
+                this.deletingFlag = true
                 this.delBlockFromHeight(errPosition, callback)
               } else {
                 callback(err, revertTxArray)
@@ -423,14 +430,14 @@ class SECTokenBlockChain {
    * @param {Array} hashArray
    * @param {function} callback
    */
-  getBlocksWithHash (hashArray, callback) {
+  getBlocksWithHash(hashArray, callback) {
     this.chainDB.getTokenBlockFromDB(hashArray, callback)
   }
 
   /**
    * get all blockchain data
    */
-  _getAllBlockChainFromDB (callback) {
+  _getAllBlockChainFromDB(callback) {
     this.chainDB.getTokenBlockChainDB((err, blockchain) => {
       if (err) {
         callback(err, null)
@@ -444,18 +451,18 @@ class SECTokenBlockChain {
   /**
    * return last block's height
    */
-  getCurrentHeight () {
+  getCurrentHeight() {
     return this.chainLength - 1
   }
 
-  getBlocksFromDB (minHeight, maxHeight = this.getCurrentHeight(), callback) {
+  getBlocksFromDB(minHeight, maxHeight = this.getCurrentHeight(), callback) {
     if (maxHeight > this.getCurrentHeight()) {
       maxHeight = this.getCurrentHeight()
     }
     this.chainDB.getTokenChain(minHeight, maxHeight, callback)
   }
 
-  getBlock (num, callback) {
+  getBlock(num, callback) {
     this.chainDB.getBlock(num, (err, block) => {
       if (err) {
         callback(err, null)
@@ -482,21 +489,21 @@ class SECTokenBlockChain {
   /**
    * get genesis block
    */
-  getGenesisBlock (callback) {
+  getGenesisBlock(callback) {
     this.getBlock(0, callback)
   }
 
   /**
    * get last block
    */
-  getLastBlock (callback) {
+  getLastBlock(callback) {
     this.getBlock(this.chainLength - 1, callback)
   }
 
   /**
    * get the second last block
    */
-  getSecondLastBlock (callback) {
+  getSecondLastBlock(callback) {
     if (this.chainLength <= 1) {
       let err = new Error('this.chainLength <= 1, failed to get second last block')
       return callback(err, null)
@@ -504,20 +511,20 @@ class SECTokenBlockChain {
     this.getBlock(this.chainLength - 2, callback)
   }
 
-  getHashList (callback) {
+  getHashList(callback) {
     this.chainDB.getHashList(callback)
   }
 
   // -------------------------  SMART CONTRACT TX DB FUNCTIONS  ------------------------
-  add (tokenName, contractAddress, callback) {
-    this.smartContractTxDB.add(tokenName, contractAddress, callback)
+  addTokenMap(tokenInfo, contractAddress, callback) {
+    this.smartContractTxDB.addTokenMap(tokenInfo, contractAddress, callback)
   }
 
-  getContractAddress (tokenName, callback) {
+  getContractAddress(tokenName, callback) {
     this.smartContractTxDB.getContractAddress(tokenName, callback)
   }
 
-  getTokenName (addr, callback) {
+  getTokenName(addr, callback) {
     if (SECUtils.isContractAddr(addr)) {
       this.smartContractTxDB.getTokenName(addr, (err, tokenName) => {
         if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
@@ -528,14 +535,36 @@ class SECTokenBlockChain {
     }
   }
 
-  setTxTokenName (tx) {
+  getSourceCode(addr, callback) {
+    if (SECUtils.isContractAddr(addr)) {
+      this.smartContractTxDB.getSourceCode(addr, (err, sourceCode) => {
+        if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
+        callback(null, sourceCode)
+      })
+    } else {
+      callback(null, '')
+    }
+  }
+
+  getDepositBalance(addr, callback) {
+    if (SECUtils.isContractAddr(addr)) {
+      this.smartContractTxDB.getDepositBalance(addr, (err, depositBalance) => {
+        if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
+        callback(null, depositBalance)
+      })
+    } else {
+      callback(null, {})
+    }
+  }
+  
+  setTxTokenName(tx) {
     let self = this
     tx = JSON.parse(tx)
     return new Promise(function (resolve, reject) {
       self.getTokenName(tx.TxTo, (err, tokenName) => {
         if (err) reject(err)
         else {
-          if (tokenName === 'SEC' && self.chainName === 'SEC'){
+          if (tokenName === 'SEC' && self.chainName === 'SEC') {
             self.getTokenName(tx.TxFrom, (err, tokenName) => {
               if (err) reject(err)
               else {
@@ -563,7 +592,7 @@ class SECTokenBlockChain {
     })
   }
 
-  setBlockTxTokenName (block, callback) {
+  setBlockTxTokenName(block, callback) {
     let promiseList = []
     block.Transactions.forEach((tx) => {
       promiseList.push(this.setTxTokenName(tx))
@@ -579,7 +608,7 @@ class SECTokenBlockChain {
 
   // -------------------------  FUNCTIONS FOR SPECIAL PURPOSES  ------------------------
   // ---------------------------------  DON'T USE THEM  --------------------------------
-  delBlock (height, callback) {
+  delBlock(height, callback) {
     if (height >= this.chainLength) {
       return callback(null)
     }
@@ -606,7 +635,7 @@ class SECTokenBlockChain {
     })
   }
 
-  writeBlock (_block, callback) {
+  writeBlock(_block, callback) {
     // write a new block to DB
     let block = JSON.parse(JSON.stringify(_block))
 
@@ -639,7 +668,7 @@ class SECTokenBlockChain {
     })
   }
 
-  getTxForUser (addr, callback) {
+  getTxForUser(addr, callback) {
     this.accTree.getAccInfo(addr, (err, info) => {
       if (err) return callback(err, null)
       else {
@@ -668,7 +697,7 @@ class SECTokenBlockChain {
     })
   }
   // -------------------------  TEST FUNCTIONS  ------------------------
-  getFromAccTree (accAddr, callback) {
+  getFromAccTree(accAddr, callback) {
     this.accTree.getAccInfo(accAddr, callback)
   }
 }
