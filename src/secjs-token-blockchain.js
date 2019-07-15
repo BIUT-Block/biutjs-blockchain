@@ -19,11 +19,11 @@ class SECTokenBlockChain {
     this.chainName = config.chainName
     this.chainDB = new SECDatahandler.TokenBlockChainDB(config.dbconfig)
     this.txDB = new SECDatahandler.TokenTxDB(config.dbconfig)
+    this.smartContractTxDB = new SECDatahandler.SmartContractTxDB(config.dbconfig)
     this.accTree = new AccTreeDB(Object.assign(config.dbconfig, {
       "chainName": this.chainName
-    }))
+    }), this.smartContractTxDB)
     this.chainLength = 0
-    this.smartContractTxDB = new SECDatahandler.SmartContractTxDB(config)
   }
 
   /**
@@ -63,9 +63,11 @@ class SECTokenBlockChain {
               let tokenInfo = {
                 'tokenName': 'MToken',
                 'sourceCode': '...',
-                'depositBalance': {}
+                'totalSupply': 100000000,
+                'timeLock': {},
+                'approve': {}
               }
-              this.smartContractTxDB.addTokenMap(tokenInfo, '000000000000000000000000000000000001', (err) => {
+              this.addTokenMap(tokenInfo, '000000000000000000000000000000000001', (err) => {
                 if (err) {
                   console.log('SenTestInit Error', err)
                 }
@@ -333,7 +335,7 @@ class SECTokenBlockChain {
               this.chainDB.writeTokenBlockToDB(block, (err) => {
                 if (err) return callback(err)
                 this.chainLength = block.Number + 1
-                this.setBlockTxTokenName(block, (err, _block) => {
+                this.updateSmartContractDB(block, (err, _block) => {
                   if (err) return callback(err)
                   this.accTree.updateWithBlock(_block, (err) => {
                     if (err) return callback(err)
@@ -520,6 +522,10 @@ class SECTokenBlockChain {
     this.smartContractTxDB.addTokenMap(tokenInfo, contractAddress, callback)
   }
 
+  deleteTokenMap(contractAddr, callback) {
+    this.smartContractTxDB.deleteTokenMap(tokenInfo, contractAddress, callback)
+  }
+
   getContractAddress(tokenName, callback) {
     this.smartContractTxDB.getContractAddress(tokenName, callback)
   }
@@ -546,64 +552,529 @@ class SECTokenBlockChain {
     }
   }
 
-  getDepositBalance(addr, callback) {
+  getApprove(addr, callback) {
     if (SECUtils.isContractAddr(addr)) {
-      this.smartContractTxDB.getDepositBalance(addr, (err, depositBalance) => {
+      this.smartContractTxDB.getApprove(addr, (err, approve) => {
         if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
-        callback(null, depositBalance)
+        callback(null, approve)
       })
     } else {
       callback(null, {})
     }
   }
-  
-  setTxTokenName(tx) {
-    let self = this
-    tx = JSON.parse(tx)
-    return new Promise(function (resolve, reject) {
-      self.getTokenName(tx.TxTo, (err, tokenName) => {
-        if (err) reject(err)
-        else {
-          if (tokenName === 'SEC' && self.chainName === 'SEC') {
-            self.getTokenName(tx.TxFrom, (err, tokenName) => {
-              if (err) reject(err)
-              else {
-                tx.TokenName = tokenName
-                tx = JSON.stringify(tx)
-                resolve(tx)
-              }
-            })
-          } else if (tokenName === 'SEN' && self.chainName === 'SEN') {
-            self.getTokenName(tx.TxFrom, (err, tokenName) => {
-              if (err) reject(err)
-              else {
-                tx.TokenName = tokenName
-                tx = JSON.stringify(tx)
-                resolve(tx)
-              }
-            })
-          } else {
-            tx.TokenName = tokenName
-            tx = JSON.stringify(tx)
-            resolve(tx)
-          }
-        }
-      })
-    })
-  }
 
-  setBlockTxTokenName(block, callback) {
+  updateSmartContractDB(block, callback) {
+    let self = this
     let promiseList = []
-    block.Transactions.forEach((tx) => {
-      promiseList.push(this.setTxTokenName(tx))
+    // parse block.Transactions
+    block.Transactions.forEach((tx, index) => {
+      if (typeof tx === 'string') {
+        block.Transactions[index] = JSON.parse(tx)
+      }
+      if (!this._typeCheck(block.Transactions[index].Value)) {
+        block.Transactions[index].Value = '0'
+      }
+      if (!this._typeCheck(block.Transactions[index].TxFee)) {
+        block.Transactions[index].TxFee = '0'
+      }
+    })
+
+    let txs = block.Transactions
+    txs.forEach((tx) => {
+      if (SECUtils.isContractAddr(tx.TxTo)) {
+        promiseList = promiseList.concat(self._updateSmartContractDBWithTx(tx))
+      }
     })
 
     Promise.all(promiseList).then((transactionsList) => {
+      transactionsList = transactionsList.filter((tx) => (tx != null))
       block.Transactions = transactionsList
       callback(null, block)
     }).catch((err) => {
       callback(err, null)
     })
+  }
+
+  _updateSmartContractDBWithTx(tx) {
+    let self = this
+    return new Promise(function (resolve, reject) {
+      if (SECUtils.isContractAddr(tx.TxTo)) {
+        self.smartContractTxDB.getTokenInfo(tx.TxTo, (err, tokenInfo) => {
+          if (err) {
+            reject(err)
+          } else {
+            if (tokenInfo) {
+              let sourceCode = tokenInfo.sourceCode
+              let tokenName = tokenInfo.tokenName
+              let contractResult = self._runContract(tx, sourceCode)
+              switch (contractResult.functionType) {
+                case 'transfer':
+                  self.contractForTransfer(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                    if (err) {
+                      return callback(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      tokenTx.TokenName = tokenName
+                      resolve([tx, tokenTx])
+                    }
+                  })
+                  break
+                case 'deposit':
+                  self.contractForDeposit(tx, contractResult, tokenInfo, (err) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      resolve(tx)
+                    }
+                  })
+                  break
+                case 'withdraw':
+                  self.contractForWithdraw(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      tokenTx.TokenName = tokenName
+                      resolve([tx, tokenTx])
+                    }
+                  })
+                  break
+                default:
+                  resolve()
+              }
+
+            } else {
+              let oTokenInfo = JSON.parse(tx.inputData)
+              tokenInfo = {
+                "tokenName": oTokenInfo.tokenName,
+                "sourceCode": oTokenInfo.sourceCode,
+                "totalSupply": oTokenInfo.totalSupply,
+                "timeLock": {},
+                "approve": {}
+              }
+
+              self.contractForCreate(tx, tokenInfo, (err) => {
+                if (err) {
+                  reject(err)
+                } else {
+                  tx.TokenName = oTokenInfo.tokenName
+                  resolve(tx)
+                }
+              })
+            }
+          }
+        })
+      } else {
+        tx.TokenName = this.chainName
+        resolve(tx)
+      }
+    })
+  }
+
+  _revertSmartContractDBWithTx(tx) {
+    let self = this
+    return new Promise(function (resolve, reject) {
+      if (SECUtils.isContractAddr(tx.TxTo)) {
+        self.smartContractTxDB.getTokenInfo(tx.TxTo, (err, tokenInfo) => {
+          if (err) {
+            reject(err)
+          } else {
+            try {
+              let oTokenInfo = JSON.parse(tx.inputData)
+              tokenInfo = {
+                "tokenName": oTokenInfo.tokenName,
+                "sourceCode": oTokenInfo.sourceCode,
+                "totalSupply": oTokenInfo.totalSupply,
+                "timeLock": {},
+                "approve": {}
+              }              
+              this.deleteTokenMap(tx.TxTo, (err)=>{
+                if(err){
+                  reject(err)
+                } else {
+                  self.revertContractForCreate(tx, tokenInfo, (err)=>{
+                    if(err){
+                      reject(err)
+                    } else {
+                      tx.tokenName = tokenInfo.tokenName
+                      resolve(tx)
+                    }
+                  })
+                }
+              })
+            } catch (e) {
+              if (e instanceof SyntaxError) {
+                let sourceCode = tokenInfo.sourceCode
+                let tokenName = tokenInfo.tokenName
+                let contractResult = self._runContract(tx, sourceCode)
+                switch (contractResult.functionType) {
+                  case 'transfer':
+                    contractForTransfer(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                      if (err) {
+                        return callback(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        tokenTx.TokenName = tokenName
+                        resolve([tx, tokenTx])
+                      }
+                    })
+                    break
+                  case 'deposit':
+                    revertContractForDeposit(tx, contractResult, tokenInfo, (err) => {
+                      if (err) {
+                        reject(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        resolve(tx)
+                      }
+                    })
+                    break
+                  case 'withdraw':
+                    revertContractForWithdraw(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                      if (err) {
+                        reject(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        tokenTx.TokenName = tokenName
+                        resolve([tx, tokenTx])
+                      }
+                    })
+                    break
+                  default:
+                    resolve()
+                }
+              } else {
+                reject(err)
+              }
+            }
+          }
+        })
+      } else {
+        tx.TokenName = this.chainName
+        resolve(tx)
+      }
+    })
+  }
+
+  contractForTransfer(tx, contractResult, tokenInfo, callback) {
+    this.BlockChain.getNonce(tx.TxTo, (err, nonce) => {
+      if (err) {
+        callback(err, null)
+      } else {
+        let tokenTx = {
+          Version: '0.1',
+          TxReceiptStatus: 'success',
+          TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+          TxFrom: tx.TxTo,
+          TxTo: contractResult.transferResult.Address,
+          Value: contractResult.transferResult.Amount.toString(),
+          GasLimit: '0',
+          GasUsedByTxn: '0',
+          GasPrice: '0',
+          Nonce: nonce,
+          InputData: `Smart Contract Transaction`
+        }
+        let txHashBuffer = [
+          Buffer.from(tokenTx.Version),
+          SECUtils.intToBuffer(tokenTx.TimeStamp),
+          Buffer.from(tokenTx.TxFrom, 'hex'),
+          Buffer.from(tokenTx.TxTo, 'hex'),
+          Buffer.from(tokenTx.Value),
+          Buffer.from(tokenTx.GasLimit),
+          Buffer.from(tokenTx.GasUsedByTxn),
+          Buffer.from(tokenTx.GasPrice),
+          Buffer.from(tokenTx.Nonce),
+          Buffer.from(tokenTx.InputData)
+        ]
+
+        tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+        callback(null, tokenTx)
+      }
+    })
+  }
+
+  contractForDeposit(tx, contractResult, tokenInfo, callback) {
+    let approve = tokenInfo.approve
+    let walletAddress = tx.TxFrom
+    if (walletAddress in approve) {
+      let balance = approve.walletAddress
+      balance = new Big(balance)
+      balance = balance.plus(contractResult.Amount)
+      balance = balance.toFixed(DEC_NUM)
+      tokenInfo.depositBalance.walletAddress = balance.toString()
+    } else {
+      tokenInfo.approve.walletAddress = contractResult.Amount.toString()
+    }
+    this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+      if (err) {
+        return callback(err)
+      }
+    })
+  }
+
+  contractForWithdraw(tx, contractResult, tokenInfo, callback) {
+    let approve = tokenInfo.approve
+    let walletAddress = tx.TxFrom
+    if (walletAddress in approve) {
+      let balance = approve.walletAddress
+      balance = new Big(balance)
+      if (balance.gte(contractResult.Amount)) {
+        let tokenTx = {
+          Version: '0.1',
+          TxReceiptStatus: 'success',
+          TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+          TxFrom: tx.TxTo,
+          TxTo: contractResult.transferResult.Address,
+          Value: contractResult.transferResult.Amount.toString(),
+          GasLimit: '0',
+          GasUsedByTxn: '0',
+          GasPrice: '0',
+          Nonce: nonce,
+          InputData: `Smart Contract Transaction`
+        }
+        let txHashBuffer = [
+          Buffer.from(tokenTx.Version),
+          SECUtils.intToBuffer(tokenTx.TimeStamp),
+          Buffer.from(tokenTx.TxFrom, 'hex'),
+          Buffer.from(tokenTx.TxTo, 'hex'),
+          Buffer.from(tokenTx.Value),
+          Buffer.from(tokenTx.GasLimit),
+          Buffer.from(tokenTx.GasUsedByTxn),
+          Buffer.from(tokenTx.GasPrice),
+          Buffer.from(tokenTx.Nonce),
+          Buffer.from(tokenTx.InputData)
+        ]
+
+        tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+
+        balance = balance.minus(contractResult.Amount)
+        balance = balance.toFixed(DEC_NUM)
+        tokenInfo.depositBalance.walletAddress = balance
+        this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+          if (err) {
+            callback(err, null)
+          } else {
+            callback(null, tokenTx)
+          }
+        })
+      } else {
+        callback(new Error('Deposit is not enough'), null)
+      }
+    } else {
+      callback(new Error('No Available Deposit Before'), null)
+    }
+  }
+
+  contractForCreate(tx, tokenInfo, callback) {
+    let totalSupply = tokenInfo.totalSupply
+    let walletAddress = tx.TxFrom
+    this.accTree.getAccInfo(walletAddress, tx.TokenName, (err, data1)=>{
+      let nonce = ''
+      let balance = ''
+      let txInfo = {}
+      if (err) {
+        data1 = []
+        data1[0] = {}
+        balance = new Big(totalSupply)
+        nonce = '1'
+        txInfo = { From: [tx.TxHash], To: [] }
+      } else {
+        balance = new Big(totalSupply)
+        nonce = (parseInt(data1[1]) + 1).toString()
+
+        txInfo = data1[2]
+        if (typeof txInfo === 'string') {
+          txInfo = JSON.parse(txInfo)
+        }
+        if (txInfo.From.indexOf(tx.TxHash) < 0) {
+          txInfo.From.push(tx.TxHash)
+        }
+      }
+      balance = parseFloat(balance).toString()
+      data1[0][tx.TokenName] = balance
+      txInfo.From.sort()
+      txInfo.To.sort()
+      this.accTree.putAccInfo(tx.TxFrom, [data1[0], nonce, txInfo], (err) => {
+        if(err){
+          callback(err)
+        }
+      })
+    })
+  }
+
+  revertContractForTransfer(tx, contractResult, tokenInfo, callback) {
+    this.BlockChain.getNonce(tx.TxTo, (err, nonce) => {
+      if (err) {
+        callback(err, null)
+      } else {
+        let tokenTx = {
+          Version: '0.1',
+          TxReceiptStatus: 'success',
+          TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+          TxFrom: tx.TxTo,
+          TxTo: contractResult.transferResult.Address,
+          Value: contractResult.transferResult.Amount.toString(),
+          GasLimit: '0',
+          GasUsedByTxn: '0',
+          GasPrice: '0',
+          Nonce: nonce,
+          InputData: `Smart Contract Transaction`
+        }
+        let txHashBuffer = [
+          Buffer.from(tokenTx.Version),
+          SECUtils.intToBuffer(tokenTx.TimeStamp),
+          Buffer.from(tokenTx.TxFrom, 'hex'),
+          Buffer.from(tokenTx.TxTo, 'hex'),
+          Buffer.from(tokenTx.Value),
+          Buffer.from(tokenTx.GasLimit),
+          Buffer.from(tokenTx.GasUsedByTxn),
+          Buffer.from(tokenTx.GasPrice),
+          Buffer.from(tokenTx.Nonce),
+          Buffer.from(tokenTx.InputData)
+        ]
+
+        tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+        callback(null, tokenTx)
+      }
+    })
+  }
+
+  revertContractForDeposit(tx, contractResult, tokenInfo, callback) {
+    let approve = tokenInfo.approve
+    let walletAddress = tx.TxFrom
+    if (walletAddress in approve) {
+      let balance = approve.walletAddress
+      balance = new Big(balance)
+      balance = balance.minus(contractResult.Amount)
+      balance = balance.toFixed(DEC_NUM)
+      tokenInfo.depositBalance.walletAddress = balance.toString()
+    } else {
+      tokenInfo.approve.walletAddress = contractResult.Amount.toString()
+    }
+    this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+      if (err) {
+        return callback(err)
+      }
+    })
+  }
+
+  revertContractForWithdraw(tx, contractResult, tokenInfo, callback) {
+    let approve = tokenInfo.approve
+    let walletAddress = tx.TxFrom
+    if (walletAddress in approve) {
+      let balance = approve.walletAddress
+      balance = new Big(balance)
+      balance = balance.plus(contractResult.Amount)
+      balance = balance.toFixed(DEC_NUM)
+      tokenInfo.depositBalance.walletAddress = balance      
+      if (balance.gte(contractResult.Amount)) {
+        let tokenTx = {
+          Version: '0.1',
+          TxReceiptStatus: 'success',
+          TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+          TxFrom: tx.TxTo,
+          TxTo: contractResult.transferResult.Address,
+          Value: contractResult.transferResult.Amount.toString(),
+          GasLimit: '0',
+          GasUsedByTxn: '0',
+          GasPrice: '0',
+          Nonce: nonce,
+          InputData: `Smart Contract Transaction`
+        }
+        let txHashBuffer = [
+          Buffer.from(tokenTx.Version),
+          SECUtils.intToBuffer(tokenTx.TimeStamp),
+          Buffer.from(tokenTx.TxFrom, 'hex'),
+          Buffer.from(tokenTx.TxTo, 'hex'),
+          Buffer.from(tokenTx.Value),
+          Buffer.from(tokenTx.GasLimit),
+          Buffer.from(tokenTx.GasUsedByTxn),
+          Buffer.from(tokenTx.GasPrice),
+          Buffer.from(tokenTx.Nonce),
+          Buffer.from(tokenTx.InputData)
+        ]
+
+        tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+
+        this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+          if (err) {
+            callback(err, null)
+          } else {
+            callback(null, tokenTx)
+          }
+        })
+      } else {
+        callback(new Error('Deposit is not enough'), null)
+      }
+    } else {
+      callback(new Error('No Available Deposit Before'), null)
+    }
+  }
+
+  revertContractForCreate(tx, tokenInfo, callback) {
+    let totalSupply = tokenInfo.totalSupply
+    let walletAddress = tx.TxFrom
+    let INIT_BALANCE = '0'
+    this.accTree.getAccInfo(walletAddress, tx.TokenName, (err, data1)=>{
+      let nonce = ''
+      let balance = ''
+      let txInfo = {}
+      if (err) {
+        data1 = []
+        data1[0] = {}
+        balance = new Big(INIT_BALANCE)
+        nonce = '1'
+        txInfo = { From: [tx.TxHash], To: [] }
+      } else {
+        balance = new Big(INIT_BALANCE)
+        nonce = (parseInt(data1[1]) - 1).toString()
+
+        txInfo = data1[2]
+        if (typeof txInfo === 'string') {
+          txInfo = JSON.parse(txInfo)
+        }
+        if (txInfo.From.indexOf(tx.TxHash) > -1) {
+          txInfo.From = txInfo.From.filter((hash) => {
+            return hash !== tx.TxHash
+          })
+        }
+        balance = parseFloat(balance).toString()
+        data1[0][tx.TokenName] = balance
+      }
+      txInfo.From.sort()
+      txInfo.To.sort()
+      this.accTree.putAccInfo(tx.TxFrom, [data1[0], nonce, txInfo], (err) => {
+        if(err){
+          callback(err)
+        }
+      })
+    })
+  }
+
+  _runContract(tx, sourceCode) {
+    let runScript = sourceCode + '; Result = ' + new Buffer(tx.InputData, 'base64').toString()
+    let sandbox = {
+      Result: {}
+    }
+    let response = {}
+    try {
+      vm.createContext(sandbox)
+      vm.runInContext(runScript, sandbox)
+      if (sandbox.Results.transferFlag) {
+        response.functionType = 'transfer'
+      } else if (sandbox.Results.depositFlag) {
+        response.functionType = 'deposit'
+      } else if (sandbox.Results.withdrawFlag) {
+        response.functionType = 'withdraw'
+      } else {
+        response.functionType = 'others'
+      }
+      response.result = sandbox.Result
+      return response
+    } catch (err) {
+      throw new Error(err)
+    }
   }
 
   // -------------------------  FUNCTIONS FOR SPECIAL PURPOSES  ------------------------
@@ -623,7 +1094,7 @@ class SECTokenBlockChain {
         this.chainDB.delBlock(dbBlock, (err) => {
           if (err) return callback(err)
           // update account tree DB
-          this.setBlockTxTokenName(dbBlock, (err, _dbblock) => {
+          this.revertSmartContractDB(dbBlock, (err, _dbblock) => {
             if (err) return callback(err)
             this.accTree.revertWithBlock(_dbblock, (err) => {
               if (err) return callback(err)
@@ -656,7 +1127,7 @@ class SECTokenBlockChain {
         this.chainDB.writeTokenBlockToDB(block, (err) => {
           if (err) return callback(err)
           // update accTree BD
-          this.setBlockTxTokenName(block, (err, _block) => {
+          this.updateSmartContractDB(block, (err, _block) => {
             if (err) return callback(err)
             this.accTree.updateWithBlock(block, (err) => {
               this.chainLength = block.Number + 1
