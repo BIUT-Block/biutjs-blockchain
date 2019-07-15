@@ -581,9 +581,67 @@ class SECTokenBlockChain {
 
     let txs = block.Transactions
     txs.forEach((tx) => {
-      if (SECUtils.isContractAddr(tx.TxTo)) {
-        promiseList = promiseList.concat(self._updateSmartContractDBWithTx(tx))
+      promiseList = promiseList.concat(self._updateSmartContractDBWithTx(tx))
+    })
+
+    Promise.all(promiseList).then((transactionsList) => {
+      transactionsList = transactionsList.filter((tx) => (tx != null))
+      block.Transactions = transactionsList
+      callback(null, block)
+    }).catch((err) => {
+      callback(err, null)
+    })
+  }
+
+  updateSmartContractDB(block, callback) {
+    let self = this
+    let promiseList = []
+    // parse block.Transactions
+    block.Transactions.forEach((tx, index) => {
+      if (typeof tx === 'string') {
+        block.Transactions[index] = JSON.parse(tx)
       }
+      if (!this._typeCheck(block.Transactions[index].Value)) {
+        block.Transactions[index].Value = '0'
+      }
+      if (!this._typeCheck(block.Transactions[index].TxFee)) {
+        block.Transactions[index].TxFee = '0'
+      }
+    })
+
+    let txs = block.Transactions
+    txs.forEach((tx) => {
+      promiseList = promiseList.concat(self._updateSmartContractDBWithTx(tx))
+    })
+
+    Promise.all(promiseList).then((transactionsList) => {
+      transactionsList = transactionsList.filter((tx) => (tx != null))
+      block.Transactions = transactionsList
+      callback(null, block)
+    }).catch((err) => {
+      callback(err, null)
+    })
+  }
+
+  revertSmartContractDB(block, callback) {
+    let self = this
+    let promiseList = []
+    // parse block.Transactions
+    block.Transactions.forEach((tx, index) => {
+      if (typeof tx === 'string') {
+        block.Transactions[index] = JSON.parse(tx)
+      }
+      if (!this._typeCheck(block.Transactions[index].Value)) {
+        block.Transactions[index].Value = '0'
+      }
+      if (!this._typeCheck(block.Transactions[index].TxFee)) {
+        block.Transactions[index].TxFee = '0'
+      }
+    })
+
+    let txs = block.Transactions
+    txs.forEach((tx) => {
+      promiseList = promiseList.concat(self._revertSmartContractDBWithTx(tx))
     })
 
     Promise.all(promiseList).then((transactionsList) => {
@@ -710,7 +768,7 @@ class SECTokenBlockChain {
                 let contractResult = self._runContract(tx, sourceCode)
                 switch (contractResult.functionType) {
                   case 'transfer':
-                    contractForTransfer(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                    self.revertContractForTransfer(tx, contractResult, tokenInfo, (err, tokenTx) => {
                       if (err) {
                         return callback(err)
                       } else {
@@ -721,7 +779,7 @@ class SECTokenBlockChain {
                     })
                     break
                   case 'deposit':
-                    revertContractForDeposit(tx, contractResult, tokenInfo, (err) => {
+                    self.revertContractForDeposit(tx, contractResult, tokenInfo, (err) => {
                       if (err) {
                         reject(err)
                       } else {
@@ -731,7 +789,7 @@ class SECTokenBlockChain {
                     })
                     break
                   case 'withdraw':
-                    revertContractForWithdraw(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                    self.revertContractForWithdraw(tx, contractResult, tokenInfo, (err, tokenTx) => {
                       if (err) {
                         reject(err)
                       } else {
