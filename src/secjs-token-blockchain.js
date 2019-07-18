@@ -563,6 +563,17 @@ class SECTokenBlockChain {
     }
   }
 
+  getTimeLock(addr, callback) {
+    if (SECUtils.isContractAddr(addr)) {
+      this.smartContractTxDB.getTimeLock(addr, (err, approve) => {
+        if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
+        callback(null, approve)
+      })
+    } else {
+      callback(null, {})
+    }
+  }
+
   updateSmartContractDB(block, callback) {
     let self = this
     let promiseList = []
@@ -698,6 +709,27 @@ class SECTokenBlockChain {
                     }
                   })
                   break
+                case 'lock':
+                  self.contractForLock(tx, contractResult, tokenInfo, (err) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      resolve(tx)
+                    }
+                  })
+                  break
+                case 'releaseLock':
+                  self.contractForReleaseLock(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      tokenTx.TokenName = tokenName
+                      resolve([tx, tokenTx])
+                    }
+                  })
+                  break
                 default:
                   resolve()
               }
@@ -746,16 +778,18 @@ class SECTokenBlockChain {
                 "totalSupply": oTokenInfo.totalSupply,
                 "timeLock": {},
                 "approve": {}
-              }              
-              this.deleteTokenMap(tx.TxTo, (err)=>{
-                if(err){
+              }
+              this.deleteTokenMap(tx.TxTo, (err) => {
+                if (err) {
                   reject(err)
                 } else {
-                  self.revertContractForCreate(tx, tokenInfo, (err)=>{
-                    if(err){
+                  self.revertContractForCreate(tx, tokenInfo, (err) => {
+                    if (err) {
                       reject(err)
                     } else {
-                      tx.tokenName = tokenInfo.tokenName
+                      tx.tokenName = this.chainName
+                      tx.Value = '0'
+                      tx.Fee = '0'
                       resolve(tx)
                     }
                   })
@@ -799,6 +833,27 @@ class SECTokenBlockChain {
                       }
                     })
                     break
+                  case 'lock':
+                    self.revertContractForLock(tx, contractResult, tokenInfo, (err) => {
+                      if (err) {
+                        reject(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        resolve(tx)
+                      }
+                    })
+                    break
+                  case 'releaseLock':
+                    self.revertContractForReleaseLock(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                      if (err) {
+                        reject(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        tokenTx.TokenName = tokenName
+                        resolve([tx, tokenTx])
+                      }
+                    })
+                    break
                   default:
                     resolve()
                 }
@@ -825,8 +880,8 @@ class SECTokenBlockChain {
           TxReceiptStatus: 'success',
           TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
           TxFrom: tx.TxTo,
-          TxTo: contractResult.transferResult.Address,
-          Value: contractResult.transferResult.Amount.toString(),
+          TxTo: contractResult.Results.Address,
+          Value: contractResult.Results.Amount.toString(),
           GasLimit: '0',
           GasUsedByTxn: '0',
           GasPrice: '0',
@@ -856,17 +911,19 @@ class SECTokenBlockChain {
     let approve = tokenInfo.approve
     let walletAddress = tx.TxFrom
     if (walletAddress in approve) {
-      let balance = approve.walletAddress
+      let balance = approve[walletAddress]
       balance = new Big(balance)
-      balance = balance.plus(contractResult.Amount)
+      balance = balance.plus(contractResult.Results.Amount)
       balance = balance.toFixed(DEC_NUM)
-      tokenInfo.depositBalance.walletAddress = balance.toString()
+      tokenInfo.approve[walletAddress] = balance.toString()
     } else {
-      tokenInfo.approve.walletAddress = contractResult.Amount.toString()
+      tokenInfo.approve[walletAddress] = contractResult.Results.Amount.toString()
     }
     this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
       if (err) {
         return callback(err)
+      } else {
+        return callback(null)
       }
     })
   }
@@ -875,16 +932,16 @@ class SECTokenBlockChain {
     let approve = tokenInfo.approve
     let walletAddress = tx.TxFrom
     if (walletAddress in approve) {
-      let balance = approve.walletAddress
+      let balance = approve[walletAddress]
       balance = new Big(balance)
-      if (balance.gte(contractResult.Amount)) {
+      if (balance.gte(contractResult.Results.Amount)) {
         let tokenTx = {
           Version: '0.1',
           TxReceiptStatus: 'success',
           TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
           TxFrom: tx.TxTo,
-          TxTo: contractResult.transferResult.Address,
-          Value: contractResult.transferResult.Amount.toString(),
+          TxTo: contractResult.Results.Address,
+          Value: contractResult.Results.Amount.toString(),
           GasLimit: '0',
           GasUsedByTxn: '0',
           GasPrice: '0',
@@ -906,9 +963,9 @@ class SECTokenBlockChain {
 
         tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
 
-        balance = balance.minus(contractResult.Amount)
+        balance = balance.minus(contractResult.Results.Amount)
         balance = balance.toFixed(DEC_NUM)
-        tokenInfo.depositBalance.walletAddress = balance
+        tokenInfo.approve[walletAddress] = balance
         this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
           if (err) {
             callback(err, null)
@@ -927,7 +984,7 @@ class SECTokenBlockChain {
   contractForCreate(tx, tokenInfo, callback) {
     let totalSupply = tokenInfo.totalSupply
     let walletAddress = tx.TxFrom
-    this.accTree.getAccInfo(walletAddress, tx.TokenName, (err, data1)=>{
+    this.accTree.getAccInfo(walletAddress, tx.TokenName, (err, data1) => {
       let nonce = ''
       let balance = ''
       let txInfo = {}
@@ -936,7 +993,10 @@ class SECTokenBlockChain {
         data1[0] = {}
         balance = new Big(totalSupply)
         nonce = '1'
-        txInfo = { From: [tx.TxHash], To: [] }
+        txInfo = {
+          From: [tx.TxHash],
+          To: []
+        }
       } else {
         balance = new Big(totalSupply)
         nonce = (parseInt(data1[1]) + 1).toString()
@@ -954,14 +1014,134 @@ class SECTokenBlockChain {
       txInfo.From.sort()
       txInfo.To.sort()
       this.accTree.putAccInfo(tx.TxFrom, [data1[0], nonce, txInfo], (err) => {
-        if(err){
+        if (err) {
           callback(err)
+        } else {
+          this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+            if (err) {
+              callback(err)
+            } else {
+              callback(null)
+            }
+          })
         }
       })
     })
   }
 
-  revertContractForTransfer(tx, contractResult, tokenInfo, callback) {
+  contractForLock(tx, contractResult, tokenInfo, callback) {
+    let timeLock = tokenInfo.timeLock
+    let senderAddress = tx.TxFrom
+    let benefitAddress = contractResult.Results.Address
+    if (senderAddress in timeLock) {
+      if (benefitAddress in timeLock[senderAddress]) {
+        if (contractResult.Results.Time in timeLock[senderAddress][benefitAddress]) {
+          let balance = timeLock[senderAddress][benefitAddress][contractResult.Results.Time]
+          balance = new Big(balance)
+          balance = balance.plus(contractResult.Results.Amount)
+          balance = balance.toFixed(DEC_NUM)
+          timeLock[senderAddress][benefitAddress][contractResult.Results.Time] = balance.toString()
+        } else {
+          timeLock[senderAddress][benefitAddress][contractResult.Results.Time] = contractResult.Results.Amount.toString()
+        }
+      } else {
+        timeLock[senderAddress][benefitAddress] = {
+          [contractResult.Results.Time]: contractResult.Results.Amount.toString()
+        }
+      }
+    } else {
+      timeLock[senderAddress] = {
+        [benefitAddress]: {
+          [contractResult.Results.Time]: contractResult.Results.Amount.toString()
+        }
+      }
+    }
+    this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+      if (err) {
+        return callback(err)
+      } else {
+        return callback(null)
+      }
+    })
+  }
+
+  contractForReleaseLock(tx, contractResult, tokenInfo, callback) {
+    let timeLock = tokenInfo.timeLock
+    let timeStamp = tx.TimeStamp
+    let senderAddress = tx.TxFrom
+    let benefitAddress = contractResult.Results.Address
+    let amountToRelease = new Big(contractResult.Results.Amount)
+    if (senderAddress in timeLock) {
+      if (benefitAddress in timeLock[senderAddress]) {
+        let benefitTimeLock = timeLock[senderAddress][benefitAddress]
+        let aLockTimestamps = Object.keys(benefitTimeLock)
+        aLockTimestamps = aLockTimestamps.sort((a, b) => {
+          return a - b
+        })
+        aLockTimestamps.forEach(ts => {
+          if (ts <= timeStamp) {
+            let lockedAmount = new Big(benefitTimeLock[ts])
+            if (!amountToRelease.isZero() && amountToRelease.gte(lockedAmount)) {
+              amountToRelease = amountToRelease.minus(lockedAmount)
+              delete benefitTimeLock[ts]
+            } else {
+              lockedAmount = lockedAmount.minus(amountToRelease)
+              lockedAmount = lockedAmount.toFixed(DEC_NUM)
+              benefitTimeLock[ts] = lockedAmount.toString
+              break
+            }
+          } else {
+            break
+          }
+        })
+        if (amountToRelease > 0) {
+          return callback(new Error('No enough unlocked Token'), null)
+        } else {
+          let tokenTx = {
+            Version: '0.1',
+            TxReceiptStatus: 'success',
+            TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+            TxFrom: tx.TxTo,
+            TxTo: contractResult.Results.Address,
+            Value: contractResult.Results.Amount.toString(),
+            GasLimit: '0',
+            GasUsedByTxn: '0',
+            GasPrice: '0',
+            Nonce: nonce,
+            InputData: `Smart Contract Transaction`
+          }
+          let txHashBuffer = [
+            Buffer.from(tokenTx.Version),
+            SECUtils.intToBuffer(tokenTx.TimeStamp),
+            Buffer.from(tokenTx.TxFrom, 'hex'),
+            Buffer.from(tokenTx.TxTo, 'hex'),
+            Buffer.from(tokenTx.Value),
+            Buffer.from(tokenTx.GasLimit),
+            Buffer.from(tokenTx.GasUsedByTxn),
+            Buffer.from(tokenTx.GasPrice),
+            Buffer.from(tokenTx.Nonce),
+            Buffer.from(tokenTx.InputData)
+          ]
+
+          tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+
+          this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+            if (err) {
+              return callback(err, null)
+            } else {
+              return callback(null, tokenTx)
+            }
+          })
+        }
+      } else {
+        return callback(new Error(`Lock Log of Benefiter ${benefitAddress} From sender ${senderAddress} not Found`), null)
+      }
+    } else {
+      return callback(new Error(`Lock Log of Sender ${senderAddress} not Found`), null)
+    }
+  }
+
+  revertContractForTransfer(tx, contractResult, callback) {
     this.BlockChain.getNonce(tx.TxTo, (err, nonce) => {
       if (err) {
         callback(err, null)
@@ -971,8 +1151,8 @@ class SECTokenBlockChain {
           TxReceiptStatus: 'success',
           TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
           TxFrom: tx.TxTo,
-          TxTo: contractResult.transferResult.Address,
-          Value: contractResult.transferResult.Amount.toString(),
+          TxTo: contractResult.Results.Address,
+          Value: contractResult.Results.Amount.toString(),
           GasLimit: '0',
           GasUsedByTxn: '0',
           GasPrice: '0',
@@ -1002,13 +1182,13 @@ class SECTokenBlockChain {
     let approve = tokenInfo.approve
     let walletAddress = tx.TxFrom
     if (walletAddress in approve) {
-      let balance = approve.walletAddress
+      let balance = approve[walletAddress]
       balance = new Big(balance)
-      balance = balance.minus(contractResult.Amount)
+      balance = balance.minus(contractResult.Results.Amount)
       balance = balance.toFixed(DEC_NUM)
-      tokenInfo.depositBalance.walletAddress = balance.toString()
+      tokenInfo.approve[walletAddress] = balance.toString()
     } else {
-      tokenInfo.approve.walletAddress = contractResult.Amount.toString()
+      tokenInfo.approve[walletAddress] = contractResult.Results.Amount.toString()
     }
     this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
       if (err) {
@@ -1021,19 +1201,19 @@ class SECTokenBlockChain {
     let approve = tokenInfo.approve
     let walletAddress = tx.TxFrom
     if (walletAddress in approve) {
-      let balance = approve.walletAddress
+      let balance = approve[walletAddress]
       balance = new Big(balance)
-      balance = balance.plus(contractResult.Amount)
+      balance = balance.plus(contractResult.Results.Amount)
       balance = balance.toFixed(DEC_NUM)
-      tokenInfo.depositBalance.walletAddress = balance      
-      if (balance.gte(contractResult.Amount)) {
+      tokenInfo.approve[walletAddress] = balance
+      if (balance.gte(contractResult.Results.Amount)) {
         let tokenTx = {
           Version: '0.1',
           TxReceiptStatus: 'success',
           TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
           TxFrom: tx.TxTo,
-          TxTo: contractResult.transferResult.Address,
-          Value: contractResult.transferResult.Amount.toString(),
+          TxTo: contractResult.Results.Address,
+          Value: contractResult.Results.Amount.toString(),
           GasLimit: '0',
           GasUsedByTxn: '0',
           GasPrice: '0',
@@ -1074,7 +1254,7 @@ class SECTokenBlockChain {
     let totalSupply = tokenInfo.totalSupply
     let walletAddress = tx.TxFrom
     let INIT_BALANCE = '0'
-    this.accTree.getAccInfo(walletAddress, tx.TokenName, (err, data1)=>{
+    this.accTree.getAccInfo(walletAddress, tx.TokenName, (err, data1) => {
       let nonce = ''
       let balance = ''
       let txInfo = {}
@@ -1083,9 +1263,11 @@ class SECTokenBlockChain {
         data1[0] = {}
         balance = new Big(INIT_BALANCE)
         nonce = '1'
-        txInfo = { From: [tx.TxHash], To: [] }
+        txInfo = {
+          From: [tx.TxHash],
+          To: []
+        }
       } else {
-        balance = new Big(INIT_BALANCE)
         nonce = (parseInt(data1[1]) - 1).toString()
 
         txInfo = data1[2]
@@ -1097,17 +1279,115 @@ class SECTokenBlockChain {
             return hash !== tx.TxHash
           })
         }
-        balance = parseFloat(balance).toString()
-        data1[0][tx.TokenName] = balance
+        delete data1[0][tx.TokenName]
       }
       txInfo.From.sort()
       txInfo.To.sort()
       this.accTree.putAccInfo(tx.TxFrom, [data1[0], nonce, txInfo], (err) => {
-        if(err){
+        if (err) {
           callback(err)
         }
       })
     })
+  }
+
+  revertContractForLock(tx, contractResult, tokenInfo, callback) {
+    let timeLock = tokenInfo.timeLock
+    let senderAddress = tx.TxFrom
+    let benefitAddress = contractResult.Results.Address
+    if (senderAddress in timeLock) {
+      if (benefitAddress in timeLock[senderAddress]) {
+        if (contractResult.Results.Time in timeLock[senderAddress][benefitAddress]) {
+          let balance = timeLock[senderAddress][benefitAddress][contractResult.Results.Time]
+          balance = new Big(balance)
+          balance = balance.minus(contractResult.Results.Amount)
+          balance = balance.toFixed(DEC_NUM)
+          if (balance.isZero()) {
+            delete timeLock[senderAddress][benefitAddress][contractResult.Results.Time]
+          } else {
+            timeLock[senderAddress][benefitAddress][contractResult.Results.Time] = balance.toString()
+          }
+          this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+            if (err) {
+              return callback(err)
+            } else {
+              return callback(null)
+            }
+          })
+        } else {
+          return callback(new Error('No Log to revert'))
+        }
+      } else {
+        return callback(new Error('No Log to revert'))
+      }
+    } else {
+      return callback(new Error('No Log to revert'))
+    }
+  }
+
+  revertContractForReleaseLock(tx, contractResult, tokenInfo, callback) {
+    let timeLock = tokenInfo.timeLock
+    let timeStamp = tx.TimeStamp
+    let senderAddress = tx.TxFrom
+    let benefitAddress = contractResult.Results.Address
+    let amountToRelease = new Big(contractResult.Results.Amount)
+    if (senderAddress in timeLock) {
+      if (benefitAddress in timeLock[senderAddress]) {
+        let benefitTimeLock = timeLock[senderAddress][benefitAddress]
+        let aLockTimestamps = Object.keys(benefitTimeLock)
+        aLockTimestamps = aLockTimestamps.filter(ts => ts <= timeStamp).sort((a, b) => {
+          return a - b
+        })
+        if (aLockTimestamps.length > 0) {
+          let ts = aLockTimestamps[0]
+          let lockedAmount = new Big(benefitTimeLock[ts])
+          lockedAmount = lockedAmount.plus(amountToRelease)
+          lockedAmount = lockedAmount.toFixed(DEC_NUM)
+          benefitTimeLock[ts] = lockedAmount.toString()
+        } else {
+          benefitTimeLock[timeStamp] = amountToRelease.toString()
+        }
+        let tokenTx = {
+          Version: '0.1',
+          TxReceiptStatus: 'success',
+          TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+          TxFrom: tx.TxTo,
+          TxTo: contractResult.Results.Address,
+          Value: contractResult.Results.Amount.toString(),
+          GasLimit: '0',
+          GasUsedByTxn: '0',
+          GasPrice: '0',
+          Nonce: nonce,
+          InputData: `Smart Contract Transaction`
+        }
+        let txHashBuffer = [
+          Buffer.from(tokenTx.Version),
+          SECUtils.intToBuffer(tokenTx.TimeStamp),
+          Buffer.from(tokenTx.TxFrom, 'hex'),
+          Buffer.from(tokenTx.TxTo, 'hex'),
+          Buffer.from(tokenTx.Value),
+          Buffer.from(tokenTx.GasLimit),
+          Buffer.from(tokenTx.GasUsedByTxn),
+          Buffer.from(tokenTx.GasPrice),
+          Buffer.from(tokenTx.Nonce),
+          Buffer.from(tokenTx.InputData)
+        ]
+
+        tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+
+        this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+          if (err) {
+            return callback(err, null)
+          } else {
+            return callback(null, tokenTx)
+          }
+        })
+      } else {
+        return callback(new Error(`Lock Log of Benefiter ${benefitAddress} From sender ${senderAddress} not Found`), null)
+      }
+    } else {
+      return callback(new Error(`Lock Log of Sender ${senderAddress} not Found`), null)
+    }
   }
 
   _runContract(tx, sourceCode) {
@@ -1119,12 +1399,16 @@ class SECTokenBlockChain {
     try {
       vm.createContext(sandbox)
       vm.runInContext(runScript, sandbox)
-      if (sandbox.Results.transferFlag) {
+      if (sandbox.Results.TransferFlag) {
         response.functionType = 'transfer'
-      } else if (sandbox.Results.depositFlag) {
+      } else if (sandbox.Results.DepositFlag) {
         response.functionType = 'deposit'
-      } else if (sandbox.Results.withdrawFlag) {
+      } else if (sandbox.Results.WithdrawFlag) {
         response.functionType = 'withdraw'
+      } else if (sandbox.Results.LockFlag) {
+        response.functionType = 'lock'
+      } else if (sandbox.Results.ReleaseLockFlag) {
+        response.functionType = 'releaseLock'
       } else {
         response.functionType = 'others'
       }
@@ -1134,6 +1418,7 @@ class SECTokenBlockChain {
       throw new Error(err)
     }
   }
+
 
   // -------------------------  FUNCTIONS FOR SPECIAL PURPOSES  ------------------------
   // ---------------------------------  DON'T USE THEM  --------------------------------
