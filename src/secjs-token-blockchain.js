@@ -62,17 +62,37 @@ class SECTokenBlockChain {
             if (process.env.netType === 'test' && this.chainName === 'SEN') {
               let tokenInfo = {
                 'tokenName': 'MToken',
-                'sourceCode': '...',
+                'sourceCode': 'ZnVuY3Rpb24gdHJhbnNmZXIoYWRkcmVzcywgYW1vdW50KSB7DQogICAgdmFyIHRyYW5zZmVyRmxhZyA9IGZhbHNlDQogICAgaWYoYW1vdW50PjEwKX'+
+                              'sNCiAgICAgICAgYW1vdW50ID0gYW1vdW50IC0gMQ0KICAgICAgICB0cmFuc2ZlckZsYWcgPSB0cnVlDQogICAgfQ0KICAgIHJldHVybiB7J0FkZHJlc' +
+                              '3MnOiBhZGRyZXNzLCAnQW1vdW50JzogYW1vdW50LCAnVHJhbnNmZXJGbGFnJzogdHJhbnNmZXJGbGFnfQ0KfQ0KDQpmdW5jdGlvbiBzdW1OdW1iZXIoY' +
+                              'SxiKXsNCiAgICByZXR1cm4gYSArIGINCn0NCg0KZnVuY3Rpb24gZGVwb3NpdChhbW91bnQpew0KICAgIHZhciBkZXBvc2l0RmxhZyA9IGZhbHNlDQogI' +
+                              'CAgaWYoYW1vdW50PjApew0KICAgICAgICBkZXBvc2l0RmxhZyA9IHRydWUNCiAgICB9DQogICAgcmV0dXJuIHsnQW1vdW50JzogYW1vdW50LCAnRGVwb' +
+                              '3NpdEZsYWcnOiBkZXBvc2l0RmxhZ30NCn0NCg0KZnVuY3Rpb24gd2l0aGRyYXcoYmVuZWZpdEFkZHJlc3MsIGFtb3VudCl7DQogICAgdmFyIHdpdGhkc' +
+                              'mF3RmxhZyA9IGZhbHNlDQogICAgaWYoYW1vdW50PjApew0KICAgICAgICB3aXRoZHJhd0ZsYWcgPSB0cnVlDQogICAgfQ0KICAgIHJldHVybiB7J0FkZH' +
+                              'Jlc3MnOiBiZW5lZml0QWRkcmVzcywgJ0Ftb3VudCc6IGFtb3VudCwgJ1dpdGhkcmF3RmxhZyc6IHdpdGhkcmF3RmxhZ30NCn0NCg0KZnVuY3Rpb24gbG9' +
+                              'jayhiZW5lZml0QWRkcmVzcywgYW1vdW50LCB0aW1lKXsNCiAgICB2YXIgbG9ja0ZsYWcgPSBmYWxzZQ0KICAgIGlmKGFtb3VudD4wKXsNCiAgICAgICAg' +
+                              'bG9ja0ZsYWcgPSB0cnVlDQogICAgfQ0KICAgIHJldHVybiB7J0FkZHJlc3MnOiBiZW5lZml0QWRkcmVzcywgJ0Ftb3VudCc6IGFtb3VudCwgJ1RpbWUnO' +
+                              'iB0aW1lLCAnTG9ja0ZsYWcnOiBsb2NrRmxhZ30NCn0NCg0KZnVuY3Rpb24gcmVsZWFzZUxvY2soYmVuZWZpdEFkZHJlc3MsIGFtb3VudCl7DQogICAgdm' +
+                              'FyIHJlbGVhc2VMb2NrRmxhZyA9IGZhbHNlDQogICAgaWYoYW1vdW50PjApew0KICAgICAgICByZWxlYXNlTG9ja0ZsYWcgPSB0cnVlDQogICAgfQ0KICA' +
+                              'gIHJldHVybiB7J0FkZHJlc3MnOiBiZW5lZml0QWRkcmVzcywgJ0Ftb3VudCc6IGFtb3VudCwgJ1JlbGVhc2VMb2NrRmxhZyc6IHJlbGVhc2VMb2NrRmxh' +
+                              'Z30NCn0=',
                 'totalSupply': 100000000,
                 'timeLock': {},
                 'approve': {}
               }
-              this.addTokenMap(tokenInfo, '000000000000000000000000000000000001', (err) => {
+              this.addTokenMap(tokenInfo, '000000000000000000000000000000000002', (err) => {
                 if (err) {
                   console.log('SenTestInit Error', err)
                 }
                 this.putBlockToDB(geneBlock, callback)
               })
+              tokenInfo.tokenName = 'SEN'
+              this.addTokenMap(tokenInfo, '000000000000000000000000000000000001', (err) => {
+                if (err) {
+                  console.log('SenTestInit Error', err)
+                }
+                this.putBlockToDB(geneBlock, callback)
+              })              
             } else {
               this.putBlockToDB(geneBlock, callback)
             }
