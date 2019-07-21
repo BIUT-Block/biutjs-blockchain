@@ -6,6 +6,7 @@ const SECUtils = require('@biut-block/biutjs-util')
 const SECTokenBlock = require('./secjs-token-block')
 const SECDatahandler = require('@biut-block/biutjs-datahandler')
 const SECMerkleTree = require('@biut-block/biutjs-merkle-tree')
+const vm = require('vm')
 
 class SECTokenBlockChain {
   /**
@@ -60,7 +61,7 @@ class SECTokenBlockChain {
             // then write genesis block to both tokenDB and account tree DB
             let geneBlock = this._generateGenesisBlock()
             if (process.env.netType === 'test' && this.chainName === 'SEN') {
-              let tokenInfo = {
+/*               let tokenInfo = {
                 'tokenName': 'MToken',
                 'sourceCode': 'ZnVuY3Rpb24gdHJhbnNmZXIoYWRkcmVzcywgYW1vdW50KSB7DQogICAgdmFyIHRyYW5zZmVyRmxhZyA9IGZhbHNlDQogICAgaWYoYW1vdW50PjEwKX'+
                               'sNCiAgICAgICAgYW1vdW50ID0gYW1vdW50IC0gMQ0KICAgICAgICB0cmFuc2ZlckZsYWcgPSB0cnVlDQogICAgfQ0KICAgIHJldHVybiB7J0FkZHJlc' +
@@ -92,7 +93,7 @@ class SECTokenBlockChain {
                   console.log('SenTestInit Error', err)
                 }
                 this.putBlockToDB(geneBlock, callback)
-              })              
+              })    */           
             } else {
               this.putBlockToDB(geneBlock, callback)
             }
