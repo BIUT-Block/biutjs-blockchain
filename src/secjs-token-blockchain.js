@@ -7,6 +7,15 @@ const SECTokenBlock = require('./secjs-token-block')
 const SECDatahandler = require('@biut-block/biutjs-datahandler')
 const SECMerkleTree = require('@biut-block/biutjs-merkle-tree')
 const vm = require('vm')
+const Big = require('bignumber.js')
+
+const DEC_NUM = 8
+Big.config({
+  ROUNDING_MODE: 0
+})
+Big.set({
+  ROUNDING_MODE: Big.ROUND_DOWN
+})
 
 class SECTokenBlockChain {
   /**
@@ -60,44 +69,7 @@ class SECTokenBlockChain {
           else {
             // then write genesis block to both tokenDB and account tree DB
             let geneBlock = this._generateGenesisBlock()
-            if (process.env.netType === 'test' && this.chainName === 'SEN') {
-              /*               let tokenInfo = {
-                              'tokenName': 'MToken',
-                              'sourceCode': 'ZnVuY3Rpb24gdHJhbnNmZXIoYWRkcmVzcywgYW1vdW50KSB7DQogICAgdmFyIHRyYW5zZmVyRmxhZyA9IGZhbHNlDQogICAgaWYoYW1vdW50PjEwKX'+
-                                            'sNCiAgICAgICAgYW1vdW50ID0gYW1vdW50IC0gMQ0KICAgICAgICB0cmFuc2ZlckZsYWcgPSB0cnVlDQogICAgfQ0KICAgIHJldHVybiB7J0FkZHJlc' +
-                                            '3MnOiBhZGRyZXNzLCAnQW1vdW50JzogYW1vdW50LCAnVHJhbnNmZXJGbGFnJzogdHJhbnNmZXJGbGFnfQ0KfQ0KDQpmdW5jdGlvbiBzdW1OdW1iZXIoY' +
-                                            'SxiKXsNCiAgICByZXR1cm4gYSArIGINCn0NCg0KZnVuY3Rpb24gZGVwb3NpdChhbW91bnQpew0KICAgIHZhciBkZXBvc2l0RmxhZyA9IGZhbHNlDQogI' +
-                                            'CAgaWYoYW1vdW50PjApew0KICAgICAgICBkZXBvc2l0RmxhZyA9IHRydWUNCiAgICB9DQogICAgcmV0dXJuIHsnQW1vdW50JzogYW1vdW50LCAnRGVwb' +
-                                            '3NpdEZsYWcnOiBkZXBvc2l0RmxhZ30NCn0NCg0KZnVuY3Rpb24gd2l0aGRyYXcoYmVuZWZpdEFkZHJlc3MsIGFtb3VudCl7DQogICAgdmFyIHdpdGhkc' +
-                                            'mF3RmxhZyA9IGZhbHNlDQogICAgaWYoYW1vdW50PjApew0KICAgICAgICB3aXRoZHJhd0ZsYWcgPSB0cnVlDQogICAgfQ0KICAgIHJldHVybiB7J0FkZH' +
-                                            'Jlc3MnOiBiZW5lZml0QWRkcmVzcywgJ0Ftb3VudCc6IGFtb3VudCwgJ1dpdGhkcmF3RmxhZyc6IHdpdGhkcmF3RmxhZ30NCn0NCg0KZnVuY3Rpb24gbG9' +
-                                            'jayhiZW5lZml0QWRkcmVzcywgYW1vdW50LCB0aW1lKXsNCiAgICB2YXIgbG9ja0ZsYWcgPSBmYWxzZQ0KICAgIGlmKGFtb3VudD4wKXsNCiAgICAgICAg' +
-                                            'bG9ja0ZsYWcgPSB0cnVlDQogICAgfQ0KICAgIHJldHVybiB7J0FkZHJlc3MnOiBiZW5lZml0QWRkcmVzcywgJ0Ftb3VudCc6IGFtb3VudCwgJ1RpbWUnO' +
-                                            'iB0aW1lLCAnTG9ja0ZsYWcnOiBsb2NrRmxhZ30NCn0NCg0KZnVuY3Rpb24gcmVsZWFzZUxvY2soYmVuZWZpdEFkZHJlc3MsIGFtb3VudCl7DQogICAgdm' +
-                                            'FyIHJlbGVhc2VMb2NrRmxhZyA9IGZhbHNlDQogICAgaWYoYW1vdW50PjApew0KICAgICAgICByZWxlYXNlTG9ja0ZsYWcgPSB0cnVlDQogICAgfQ0KICA' +
-                                            'gIHJldHVybiB7J0FkZHJlc3MnOiBiZW5lZml0QWRkcmVzcywgJ0Ftb3VudCc6IGFtb3VudCwgJ1JlbGVhc2VMb2NrRmxhZyc6IHJlbGVhc2VMb2NrRmxh' +
-                                            'Z30NCn0=',
-                              'totalSupply': 100000000,
-                              'timeLock': {},
-                              'approve': {}
-                            }
-                            this.addTokenMap(tokenInfo, '000000000000000000000000000000000002', (err) => {
-                              if (err) {
-                                console.log('SenTestInit Error', err)
-                              }
-                              this.putBlockToDB(geneBlock, callback)
-                            })
-                            tokenInfo.tokenName = 'SEN'
-                            this.addTokenMap(tokenInfo, '000000000000000000000000000000000001', (err) => {
-                              if (err) {
-                                console.log('SenTestInit Error', err)
-                              }
-                              this.putBlockToDB(geneBlock, callback)
-                            })    */
-              this.putBlockToDB(geneBlock, callback)
-            } else {
-              this.putBlockToDB(geneBlock, callback)
-            }
+            this.putBlockToDB(geneBlock, callback)
           }
         })
       } else {
@@ -587,44 +559,25 @@ class SECTokenBlockChain {
 
   getTimeLock(addr, callback) {
     if (SECUtils.isContractAddr(addr)) {
-      this.smartContractTxDB.getTimeLock(addr, (err, approve) => {
+      this.smartContractTxDB.getTimeLock(addr, (err, timeLock) => {
         if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
-        callback(null, approve)
+        callback(null, timeLock)
       })
     } else {
       callback(null, {})
     }
   }
 
-  updateSmartContractDB(block, callback) {
-    let self = this
-    let promiseList = []
-    // parse block.Transactions
-    block.Transactions.forEach((tx, index) => {
-      if (typeof tx === 'string') {
-        block.Transactions[index] = JSON.parse(tx)
-      }
-      if (!this._typeCheck(block.Transactions[index].Value)) {
-        block.Transactions[index].Value = '0'
-      }
-      if (!this._typeCheck(block.Transactions[index].TxFee)) {
-        block.Transactions[index].TxFee = '0'
-      }
-    })
-
-    let txs = block.Transactions
-    txs.forEach((tx) => {
-      promiseList = promiseList.concat(self._updateSmartContractDBWithTx(tx))
-    })
-
-    Promise.all(promiseList).then((transactionsList) => {
-      transactionsList = transactionsList.filter((tx) => (tx != null))
-      block.Transactions = transactionsList
-      callback(null, block)
-    }).catch((err) => {
-      callback(err, null)
-    })
-  }
+  getTokenInfo(addr, callback) {
+    if (SECUtils.isContractAddr(addr)) {
+      this.smartContractTxDB.getTokenInfo(addr, (err, tokenInfo) => {
+        if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
+        callback(null, tokenInfo)
+      })
+    } else {
+      callback(null, {})
+    }
+  }  
 
   updateSmartContractDB(block, callback) {
     let self = this
@@ -690,88 +643,92 @@ class SECTokenBlockChain {
     let self = this
     return new Promise(function (resolve, reject) {
       if (SECUtils.isContractAddr(tx.TxTo)) {
-        self.smartContractTxDB.getTokenInfo(tx.TxTo, (err, tokenInfo) => {
+        self.getTokenInfo(tx.TxTo, (err, tokenInfo) => {
           if (err) {
-            try {
-              let oTokenInfo = JSON.parse(tx.inputData)
-              tokenInfo = {
-                "tokenName": oTokenInfo.tokenName,
-                "sourceCode": oTokenInfo.sourceCode,
-                "totalSupply": oTokenInfo.totalSupply,
-                "timeLock": {},
-                "approve": {}
-              }
-              self.contractForCreate(tx, tokenInfo, (err) => {
-                if (err) {
-                  reject(err)
-                } else {
-                  tx.TokenName = oTokenInfo.tokenName
-                  resolve(tx)
-                }
-              })
-            } catch (error) {
-              reject(err)
-            }
+            reject(err)
           } else {
-            let sourceCode = tokenInfo.sourceCode
-            let tokenName = tokenInfo.tokenName
-            let contractResult = self._runContract(tx, sourceCode)
-            switch (contractResult.functionType) {
-              case 'transfer':
-                self.contractForTransfer(tx, contractResult, tokenInfo, (err, tokenTx) => {
-                  if (err) {
-                    return callback(err)
-                  } else {
-                    tx.TokenName = tokenName
-                    tokenTx.TokenName = tokenName
-                    resolve([tx, tokenTx])
-                  }
-                })
-                break
-              case 'deposit':
-                self.contractForDeposit(tx, contractResult, tokenInfo, (err) => {
+            if (tokenInfo) {
+              let sourceCode = tokenInfo.sourceCode
+              let tokenName = tokenInfo.tokenName
+              let contractResult = self._runContract(tx, sourceCode)
+              switch (contractResult.functionType) {
+                case 'transfer':
+                  self.contractForTransfer(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      tokenTx.TokenName = tokenName
+                      resolve([tx, tokenTx])
+                    }
+                  })
+                  break
+                case 'deposit':
+                  self.contractForDeposit(tx, contractResult, tokenInfo, (err) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      resolve(tx)
+                    }
+                  })
+                  break
+                case 'withdraw':
+                  self.contractForWithdraw(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      tokenTx.TokenName = tokenName
+                      resolve([tx, tokenTx])
+                    }
+                  })
+                  break
+                case 'lock':
+                  self.contractForLock(tx, contractResult, tokenInfo, (err) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      resolve(tx)
+                    }
+                  })
+                  break
+                case 'releaseLock':
+                  self.contractForReleaseLock(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      tokenTx.TokenName = tokenName
+                      resolve([tx, tokenTx])
+                    }
+                  })
+                  break
+                default:
+                  resolve()
+              }
+            } else {
+              try {
+                let oTokenInfo = JSON.parse(tx.InputData)
+                tokenInfo = {
+                  "tokenName": oTokenInfo.tokenName,
+                  "sourceCode": oTokenInfo.sourceCode,
+                  "totalSupply": oTokenInfo.totalSupply,
+                  "timeLock": {},
+                  "approve": {}
+                }
+                self.contractForCreate(tx, tokenInfo, (err) => {
                   if (err) {
                     reject(err)
                   } else {
-                    tx.TokenName = tokenName
+                    tx.TokenName = oTokenInfo.tokenName
                     resolve(tx)
                   }
                 })
-                break
-              case 'withdraw':
-                self.contractForWithdraw(tx, contractResult, tokenInfo, (err, tokenTx) => {
-                  if (err) {
-                    reject(err)
-                  } else {
-                    tx.TokenName = tokenName
-                    tokenTx.TokenName = tokenName
-                    resolve([tx, tokenTx])
-                  }
-                })
-                break
-              case 'lock':
-                self.contractForLock(tx, contractResult, tokenInfo, (err) => {
-                  if (err) {
-                    reject(err)
-                  } else {
-                    tx.TokenName = tokenName
-                    resolve(tx)
-                  }
-                })
-                break
-              case 'releaseLock':
-                self.contractForReleaseLock(tx, contractResult, tokenInfo, (err, tokenTx) => {
-                  if (err) {
-                    reject(err)
-                  } else {
-                    tx.TokenName = tokenName
-                    tokenTx.TokenName = tokenName
-                    resolve([tx, tokenTx])
-                  }
-                })
-                break
-              default:
-                resolve()
+              } catch (error) {
+                reject(error)
+              }
             }
           }
         })
@@ -786,12 +743,12 @@ class SECTokenBlockChain {
     let self = this
     return new Promise(function (resolve, reject) {
       if (SECUtils.isContractAddr(tx.TxTo)) {
-        self.smartContractTxDB.getTokenInfo(tx.TxTo, (err, tokenInfo) => {
+        self.getTokenInfo(tx.TxTo, (err, tokenInfo) => {
           if (err) {
             reject(err)
           } else {
             try {
-              let oTokenInfo = JSON.parse(tx.inputData)
+              let oTokenInfo = JSON.parse(tx.InputData)
               tokenInfo = {
                 "tokenName": oTokenInfo.tokenName,
                 "sourceCode": oTokenInfo.sourceCode,
