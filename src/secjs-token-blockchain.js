@@ -94,6 +94,7 @@ class SECTokenBlockChain {
                               }
                               this.putBlockToDB(geneBlock, callback)
                             })    */
+              this.putBlockToDB(geneBlock, callback)
             } else {
               this.putBlockToDB(geneBlock, callback)
             }
