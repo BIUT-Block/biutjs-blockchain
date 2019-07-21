@@ -777,7 +777,7 @@ class SECTokenBlockChain {
           }
         })
       } else {
-        tx.TokenName = this.chainName
+        tx.TokenName = self.chainName
         resolve(tx)
       }
     })
