@@ -1439,6 +1439,11 @@ class SECTokenBlockChain {
     }
   }
 
+  _typeCheck (variable) {
+    if (typeof variable !== 'string') return false
+    if (isNaN(parseInt(variable))) return false
+    return true
+  }
 
   // -------------------------  FUNCTIONS FOR SPECIAL PURPOSES  ------------------------
   // ---------------------------------  DON'T USE THEM  --------------------------------
