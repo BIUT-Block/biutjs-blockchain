@@ -581,7 +581,7 @@ class SECTokenBlockChain {
 
   updateSmartContractDB(block, callback) {
     let self = this
-    let promiseList = []
+    let promiseList = [[]]
     // parse block.Transactions
     block.Transactions.forEach((tx, index) => {
       if (typeof tx === 'string') {
@@ -601,7 +601,7 @@ class SECTokenBlockChain {
     })
 
     Promise.all(promiseList).then((transactionsList) => {
-      transactionsList = transactionsList.reduce((a,b) => [...a, ...b])
+      transactionsList = transactionsList.filter((tx) => (tx != null)).reduce((a,b) => [...a, ...b])
       block.Transactions = transactionsList
       callback(null, block)
     }).catch((err) => {
@@ -631,7 +631,7 @@ class SECTokenBlockChain {
     })
 
     Promise.all(promiseList).then((transactionsList) => {
-      transactionsList = transactionsList.reduce((a,b) => [...a, ...b])
+      transactionsList = transactionsList.filter((tx) => (tx != null)).reduce((a,b) => [...a, ...b])
       block.Transactions = transactionsList
       callback(null, block)
     }).catch((err) => {
@@ -669,7 +669,7 @@ class SECTokenBlockChain {
                       reject(err)
                     } else {
                       tx.TokenName = tokenName
-                      resolve(tx)
+                      resolve([tx])
                     }
                   })
                   break
@@ -690,7 +690,7 @@ class SECTokenBlockChain {
                       reject(err)
                     } else {
                       tx.TokenName = tokenName
-                      resolve(tx)
+                      resolve([tx])
                     }
                   })
                   break
@@ -723,7 +723,7 @@ class SECTokenBlockChain {
                     reject(err)
                   } else {
                     tx.TokenName = oTokenInfo.tokenName
-                    resolve(tx)
+                    resolve([tx])
                   }
                 })
               } catch (error) {
@@ -734,7 +734,7 @@ class SECTokenBlockChain {
         })
       } else {
         tx.TokenName = self.chainName
-        resolve(tx)
+        resolve([tx])
       }
     })
   }
@@ -767,7 +767,7 @@ class SECTokenBlockChain {
                       tx.tokenName = this.chainName
                       tx.Value = '0'
                       tx.Fee = '0'
-                      resolve(tx)
+                      resolve([tx])
                     }
                   })
                 }
@@ -795,7 +795,7 @@ class SECTokenBlockChain {
                         reject(err)
                       } else {
                         tx.TokenName = tokenName
-                        resolve(tx)
+                        resolve([tx])
                       }
                     })
                     break
@@ -816,7 +816,7 @@ class SECTokenBlockChain {
                         reject(err)
                       } else {
                         tx.TokenName = tokenName
-                        resolve(tx)
+                        resolve([tx])
                       }
                     })
                     break
@@ -842,7 +842,7 @@ class SECTokenBlockChain {
         })
       } else {
         tx.TokenName = this.chainName
-        resolve(tx)
+        resolve([tx])
       }
     })
   }
