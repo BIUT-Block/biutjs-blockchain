@@ -581,7 +581,7 @@ class SECTokenBlockChain {
 
   updateSmartContractDB(block, callback) {
     let self = this
-    let promiseList = [[]]
+    let promiseList = []
     // parse block.Transactions
     block.Transactions.forEach((tx, index) => {
       if (typeof tx === 'string') {
@@ -601,7 +601,9 @@ class SECTokenBlockChain {
     })
 
     Promise.all(promiseList).then((transactionsList) => {
-      transactionsList = transactionsList.filter((tx) => (tx != null)).reduce((a,b) => [...a, ...b])
+      if(transactionsList.length>0){
+        transactionsList = transactionsList.filter((tx) => (tx != null)).reduce((a,b) => [...a, ...b])
+      } 
       block.Transactions = transactionsList
       callback(null, block)
     }).catch((err) => {
@@ -631,7 +633,9 @@ class SECTokenBlockChain {
     })
 
     Promise.all(promiseList).then((transactionsList) => {
-      transactionsList = transactionsList.filter((tx) => (tx != null)).reduce((a,b) => [...a, ...b])
+      if(transactionsList.length>0){
+        transactionsList = transactionsList.filter((tx) => (tx != null)).reduce((a,b) => [...a, ...b])
+      } 
       block.Transactions = transactionsList
       callback(null, block)
     }).catch((err) => {
