@@ -24,7 +24,7 @@ class SECTokenBlockChain {
    *
    */
 
-  constructor(config) {
+  constructor(config, pool) {
     this.deletingFlag = false
     this.chainName = config.chainName
     this.chainDB = new SECDatahandler.TokenBlockChainDB(config.dbconfig)
@@ -32,10 +32,10 @@ class SECTokenBlockChain {
     this.smartContractTxDB = new SECDatahandler.SmartContractTxDB(config.dbconfig)
     this.accTree = new AccTreeDB(Object.assign(config.dbconfig, {
       "chainName": this.chainName
-    }), this.smartContractTxDB)
+    }))
     this.chainLength = 0
+    this.pool = pool
   }
-
   /**
    * generate genesis token block
    */
@@ -597,11 +597,11 @@ class SECTokenBlockChain {
 
     let txs = block.Transactions
     txs.forEach((tx) => {
-      promiseList = promiseList.concat(self._updateSmartContractDBWithTx(tx))
+      promiseList = promiseList.push(self._updateSmartContractDBWithTx(tx))
     })
 
     Promise.all(promiseList).then((transactionsList) => {
-      transactionsList = transactionsList.filter((tx) => (tx != null))
+      transactionsList = transactionsList.reduce((a,b) => [...a, ...b])
       block.Transactions = transactionsList
       callback(null, block)
     }).catch((err) => {
@@ -627,11 +627,11 @@ class SECTokenBlockChain {
 
     let txs = block.Transactions
     txs.forEach((tx) => {
-      promiseList = promiseList.concat(self._revertSmartContractDBWithTx(tx))
+      promiseList = promiseList.push(self._revertSmartContractDBWithTx(tx))
     })
 
     Promise.all(promiseList).then((transactionsList) => {
-      transactionsList = transactionsList.filter((tx) => (tx != null))
+      transactionsList = transactionsList.reduce((a,b) => [...a, ...b])
       block.Transactions = transactionsList
       callback(null, block)
     }).catch((err) => {
@@ -1368,9 +1368,11 @@ class SECTokenBlockChain {
   }
 
   _runContract(tx, sourceCode) {
-    let runScript = sourceCode + '; Result = ' + new Buffer(tx.InputData, 'base64').toString()
+    let runScript = new Buffer(sourceCode, 'base64').toString() +
+                    '; Results = ' + 
+                    new Buffer(tx.InputData, 'base64').toString()
     let sandbox = {
-      Result: {}
+      Results: {}
     }
     let response = {}
     try {
@@ -1389,7 +1391,7 @@ class SECTokenBlockChain {
       } else {
         response.functionType = 'others'
       }
-      response.result = sandbox.Result
+      response.Results = sandbox.Results
       return response
     } catch (err) {
       throw new Error(err)
