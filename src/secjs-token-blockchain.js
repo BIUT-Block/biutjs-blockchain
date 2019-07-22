@@ -7,6 +7,7 @@ const SECTokenBlock = require('./secjs-token-block')
 const SECDatahandler = require('@biut-block/biutjs-datahandler')
 const SECMerkleTree = require('@biut-block/biutjs-merkle-tree')
 const vm = require('vm')
+const cloneDeep = require('clone-deep')
 const Big = require('bignumber.js')
 
 const DEC_NUM = 8
@@ -83,8 +84,9 @@ class SECTokenBlockChain {
             if (errPosition !== -1) {
               this.deletingFlag = true
               this.delBlockFromHeight(errPosition, (err) => {
-                if (err) callback(err)
-                else {
+                if (err) {
+                  return callback(err)
+                } else {
                   this.verifyStateRoot(callback)
                 }
               })
@@ -162,7 +164,9 @@ class SECTokenBlockChain {
             contractAddr = tx.TxFrom
           }
           this.getTokenName(contractAddr, (err1, tokenName) => {
-            if (err1) return cb(err1)
+            if (err1) {
+              return cb(err1)
+            }
             tx.TokenName = tokenName
             count++
             if (count >= txLength) {
@@ -325,15 +329,16 @@ class SECTokenBlockChain {
             // new block received, update tokenTxDB
             this.txDB.writeBlock(block, (err) => {
               if (err) return callback(err)
-              // update token blockchain DB
-              this.chainDB.writeTokenBlockToDB(block, (err) => {
+              this.updateSmartContractDB(block, (err, _block) => {
                 if (err) return callback(err)
-                this.chainLength = block.Number + 1
-                this.updateSmartContractDB(block, (err, _block) => {
+                // update token blockchain DB
+                this.accTree.updateWithBlock(_block, (err) => {
                   if (err) return callback(err)
-                  this.accTree.updateWithBlock(_block, (err) => {
+                  _block.StateRoot = this.accTree.getRoot()
+                  this.chainDB.writeTokenBlockToDB(cloneDeep(_block), (err) => {
                     if (err) return callback(err)
-                    callback()
+                    this.chainLength = _block.Number + 1
+                    callback(_block.StateRoot)
                   })
                 })
               })
@@ -577,7 +582,7 @@ class SECTokenBlockChain {
     } else {
       callback(null, {})
     }
-  }  
+  }
 
   updateSmartContractDB(block, callback) {
     let self = this
@@ -597,13 +602,13 @@ class SECTokenBlockChain {
 
     let txs = block.Transactions
     txs.forEach((tx) => {
-      promiseList = promiseList.push(self._updateSmartContractDBWithTx(tx))
+      promiseList.push(self._updateSmartContractDBWithTx(tx))
     })
 
     Promise.all(promiseList).then((transactionsList) => {
-      if(transactionsList.length>0){
-        transactionsList = transactionsList.filter((tx) => (tx != null)).reduce((a,b) => [...a, ...b])
-      } 
+      if (transactionsList.length > 0) {
+        transactionsList = transactionsList.reduce((a, b) => [...a, ...b])
+      }
       block.Transactions = transactionsList
       callback(null, block)
     }).catch((err) => {
@@ -629,13 +634,13 @@ class SECTokenBlockChain {
 
     let txs = block.Transactions
     txs.forEach((tx) => {
-      promiseList = promiseList.push(self._revertSmartContractDBWithTx(tx))
+      promiseList.push(self._revertSmartContractDBWithTx(tx))
     })
 
     Promise.all(promiseList).then((transactionsList) => {
-      if(transactionsList.length>0){
-        transactionsList = transactionsList.filter((tx) => (tx != null)).reduce((a,b) => [...a, ...b])
-      } 
+      if (transactionsList.length > 0) {
+        transactionsList = transactionsList.reduce((a, b) => [...a, ...b])
+      }
       block.Transactions = transactionsList
       callback(null, block)
     }).catch((err) => {
@@ -722,12 +727,17 @@ class SECTokenBlockChain {
                   "timeLock": {},
                   "approve": {}
                 }
-                self.contractForCreate(tx, tokenInfo, (err) => {
+                self.contractForCreate(tx, tokenInfo, (err, tokenTx) => {
                   if (err) {
                     reject(err)
                   } else {
                     tx.TokenName = oTokenInfo.tokenName
-                    resolve([tx])
+                    if (tokenTx) {
+                      tokenTx.TokenName = oTokenInfo.tokenName
+                      resolve([tx, tokenTx])
+                    } else {
+                      resolve([tx])
+                    }
                   }
                 })
               } catch (error) {
@@ -764,14 +774,17 @@ class SECTokenBlockChain {
                 if (err) {
                   reject(err)
                 } else {
-                  self.revertContractForCreate(tx, tokenInfo, (err) => {
+                  self.revertContractForCreate(tx, tokenInfo, (err, tokenTx) => {
                     if (err) {
                       reject(err)
                     } else {
-                      tx.tokenName = this.chainName
-                      tx.Value = '0'
-                      tx.Fee = '0'
-                      resolve([tx])
+                      tx.tokenName = oTokenInfo.tokenName
+                      if (tokenTx) {
+                        tokenTx.tokenName = oTokenInfo.tokenName
+                        resolve([tx, tokenTx])
+                      } else {
+                        resolve([tx])
+                      }
                     }
                   })
                 }
@@ -852,7 +865,7 @@ class SECTokenBlockChain {
   }
 
   contractForTransfer(tx, contractResult, tokenInfo, callback) {
-    this.BlockChain.getNonce(tx.TxTo, (err, nonce) => {
+    this.getNonce(tx.TxTo, (err, nonce) => {
       if (err) {
         callback(err, null)
       } else {
@@ -866,6 +879,7 @@ class SECTokenBlockChain {
           GasLimit: '0',
           GasUsedByTxn: '0',
           GasPrice: '0',
+          TxFee: '0',
           Nonce: nonce,
           InputData: `Smart Contract Transaction`
         }
@@ -878,6 +892,7 @@ class SECTokenBlockChain {
           Buffer.from(tokenTx.GasLimit),
           Buffer.from(tokenTx.GasUsedByTxn),
           Buffer.from(tokenTx.GasPrice),
+          Buffer.from(tokenTx.TxFee),
           Buffer.from(tokenTx.Nonce),
           Buffer.from(tokenTx.InputData)
         ]
@@ -926,6 +941,7 @@ class SECTokenBlockChain {
           GasLimit: '0',
           GasUsedByTxn: '0',
           GasPrice: '0',
+          TxFee: '0',
           Nonce: nonce,
           InputData: `Smart Contract Transaction`
         }
@@ -938,6 +954,7 @@ class SECTokenBlockChain {
           Buffer.from(tokenTx.GasLimit),
           Buffer.from(tokenTx.GasUsedByTxn),
           Buffer.from(tokenTx.GasPrice),
+          Buffer.from(tokenTx.TxFee),
           Buffer.from(tokenTx.Nonce),
           Buffer.from(tokenTx.InputData)
         ]
@@ -964,49 +981,51 @@ class SECTokenBlockChain {
 
   contractForCreate(tx, tokenInfo, callback) {
     let totalSupply = tokenInfo.totalSupply
-    let walletAddress = tx.TxFrom
-    this.accTree.getAccInfo(walletAddress, tx.TokenName, (err, data1) => {
-      let nonce = ''
-      let balance = ''
-      let txInfo = {}
+    this.getNonce(tx.TxTo, (err, nonce) => {
       if (err) {
-        data1 = []
-        data1[0] = {}
-        balance = new Big(totalSupply)
-        nonce = '1'
-        txInfo = {
-          From: [tx.TxHash],
-          To: []
-        }
+        callback(err, null)
       } else {
-        balance = new Big(totalSupply)
-        nonce = (parseInt(data1[1]) + 1).toString()
+        let tokenTx = null
+        if (tokenInfo.tokenName !== this.chainName) {
+          tokenTx = {
+            Version: '0.1',
+            TxReceiptStatus: 'success',
+            TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+            TxFrom: '0000000000000000000000000000000000000000',
+            TxTo: tx.TxFrom,
+            Value: totalSupply.toString(),
+            GasLimit: '0',
+            GasUsedByTxn: '0',
+            GasPrice: '0',
+            TxFee: '0',
+            Nonce: nonce,
+            InputData: `Smart Contract Initialization`
+          }
 
-        txInfo = data1[2]
-        if (typeof txInfo === 'string') {
-          txInfo = JSON.parse(txInfo)
+          let txHashBuffer = [
+            Buffer.from(tokenTx.Version),
+            SECUtils.intToBuffer(tokenTx.TimeStamp),
+            Buffer.from(tokenTx.TxFrom, 'hex'),
+            Buffer.from(tokenTx.TxTo, 'hex'),
+            Buffer.from(tokenTx.Value),
+            Buffer.from(tokenTx.GasLimit),
+            Buffer.from(tokenTx.GasUsedByTxn),
+            Buffer.from(tokenTx.GasPrice),
+            Buffer.from(tokenTx.TxFee),
+            Buffer.from(tokenTx.Nonce),
+            Buffer.from(tokenTx.InputData)
+          ]
+
+          tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
         }
-        if (txInfo.From.indexOf(tx.TxHash) < 0) {
-          txInfo.From.push(tx.TxHash)
-        }
+        this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+          if (err) {
+            callback(err, null)
+          } else {
+            callback(null, tokenTx)
+          }
+        })
       }
-      balance = parseFloat(balance).toString()
-      data1[0][tx.TokenName] = balance
-      txInfo.From.sort()
-      txInfo.To.sort()
-      this.accTree.putAccInfo(tx.TxFrom, [data1[0], nonce, txInfo], (err) => {
-        if (err) {
-          callback(err)
-        } else {
-          this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
-            if (err) {
-              callback(err)
-            } else {
-              callback(null)
-            }
-          })
-        }
-      })
     })
   }
 
@@ -1088,6 +1107,7 @@ class SECTokenBlockChain {
             GasLimit: '0',
             GasUsedByTxn: '0',
             GasPrice: '0',
+            TxFee: '0',
             Nonce: nonce,
             InputData: `Smart Contract Transaction`
           }
@@ -1100,6 +1120,7 @@ class SECTokenBlockChain {
             Buffer.from(tokenTx.GasLimit),
             Buffer.from(tokenTx.GasUsedByTxn),
             Buffer.from(tokenTx.GasPrice),
+            Buffer.from(tokenTx.TxFee),
             Buffer.from(tokenTx.Nonce),
             Buffer.from(tokenTx.InputData)
           ]
@@ -1123,7 +1144,7 @@ class SECTokenBlockChain {
   }
 
   revertContractForTransfer(tx, contractResult, callback) {
-    this.BlockChain.getNonce(tx.TxTo, (err, nonce) => {
+    this.getNonce(tx.TxTo, (err, nonce) => {
       if (err) {
         callback(err, null)
       } else {
@@ -1137,6 +1158,7 @@ class SECTokenBlockChain {
           GasLimit: '0',
           GasUsedByTxn: '0',
           GasPrice: '0',
+          TxFee: '0',
           Nonce: nonce,
           InputData: `Smart Contract Transaction`
         }
@@ -1149,6 +1171,7 @@ class SECTokenBlockChain {
           Buffer.from(tokenTx.GasLimit),
           Buffer.from(tokenTx.GasUsedByTxn),
           Buffer.from(tokenTx.GasPrice),
+          Buffer.from(tokenTx.TxFee),
           Buffer.from(tokenTx.Nonce),
           Buffer.from(tokenTx.InputData)
         ]
@@ -1198,6 +1221,7 @@ class SECTokenBlockChain {
           GasLimit: '0',
           GasUsedByTxn: '0',
           GasPrice: '0',
+          TxFee: '0',
           Nonce: nonce,
           InputData: `Smart Contract Transaction`
         }
@@ -1210,6 +1234,7 @@ class SECTokenBlockChain {
           Buffer.from(tokenTx.GasLimit),
           Buffer.from(tokenTx.GasUsedByTxn),
           Buffer.from(tokenTx.GasPrice),
+          Buffer.from(tokenTx.TxFee),
           Buffer.from(tokenTx.Nonce),
           Buffer.from(tokenTx.InputData)
         ]
@@ -1233,42 +1258,45 @@ class SECTokenBlockChain {
 
   revertContractForCreate(tx, tokenInfo, callback) {
     let totalSupply = tokenInfo.totalSupply
-    let walletAddress = tx.TxFrom
-    let INIT_BALANCE = '0'
-    this.accTree.getAccInfo(walletAddress, tx.TokenName, (err, data1) => {
-      let nonce = ''
-      let balance = ''
-      let txInfo = {}
+    this.getNonce(tx.TxTo, (err, nonce) => {
       if (err) {
-        data1 = []
-        data1[0] = {}
-        balance = new Big(INIT_BALANCE)
-        nonce = '1'
-        txInfo = {
-          From: [tx.TxHash],
-          To: []
-        }
+        callback(err, null)
       } else {
-        nonce = (parseInt(data1[1]) - 1).toString()
+        let tokenTx = null
+        if (tokenInfo.tokenName !== this.chainName) {
+          tokenTx = {
+            Version: '0.1',
+            TxReceiptStatus: 'success',
+            TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+            TxFrom: '0000000000000000000000000000000000000000',
+            TxTo: tx.TxFrom,
+            Value: totalSupply.toString(),
+            GasLimit: '0',
+            GasUsedByTxn: '0',
+            GasPrice: '0',
+            TxFee: '0',
+            Nonce: nonce,
+            InputData: `Smart Contract Initialization`
+          }
 
-        txInfo = data1[2]
-        if (typeof txInfo === 'string') {
-          txInfo = JSON.parse(txInfo)
+          let txHashBuffer = [
+            Buffer.from(tokenTx.Version),
+            SECUtils.intToBuffer(tokenTx.TimeStamp),
+            Buffer.from(tokenTx.TxFrom, 'hex'),
+            Buffer.from(tokenTx.TxTo, 'hex'),
+            Buffer.from(tokenTx.Value),
+            Buffer.from(tokenTx.GasLimit),
+            Buffer.from(tokenTx.GasUsedByTxn),
+            Buffer.from(tokenTx.GasPrice),
+            Buffer.from(tokenTx.TxFee),
+            Buffer.from(tokenTx.Nonce),
+            Buffer.from(tokenTx.InputData)
+          ]
+
+          tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
         }
-        if (txInfo.From.indexOf(tx.TxHash) > -1) {
-          txInfo.From = txInfo.From.filter((hash) => {
-            return hash !== tx.TxHash
-          })
-        }
-        delete data1[0][tx.TokenName]
+        callback(null, tokenTx)
       }
-      txInfo.From.sort()
-      txInfo.To.sort()
-      this.accTree.putAccInfo(tx.TxFrom, [data1[0], nonce, txInfo], (err) => {
-        if (err) {
-          callback(err)
-        }
-      })
     })
   }
 
@@ -1338,6 +1366,7 @@ class SECTokenBlockChain {
           GasLimit: '0',
           GasUsedByTxn: '0',
           GasPrice: '0',
+          TxFee: '0',
           Nonce: nonce,
           InputData: `Smart Contract Transaction`
         }
@@ -1350,6 +1379,7 @@ class SECTokenBlockChain {
           Buffer.from(tokenTx.GasLimit),
           Buffer.from(tokenTx.GasUsedByTxn),
           Buffer.from(tokenTx.GasPrice),
+          Buffer.from(tokenTx.TxFee),
           Buffer.from(tokenTx.Nonce),
           Buffer.from(tokenTx.InputData)
         ]
@@ -1373,8 +1403,8 @@ class SECTokenBlockChain {
 
   _runContract(tx, sourceCode) {
     let runScript = new Buffer(sourceCode, 'base64').toString() +
-                    '; Results = ' + 
-                    new Buffer(tx.InputData, 'base64').toString()
+      '; Results = ' +
+      new Buffer(tx.InputData, 'base64').toString()
     let sandbox = {
       Results: {}
     }
@@ -1406,6 +1436,19 @@ class SECTokenBlockChain {
     if (typeof variable !== 'string') return false
     if (isNaN(parseInt(variable))) return false
     return true
+  }
+
+  getNonce(userAddress, callback) {
+    this.accTree.getNonce(userAddress, (err, nonce) => {
+      if (err) callback(err, null)
+      else {
+        nonce = parseInt(nonce)
+        let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
+        nonce = nonce + txArray.length
+        nonce = nonce.toString()
+        callback(null, nonce)
+      }
+    })
   }
 
   // -------------------------  FUNCTIONS FOR SPECIAL PURPOSES  ------------------------
@@ -1454,15 +1497,17 @@ class SECTokenBlockChain {
       if (err) return callback(err)
       this.txDB.writeBlock(block, (err) => {
         if (err) return callback(err)
-        // update token blockchain DB
-        this.chainDB.writeTokenBlockToDB(block, (err) => {
+        // update accTree BD
+        this.updateSmartContractDB(block, (err, _block) => {
           if (err) return callback(err)
-          // update accTree BD
-          this.updateSmartContractDB(block, (err, _block) => {
+          // update token blockchain DB
+          this.accTree.updateWithBlock(_block, (err) => {
             if (err) return callback(err)
-            this.accTree.updateWithBlock(block, (err) => {
-              this.chainLength = block.Number + 1
-              callback(err)
+            _block.StateRoot = this.accTree.getRoot()
+            this.chainDB.writeTokenBlockToDB(cloneDeep(_block), (err) => {
+              if (err) return callback(err)
+              callback(_block.StateRoot)
+              this.chainLength = _block.Number + 1
             })
           })
         })

@@ -24,10 +24,6 @@ class SECAccTree {
     this.accTree.getAccInfo(accAddr, tokenname, callback)
   }
 
-  putAccInfo (accAddr, tokenname, callback) {
-    this.accTree.getAccInfo(accAddr, tokenname, callback)
-  }  
-
   getBalance (accAddr, tokenName, callback) {
     this.getAccInfo(accAddr, tokenName, (err, info) => {
       if (err) callback(err, null)
