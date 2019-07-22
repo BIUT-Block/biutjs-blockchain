@@ -709,8 +709,12 @@ class SECTokenBlockChain {
                       reject(err)
                     } else {
                       tx.TokenName = tokenName
-                      tokenTx.TokenName = tokenName
-                      resolve([tx, tokenTx])
+                      if(tokenTx){
+                        tokenTx.TokenName = tokenName
+                        resolve([tx, tokenTx])
+                      } else {
+                        resolve([tx])
+                      }
                     }
                   })
                   break
@@ -931,44 +935,50 @@ class SECTokenBlockChain {
       let balance = approve[walletAddress]
       balance = new Big(balance)
       if (balance.gte(contractResult.Results.Amount)) {
-        let tokenTx = {
-          Version: '0.1',
-          TxReceiptStatus: 'success',
-          TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
-          TxFrom: tx.TxTo,
-          TxTo: contractResult.Results.Address,
-          Value: contractResult.Results.Amount.toString(),
-          GasLimit: '0',
-          GasUsedByTxn: '0',
-          GasPrice: '0',
-          TxFee: '0',
-          Nonce: nonce,
-          InputData: `Smart Contract Transaction`
-        }
-        let txHashBuffer = [
-          Buffer.from(tokenTx.Version),
-          SECUtils.intToBuffer(tokenTx.TimeStamp),
-          Buffer.from(tokenTx.TxFrom, 'hex'),
-          Buffer.from(tokenTx.TxTo, 'hex'),
-          Buffer.from(tokenTx.Value),
-          Buffer.from(tokenTx.GasLimit),
-          Buffer.from(tokenTx.GasUsedByTxn),
-          Buffer.from(tokenTx.GasPrice),
-          Buffer.from(tokenTx.TxFee),
-          Buffer.from(tokenTx.Nonce),
-          Buffer.from(tokenTx.InputData)
-        ]
-
-        tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
-
-        balance = balance.minus(contractResult.Results.Amount)
-        balance = balance.toFixed(DEC_NUM)
-        tokenInfo.approve[walletAddress] = balance
-        this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+        this.getNonce(tx.TxTo, (err, nonce) => {
           if (err) {
-            callback(err, null)
+            return callback(err, null)
           } else {
-            callback(null, tokenTx)
+            let tokenTx = {
+              Version: '0.1',
+              TxReceiptStatus: 'success',
+              TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+              TxFrom: tx.TxTo,
+              TxTo: contractResult.Results.Address,
+              Value: contractResult.Results.Amount.toString(),
+              GasLimit: '0',
+              GasUsedByTxn: '0',
+              GasPrice: '0',
+              TxFee: '0',
+              Nonce: nonce,
+              InputData: `Smart Contract Transaction`
+            }
+            let txHashBuffer = [
+              Buffer.from(tokenTx.Version),
+              SECUtils.intToBuffer(tokenTx.TimeStamp),
+              Buffer.from(tokenTx.TxFrom, 'hex'),
+              Buffer.from(tokenTx.TxTo, 'hex'),
+              Buffer.from(tokenTx.Value),
+              Buffer.from(tokenTx.GasLimit),
+              Buffer.from(tokenTx.GasUsedByTxn),
+              Buffer.from(tokenTx.GasPrice),
+              Buffer.from(tokenTx.TxFee),
+              Buffer.from(tokenTx.Nonce),
+              Buffer.from(tokenTx.InputData)
+            ]
+
+            tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+
+            balance = balance.minus(contractResult.Results.Amount)
+            balance = balance.toFixed(DEC_NUM)
+            tokenInfo.approve[walletAddress] = balance
+            this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+              if (err) {
+                callback(err, null)
+              } else {
+                callback(null, tokenTx)
+              }
+            })
           }
         })
       } else {
@@ -981,44 +991,50 @@ class SECTokenBlockChain {
 
   contractForCreate(tx, tokenInfo, callback) {
     let totalSupply = tokenInfo.totalSupply
-    let tokenTx = null
-    if (tokenInfo.tokenName !== this.chainName) {
-      tokenTx = {
-        Version: '0.1',
-        TxReceiptStatus: 'success',
-        TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
-        TxFrom: '0000000000000000000000000000000000000000',
-        TxTo: tx.TxFrom,
-        Value: totalSupply.toString(),
-        GasLimit: '0',
-        GasUsedByTxn: '0',
-        GasPrice: '0',
-        TxFee: '0',
-        Nonce: '0',
-        InputData: `Smart Contract Initialization`
-      }
-
-      let txHashBuffer = [
-        Buffer.from(tokenTx.Version),
-        SECUtils.intToBuffer(tokenTx.TimeStamp),
-        Buffer.from(tokenTx.TxFrom, 'hex'),
-        Buffer.from(tokenTx.TxTo, 'hex'),
-        Buffer.from(tokenTx.Value),
-        Buffer.from(tokenTx.GasLimit),
-        Buffer.from(tokenTx.GasUsedByTxn),
-        Buffer.from(tokenTx.GasPrice),
-        Buffer.from(tokenTx.TxFee),
-        Buffer.from(tokenTx.Nonce),
-        Buffer.from(tokenTx.InputData)
-      ]
-
-      tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
-    }
-    this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+    this.getNonce(tx.TxTo, (err, nonce) => {
       if (err) {
         callback(err, null)
       } else {
-        callback(null, tokenTx)
+        let tokenTx = null
+        if (tokenInfo.tokenName !== this.chainName) {
+          tokenTx = {
+            Version: '0.1',
+            TxReceiptStatus: 'success',
+            TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+            TxFrom: '0000000000000000000000000000000000000000',
+            TxTo: tx.TxFrom,
+            Value: totalSupply.toString(),
+            GasLimit: '0',
+            GasUsedByTxn: '0',
+            GasPrice: '0',
+            TxFee: '0',
+            Nonce: nonce,
+            InputData: `Smart Contract Initialization`
+          }
+
+          let txHashBuffer = [
+            Buffer.from(tokenTx.Version),
+            SECUtils.intToBuffer(tokenTx.TimeStamp),
+            Buffer.from(tokenTx.TxFrom, 'hex'),
+            Buffer.from(tokenTx.TxTo, 'hex'),
+            Buffer.from(tokenTx.Value),
+            Buffer.from(tokenTx.GasLimit),
+            Buffer.from(tokenTx.GasUsedByTxn),
+            Buffer.from(tokenTx.GasPrice),
+            Buffer.from(tokenTx.TxFee),
+            Buffer.from(tokenTx.Nonce),
+            Buffer.from(tokenTx.InputData)
+          ]
+
+          tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+        }
+        this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+          if (err) {
+            callback(err, null)
+          } else {
+            callback(null, tokenTx)
+          }
+        })
       }
     })
   }
@@ -1072,7 +1088,7 @@ class SECTokenBlockChain {
         aLockTimestamps = aLockTimestamps.sort((a, b) => {
           return a - b
         })
-        aLockTimestamps.forEach(ts => {
+        for (let ts of aLockTimestamps) {
           if (ts <= timeStamp) {
             let lockedAmount = new Big(benefitTimeLock[ts])
             if (!amountToRelease.isZero() && amountToRelease.gte(lockedAmount)) {
@@ -1085,11 +1101,13 @@ class SECTokenBlockChain {
               break
             }
           } else {
-            break
+            continue
           }
-        })
+        }
         if (amountToRelease > 0) {
-          return callback(new Error('No enough unlocked Token'), null)
+          console.log(new Error('No enough unlocked Token'))
+          //return callback(new Error('No enough unlocked Token'), null)
+          return callback(null, null)
         } else {
           this.getNonce(tx.TxTo, (err, nonce) => {
             if (err) {
@@ -1148,36 +1166,42 @@ class SECTokenBlockChain {
       if (err) {
         callback(err, null)
       } else {
-        let tokenTx = {
-          Version: '0.1',
-          TxReceiptStatus: 'success',
-          TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
-          TxFrom: tx.TxTo,
-          TxTo: contractResult.Results.Address,
-          Value: contractResult.Results.Amount.toString(),
-          GasLimit: '0',
-          GasUsedByTxn: '0',
-          GasPrice: '0',
-          TxFee: '0',
-          Nonce: nonce,
-          InputData: `Smart Contract Transaction`
-        }
-        let txHashBuffer = [
-          Buffer.from(tokenTx.Version),
-          SECUtils.intToBuffer(tokenTx.TimeStamp),
-          Buffer.from(tokenTx.TxFrom, 'hex'),
-          Buffer.from(tokenTx.TxTo, 'hex'),
-          Buffer.from(tokenTx.Value),
-          Buffer.from(tokenTx.GasLimit),
-          Buffer.from(tokenTx.GasUsedByTxn),
-          Buffer.from(tokenTx.GasPrice),
-          Buffer.from(tokenTx.TxFee),
-          Buffer.from(tokenTx.Nonce),
-          Buffer.from(tokenTx.InputData)
-        ]
+        this.getNonce(tx.TxTo, (err, nonce) => {
+          if (err) {
+            return callback(err, null)
+          } else {
+            let tokenTx = {
+              Version: '0.1',
+              TxReceiptStatus: 'success',
+              TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+              TxFrom: tx.TxTo,
+              TxTo: contractResult.Results.Address,
+              Value: contractResult.Results.Amount.toString(),
+              GasLimit: '0',
+              GasUsedByTxn: '0',
+              GasPrice: '0',
+              TxFee: '0',
+              Nonce: nonce,
+              InputData: `Smart Contract Transaction`
+            }
+            let txHashBuffer = [
+              Buffer.from(tokenTx.Version),
+              SECUtils.intToBuffer(tokenTx.TimeStamp),
+              Buffer.from(tokenTx.TxFrom, 'hex'),
+              Buffer.from(tokenTx.TxTo, 'hex'),
+              Buffer.from(tokenTx.Value),
+              Buffer.from(tokenTx.GasLimit),
+              Buffer.from(tokenTx.GasUsedByTxn),
+              Buffer.from(tokenTx.GasPrice),
+              Buffer.from(tokenTx.TxFee),
+              Buffer.from(tokenTx.Nonce),
+              Buffer.from(tokenTx.InputData)
+            ]
 
-        tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
-        callback(null, tokenTx)
+            tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+            callback(null, tokenTx)
+          }
+        })
       }
     })
   }
@@ -1211,42 +1235,49 @@ class SECTokenBlockChain {
       balance = balance.toFixed(DEC_NUM)
       tokenInfo.approve[walletAddress] = balance
       if (balance.gte(contractResult.Results.Amount)) {
-        let tokenTx = {
-          Version: '0.1',
-          TxReceiptStatus: 'success',
-          TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
-          TxFrom: tx.TxTo,
-          TxTo: contractResult.Results.Address,
-          Value: contractResult.Results.Amount.toString(),
-          GasLimit: '0',
-          GasUsedByTxn: '0',
-          GasPrice: '0',
-          TxFee: '0',
-          Nonce: nonce,
-          InputData: `Smart Contract Transaction`
-        }
-        let txHashBuffer = [
-          Buffer.from(tokenTx.Version),
-          SECUtils.intToBuffer(tokenTx.TimeStamp),
-          Buffer.from(tokenTx.TxFrom, 'hex'),
-          Buffer.from(tokenTx.TxTo, 'hex'),
-          Buffer.from(tokenTx.Value),
-          Buffer.from(tokenTx.GasLimit),
-          Buffer.from(tokenTx.GasUsedByTxn),
-          Buffer.from(tokenTx.GasPrice),
-          Buffer.from(tokenTx.TxFee),
-          Buffer.from(tokenTx.Nonce),
-          Buffer.from(tokenTx.InputData)
-        ]
-
-        tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
-
-        this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+        this.getNonce(tx.TxTo, (err, nonce) => {
           if (err) {
-            callback(err, null)
+            return callback(err, null)
           } else {
-            callback(null, tokenTx)
+            let tokenTx = {
+              Version: '0.1',
+              TxReceiptStatus: 'success',
+              TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+              TxFrom: tx.TxTo,
+              TxTo: contractResult.Results.Address,
+              Value: contractResult.Results.Amount.toString(),
+              GasLimit: '0',
+              GasUsedByTxn: '0',
+              GasPrice: '0',
+              TxFee: '0',
+              Nonce: nonce,
+              InputData: `Smart Contract Transaction`
+            }
+            let txHashBuffer = [
+              Buffer.from(tokenTx.Version),
+              SECUtils.intToBuffer(tokenTx.TimeStamp),
+              Buffer.from(tokenTx.TxFrom, 'hex'),
+              Buffer.from(tokenTx.TxTo, 'hex'),
+              Buffer.from(tokenTx.Value),
+              Buffer.from(tokenTx.GasLimit),
+              Buffer.from(tokenTx.GasUsedByTxn),
+              Buffer.from(tokenTx.GasPrice),
+              Buffer.from(tokenTx.TxFee),
+              Buffer.from(tokenTx.Nonce),
+              Buffer.from(tokenTx.InputData)
+            ]
+
+            tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+
+            this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+              if (err) {
+                callback(err, null)
+              } else {
+                callback(null, tokenTx)
+              }
+            })
           }
+
         })
       } else {
         callback(new Error('Deposit is not enough'), null)
@@ -1258,40 +1289,46 @@ class SECTokenBlockChain {
 
   revertContractForCreate(tx, tokenInfo, callback) {
     let totalSupply = tokenInfo.totalSupply
-    let tokenTx = null
-    if (tokenInfo.tokenName !== this.chainName) {
-      tokenTx = {
-        Version: '0.1',
-        TxReceiptStatus: 'success',
-        TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
-        TxFrom: '0000000000000000000000000000000000000000',
-        TxTo: tx.TxFrom,
-        Value: totalSupply.toString(),
-        GasLimit: '0',
-        GasUsedByTxn: '0',
-        GasPrice: '0',
-        TxFee: '0',
-        Nonce: '0',
-        InputData: `Smart Contract Initialization`
+    this.getNonce(tx.TxTo, (err, nonce) => {
+      if (err) {
+        callback(err, null)
+      } else {
+        let tokenTx = null
+        if (tokenInfo.tokenName !== this.chainName) {
+          tokenTx = {
+            Version: '0.1',
+            TxReceiptStatus: 'success',
+            TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+            TxFrom: '0000000000000000000000000000000000000000',
+            TxTo: tx.TxFrom,
+            Value: totalSupply.toString(),
+            GasLimit: '0',
+            GasUsedByTxn: '0',
+            GasPrice: '0',
+            TxFee: '0',
+            Nonce: nonce,
+            InputData: `Smart Contract Initialization`
+          }
+
+          let txHashBuffer = [
+            Buffer.from(tokenTx.Version),
+            SECUtils.intToBuffer(tokenTx.TimeStamp),
+            Buffer.from(tokenTx.TxFrom, 'hex'),
+            Buffer.from(tokenTx.TxTo, 'hex'),
+            Buffer.from(tokenTx.Value),
+            Buffer.from(tokenTx.GasLimit),
+            Buffer.from(tokenTx.GasUsedByTxn),
+            Buffer.from(tokenTx.GasPrice),
+            Buffer.from(tokenTx.TxFee),
+            Buffer.from(tokenTx.Nonce),
+            Buffer.from(tokenTx.InputData)
+          ]
+
+          tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+        }
+        callback(null, tokenTx)
       }
-
-      let txHashBuffer = [
-        Buffer.from(tokenTx.Version),
-        SECUtils.intToBuffer(tokenTx.TimeStamp),
-        Buffer.from(tokenTx.TxFrom, 'hex'),
-        Buffer.from(tokenTx.TxTo, 'hex'),
-        Buffer.from(tokenTx.Value),
-        Buffer.from(tokenTx.GasLimit),
-        Buffer.from(tokenTx.GasUsedByTxn),
-        Buffer.from(tokenTx.GasPrice),
-        Buffer.from(tokenTx.TxFee),
-        Buffer.from(tokenTx.Nonce),
-        Buffer.from(tokenTx.InputData)
-      ]
-
-      tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
-    }
-    callback(null, tokenTx)
+    })
   }
 
   revertContractForLock(tx, contractResult, tokenInfo, callback) {
