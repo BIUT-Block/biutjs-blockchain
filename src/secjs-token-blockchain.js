@@ -338,7 +338,7 @@ class SECTokenBlockChain {
                   this.chainDB.writeTokenBlockToDB(cloneDeep(_block), (err) => {
                     if (err) return callback(err)
                     this.chainLength = _block.Number + 1
-                    callback(_block.StateRoot)
+                    callback(null, _block.StateRoot)
                   })
                 })
               })
