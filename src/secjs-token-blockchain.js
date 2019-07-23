@@ -584,9 +584,9 @@ class SECTokenBlockChain {
     }
   }
 
-  updateSmartContractDB(block, callback) {
+  async updateSmartContractDB(block, callback) {
     let self = this
-    let promiseList = []
+    let transactionsList = []
     // parse block.Transactions
     block.Transactions.forEach((tx, index) => {
       if (typeof tx === 'string') {
@@ -601,22 +601,31 @@ class SECTokenBlockChain {
     })
 
     let txs = block.Transactions
-    txs.forEach((tx) => {
-      promiseList.push(self._updateSmartContractDBWithTx(tx))
-    })
+    // txs.forEach((tx) => {
+    //   promiseList.push(self._updateSmartContractDBWithTx(tx))
+    // })
 
-    Promise.all(promiseList).then((transactionsList) => {
-      if (transactionsList.length > 0) {
-        transactionsList = transactionsList.reduce((a, b) => [...a, ...b])
-      }
-      block.Transactions = transactionsList
+    // Promise.all(promiseList).then((transactionsList) => {
+    //   if (transactionsList.length > 0) {
+    //     transactionsList = transactionsList.reduce((a, b) => [...a, ...b])
+    //   }
+    //   block.Transactions = transactionsList
+    //   callback(null, block)
+    // }).catch((err) => {
+    //   callback(err, null)
+    // })
+    try {
+      await self._asyncForEach(txs, async (tx) => {
+        transactionsList = transactionsList.concat(await self._updateSmartContractDBWithTx(tx))
+      })
+      block.Transactions = transactionsList      
       callback(null, block)
-    }).catch((err) => {
+    } catch(err) {
       callback(err, null)
-    })
+    }
   }
 
-  revertSmartContractDB(block, callback) {
+  async revertSmartContractDB(block, callback) {
     let self = this
     let promiseList = []
     // parse block.Transactions
@@ -633,19 +642,28 @@ class SECTokenBlockChain {
     })
 
     let txs = block.Transactions
-    txs.forEach((tx) => {
-      promiseList.push(self._revertSmartContractDBWithTx(tx))
-    })
+    // txs.forEach((tx) => {
+    //   promiseList.push(self._revertSmartContractDBWithTx(tx))
+    // })
 
-    Promise.all(promiseList).then((transactionsList) => {
-      if (transactionsList.length > 0) {
-        transactionsList = transactionsList.reduce((a, b) => [...a, ...b])
-      }
-      block.Transactions = transactionsList
+    // Promise.all(promiseList).then((transactionsList) => {
+    //   if (transactionsList.length > 0) {
+    //     transactionsList = transactionsList.reduce((a, b) => [...a, ...b])
+    //   }
+    //   block.Transactions = transactionsList
+    //   callback(null, block)
+    // }).catch((err) => {
+    //   callback(err, null)
+    // })
+    try {
+      await self._asyncForEach(txs, async (tx) => {
+        transactionsList = transactionsList.concat(await self._revertSmartContractDBWithTx(tx))
+      })
+      block.Transactions = transactionsList      
       callback(null, block)
-    }).catch((err) => {
+    } catch(err) {
       callback(err, null)
-    })
+    }    
   }
 
   _updateSmartContractDBWithTx(tx) {
@@ -1098,6 +1116,7 @@ class SECTokenBlockChain {
               lockedAmount = lockedAmount.minus(amountToRelease)
               lockedAmount = lockedAmount.toFixed(DEC_NUM)
               benefitTimeLock[ts] = lockedAmount.toString
+              amountToRelease = new Big(0)
               break
             }
           } else {
@@ -1473,6 +1492,12 @@ class SECTokenBlockChain {
     if (typeof variable !== 'string') return false
     if (isNaN(parseInt(variable))) return false
     return true
+  }
+
+  async _asyncForEach(array, callback) {
+    for (let index = 0; index < array.length; index++) {
+      await callback(array[index], index, array)
+    }
   }
 
   getNonce(userAddress, callback) {
