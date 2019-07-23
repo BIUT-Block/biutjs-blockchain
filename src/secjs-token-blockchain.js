@@ -197,7 +197,7 @@ class SECTokenBlockChain {
     }
   }
 
-  verifyDifficulty(block, callback) {
+  verifyDifficulty (block, callback) {
     let difficulty = parseFloat(block.Difficulty)
     if (block.Number > 1) {
       if (difficulty < 2048) {
@@ -223,7 +223,7 @@ class SECTokenBlockChain {
     }
   }
 
-  verifyTxRoot(block) {
+  verifyTxRoot (block) {
     // verify block header transaction root
     let txHashArray = []
     block['Transactions'].forEach(tx => {
@@ -244,7 +244,7 @@ class SECTokenBlockChain {
     return false
   }
 
-  _consistentCheck(callback) {
+  _consistentCheck (callback) {
     this.getHashList((err, hashList) => {
       if (err) {
         return callback(err, 1)
@@ -288,7 +288,7 @@ class SECTokenBlockChain {
    * @param {SECTokenBlock} block the block object in json formation
    * @param {callback} callback
    */
-  putBlockToDB(_block, callback) {
+  putBlockToDB (_block, callback) {
     if (this.deletingFlag) return callback(new Error('Now deleting block, can not write block into database.'))
     this._consistentCheck((err, errPosition) => {
       if (err) {
@@ -1515,7 +1515,7 @@ class SECTokenBlockChain {
 
   // -------------------------  FUNCTIONS FOR SPECIAL PURPOSES  ------------------------
   // ---------------------------------  DON'T USE THEM  --------------------------------
-  delBlock(height, callback) {
+  delBlock (height, callback) {
     if (height >= this.chainLength) {
       return callback(null)
     }
@@ -1568,7 +1568,7 @@ class SECTokenBlockChain {
             _block.StateRoot = this.accTree.getRoot()
             this.chainDB.writeTokenBlockToDB(cloneDeep(_block), (err) => {
               if (err) return callback(err)
-              callback(_block.StateRoot)
+              callback(null, _block.StateRoot)
               this.chainLength = _block.Number + 1
             })
           })
@@ -1577,8 +1577,8 @@ class SECTokenBlockChain {
     })
   }
 
-  getTxForUser(addr, callback) {
-    this.accTree.getAccInfo(addr, (err, info) => {
+  getTxForUser (addr, callback) {
+    this.accTree.getAccInfo(addr, 'All', (err, info) => {
       if (err) return callback(err, null)
       else {
         let txList = []
@@ -1605,6 +1605,7 @@ class SECTokenBlockChain {
       }
     })
   }
+
   // -------------------------  TEST FUNCTIONS  ------------------------
   getFromAccTree(accAddr, callback) {
     this.accTree.getAccInfo(accAddr, callback)
