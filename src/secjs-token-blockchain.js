@@ -1608,7 +1608,7 @@ class SECTokenBlockChain {
 
   // -------------------------  TEST FUNCTIONS  ------------------------
   getFromAccTree(accAddr, callback) {
-    this.accTree.getAccInfo(accAddr, callback)
+    this.accTree.getAccInfo(accAddr, 'All', callback)
   }
 }
 
