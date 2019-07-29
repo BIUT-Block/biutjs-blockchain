@@ -197,7 +197,7 @@ class SECTokenBlockChain {
     }
   }
 
-  verifyDifficulty (block, callback) {
+  verifyDifficulty(block, callback) {
     let difficulty = parseFloat(block.Difficulty)
     if (block.Number > 1) {
       if (difficulty < 2048) {
@@ -223,7 +223,7 @@ class SECTokenBlockChain {
     }
   }
 
-  verifyTxRoot (block) {
+  verifyTxRoot(block) {
     // verify block header transaction root
     let txHashArray = []
     block['Transactions'].forEach(tx => {
@@ -244,7 +244,7 @@ class SECTokenBlockChain {
     return false
   }
 
-  _consistentCheck (callback) {
+  _consistentCheck(callback) {
     this.getHashList((err, hashList) => {
       if (err) {
         return callback(err, 1)
@@ -288,7 +288,7 @@ class SECTokenBlockChain {
    * @param {SECTokenBlock} block the block object in json formation
    * @param {callback} callback
    */
-  putBlockToDB (_block, callback) {
+  putBlockToDB(_block, callback) {
     if (this.deletingFlag) return callback(new Error('Now deleting block, can not write block into database.'))
     this._consistentCheck((err, errPosition) => {
       if (err) {
@@ -334,7 +334,7 @@ class SECTokenBlockChain {
                 // update token blockchain DB
                 this.accTree.updateWithBlock(_smartContractBlock, (err) => {
                   if (err) return callback(err)
-                  if(_smartContractBlock.Number != 0){
+                  if (_smartContractBlock.Number != 0) {
                     let newStateRoot = this.accTree.getRoot()
                     _smartContractBlock.StateRoot = newStateRoot
                     block.StateRoot = newStateRoot
@@ -622,9 +622,9 @@ class SECTokenBlockChain {
       await self._asyncForEach(txs, async (tx) => {
         transactionsList = transactionsList.concat(await self._updateSmartContractDBWithTx(tx))
       })
-      block.Transactions = transactionsList      
+      block.Transactions = transactionsList
       callback(null, block)
-    } catch(err) {
+    } catch (err) {
       callback(err, null)
     }
   }
@@ -663,25 +663,31 @@ class SECTokenBlockChain {
       await self._asyncForEach(txs, async (tx) => {
         transactionsList = transactionsList.concat(await self._revertSmartContractDBWithTx(tx))
       })
-      block.Transactions = transactionsList      
+      block.Transactions = transactionsList
       callback(null, block)
-    } catch(err) {
+    } catch (err) {
       callback(err, null)
-    }    
+    }
   }
 
   _updateSmartContractDBWithTx(tx) {
     let self = this
+    let oInputData
     return new Promise(function (resolve, reject) {
       if (SECUtils.isContractAddr(tx.TxTo)) {
+        try {
+          oInputData = JSON.parse(tx.InputData)
+        } catch (error) {
+          reject(new Error('Invalid Smart Contract Call'))
+        }
         self.getTokenInfo(tx.TxTo, (err, tokenInfo) => {
           if (err) {
             reject(err)
           } else {
-            if (tokenInfo) {
+            if (tokenInfo && oInputData.callCode) {
               let sourceCode = tokenInfo.sourceCode
               let tokenName = tokenInfo.tokenName
-              let contractResult = self._runContract(tx, sourceCode)
+              let contractResult = self._runContract(oInputData.callCode, sourceCode)
               switch (contractResult.functionType) {
                 case 'transfer':
                   self.contractForTransfer(tx, contractResult, tokenInfo, (err, tokenTx) => {
@@ -731,7 +737,7 @@ class SECTokenBlockChain {
                       reject(err)
                     } else {
                       tx.TokenName = tokenName
-                      if(tokenTx){
+                      if (tokenTx) {
                         tokenTx.TokenName = tokenName
                         resolve([tx, tokenTx])
                       } else {
@@ -743,32 +749,29 @@ class SECTokenBlockChain {
                 default:
                   resolve()
               }
-            } else {
-              try {
-                let oTokenInfo = JSON.parse(tx.InputData)
-                tokenInfo = {
-                  "tokenName": oTokenInfo.tokenName,
-                  "sourceCode": oTokenInfo.sourceCode,
-                  "totalSupply": oTokenInfo.totalSupply,
-                  "timeLock": {},
-                  "approve": {}
-                }
-                self.contractForCreate(tx, tokenInfo, (err, tokenTx) => {
-                  if (err) {
-                    reject(err)
-                  } else {
-                    tx.TokenName = oTokenInfo.tokenName
-                    if (tokenTx) {
-                      tokenTx.TokenName = oTokenInfo.tokenName
-                      resolve([tx, tokenTx])
-                    } else {
-                      resolve([tx])
-                    }
-                  }
-                })
-              } catch (error) {
-                reject(error)
+            } else if ((!tokenInfo) && oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply) {
+              tokenInfo = {
+                "tokenName": oInputData.tokenName,
+                "sourceCode": oInputData.sourceCode,
+                "totalSupply": oInputData.totalSupply,
+                "timeLock": {},
+                "approve": {}
               }
+              self.contractForCreate(tx, tokenInfo, (err, tokenTx) => {
+                if (err) {
+                  reject(err)
+                } else {
+                  tx.TokenName = oInputData.tokenName
+                  if (tokenTx) {
+                    tokenTx.TokenName = oInputData.tokenName
+                    resolve([tx, tokenTx])
+                  } else {
+                    resolve([tx])
+                  }
+                }
+              })
+            } else {
+              reject(new Error('Invalid Smart Contract Call or The Contract already exists'))
             }
           }
         })
@@ -781,6 +784,7 @@ class SECTokenBlockChain {
 
   _revertSmartContractDBWithTx(tx) {
     let self = this
+    let oInputData
     return new Promise(function (resolve, reject) {
       if (SECUtils.isContractAddr(tx.TxTo)) {
         self.getTokenInfo(tx.TxTo, (err, tokenInfo) => {
@@ -788,11 +792,15 @@ class SECTokenBlockChain {
             reject(err)
           } else {
             try {
-              let oTokenInfo = JSON.parse(tx.InputData)
+              oInputData = JSON.parse(tx.InputData)
+            } catch (e) {
+              reject(new Error('Invalid Smart Contract Call'))
+            }
+            if (oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply) {
               tokenInfo = {
-                "tokenName": oTokenInfo.tokenName,
-                "sourceCode": oTokenInfo.sourceCode,
-                "totalSupply": oTokenInfo.totalSupply,
+                "tokenName": oInputData.tokenName,
+                "sourceCode": oInputData.sourceCode,
+                "totalSupply": oInputData.totalSupply,
                 "timeLock": {},
                 "approve": {}
               }
@@ -804,9 +812,9 @@ class SECTokenBlockChain {
                     if (err) {
                       reject(err)
                     } else {
-                      tx.tokenName = oTokenInfo.tokenName
+                      tx.tokenName = oInputData.tokenName
                       if (tokenTx) {
-                        tokenTx.tokenName = oTokenInfo.tokenName
+                        tokenTx.tokenName = oInputData.tokenName
                         resolve([tx, tokenTx])
                       } else {
                         resolve([tx])
@@ -815,71 +823,69 @@ class SECTokenBlockChain {
                   })
                 }
               })
-            } catch (e) {
-              if (e instanceof SyntaxError) {
-                let sourceCode = tokenInfo.sourceCode
-                let tokenName = tokenInfo.tokenName
-                let contractResult = self._runContract(tx, sourceCode)
-                switch (contractResult.functionType) {
-                  case 'transfer':
-                    self.revertContractForTransfer(tx, contractResult, tokenInfo, (err, tokenTx) => {
-                      if (err) {
-                        return callback(err)
-                      } else {
-                        tx.TokenName = tokenName
-                        tokenTx.TokenName = tokenName
-                        resolve([tx, tokenTx])
-                      }
-                    })
-                    break
-                  case 'deposit':
-                    self.revertContractForDeposit(tx, contractResult, tokenInfo, (err) => {
-                      if (err) {
-                        reject(err)
-                      } else {
-                        tx.TokenName = tokenName
-                        resolve([tx])
-                      }
-                    })
-                    break
-                  case 'withdraw':
-                    self.revertContractForWithdraw(tx, contractResult, tokenInfo, (err, tokenTx) => {
-                      if (err) {
-                        reject(err)
-                      } else {
-                        tx.TokenName = tokenName
-                        tokenTx.TokenName = tokenName
-                        resolve([tx, tokenTx])
-                      }
-                    })
-                    break
-                  case 'lock':
-                    self.revertContractForLock(tx, contractResult, tokenInfo, (err) => {
-                      if (err) {
-                        reject(err)
-                      } else {
-                        tx.TokenName = tokenName
-                        resolve([tx])
-                      }
-                    })
-                    break
-                  case 'releaseLock':
-                    self.revertContractForReleaseLock(tx, contractResult, tokenInfo, (err, tokenTx) => {
-                      if (err) {
-                        reject(err)
-                      } else {
-                        tx.TokenName = tokenName
-                        tokenTx.TokenName = tokenName
-                        resolve([tx, tokenTx])
-                      }
-                    })
-                    break
-                  default:
-                    resolve()
-                }
-              } else {
-                reject(err)
+            } else if (oInputData.callCode) {
+              let sourceCode = tokenInfo.sourceCode
+              let tokenName = tokenInfo.tokenName
+              let contractResult = self._runContract(oInputData.callCode, sourceCode)
+              switch (contractResult.functionType) {
+                case 'transfer':
+                  self.revertContractForTransfer(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                    if (err) {
+                      return callback(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      tokenTx.TokenName = tokenName
+                      resolve([tx, tokenTx])
+                    }
+                  })
+                  break
+                case 'deposit':
+                  self.revertContractForDeposit(tx, contractResult, tokenInfo, (err) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      resolve([tx])
+                    }
+                  })
+                  break
+                case 'withdraw':
+                  self.revertContractForWithdraw(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      tokenTx.TokenName = tokenName
+                      resolve([tx, tokenTx])
+                    }
+                  })
+                  break
+                case 'lock':
+                  self.revertContractForLock(tx, contractResult, tokenInfo, (err) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      resolve([tx])
+                    }
+                  })
+                  break
+                case 'releaseLock':
+                  self.revertContractForReleaseLock(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      tx.TokenName = tokenName
+                      tokenTx.TokenName = tokenName
+                      resolve([tx, tokenTx])
+                    }
+                  })
+                  break
+                default:
+                  resolve()
               }
+            } else {
+              reject(new Error('Invalid Smart Contract Call or The Contract already exists'))
             }
           }
         })
@@ -1461,10 +1467,10 @@ class SECTokenBlockChain {
     }
   }
 
-  _runContract(tx, sourceCode) {
+  _runContract(callCode, sourceCode) {
     let runScript = new Buffer(sourceCode, 'base64').toString() +
       '; Results = ' +
-      new Buffer(tx.InputData, 'base64').toString()
+      new Buffer(callCode, 'base64').toString()
     let sandbox = {
       Results: {}
     }
@@ -1519,7 +1525,7 @@ class SECTokenBlockChain {
 
   // -------------------------  FUNCTIONS FOR SPECIAL PURPOSES  ------------------------
   // ---------------------------------  DON'T USE THEM  --------------------------------
-  delBlock (height, callback) {
+  delBlock(height, callback) {
     if (height >= this.chainLength) {
       return callback(null)
     }
@@ -1570,7 +1576,7 @@ class SECTokenBlockChain {
           // update token blockchain DB
           this.accTree.updateWithBlock(_smartContractBlock, (err) => {
             if (err) return callback(err)
-            if(_smartContractBlock.Number != 0){
+            if (_smartContractBlock.Number != 0) {
               let newStateRoot = this.accTree.getRoot()
               _smartContractBlock.StateRoot = this.accTree.getRoot()
               block.StateRoot = newStateRoot
@@ -1586,7 +1592,7 @@ class SECTokenBlockChain {
     })
   }
 
-  getTxForUser (addr, callback) {
+  getTxForUser(addr, callback) {
     this.accTree.getAccInfo(addr, 'All', (err, info) => {
       if (err) return callback(err, null)
       else {
