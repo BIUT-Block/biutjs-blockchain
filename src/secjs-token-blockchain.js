@@ -301,7 +301,6 @@ class SECTokenBlockChain {
       } else {
         // write a new block to DB
         let block = JSON.parse(JSON.stringify(_block))
-
         // parse block.Transactions
         block.Transactions.forEach((tx, index) => {
           if (typeof tx === 'string') {
@@ -329,16 +328,21 @@ class SECTokenBlockChain {
             // new block received, update tokenTxDB
             this.txDB.writeBlock(block, (err) => {
               if (err) return callback(err)
-              this.updateSmartContractDB(block, (err, _block) => {
+              let smartContractBlock = cloneDeep(block)
+              this.updateSmartContractDB(smartContractBlock, (err, _smartContractBlock) => {
                 if (err) return callback(err)
                 // update token blockchain DB
-                this.accTree.updateWithBlock(_block, (err) => {
+                this.accTree.updateWithBlock(_smartContractBlock, (err) => {
                   if (err) return callback(err)
-                  _block.StateRoot = this.accTree.getRoot()
-                  this.chainDB.writeTokenBlockToDB(cloneDeep(_block), (err) => {
+                  if(_smartContractBlock.Number != 0){
+                    let newStateRoot = this.accTree.getRoot()
+                    _smartContractBlock.StateRoot = newStateRoot
+                    block.StateRoot = newStateRoot
+                  }
+                  this.chainDB.writeTokenBlockToDB(cloneDeep(block), (err) => {
                     if (err) return callback(err)
-                    this.chainLength = _block.Number + 1
-                    callback(null, _block.StateRoot)
+                    this.chainLength = block.Number + 1
+                    callback(null, block.StateRoot)
                   })
                 })
               })
@@ -1560,16 +1564,21 @@ class SECTokenBlockChain {
       this.txDB.writeBlock(block, (err) => {
         if (err) return callback(err)
         // update accTree BD
-        this.updateSmartContractDB(block, (err, _block) => {
+        let smartContractBlock = cloneDeep(block)
+        this.updateSmartContractDB(smartContractBlock, (err, _smartContractBlock) => {
           if (err) return callback(err)
           // update token blockchain DB
-          this.accTree.updateWithBlock(_block, (err) => {
+          this.accTree.updateWithBlock(_smartContractBlock, (err) => {
             if (err) return callback(err)
-            _block.StateRoot = this.accTree.getRoot()
-            this.chainDB.writeTokenBlockToDB(cloneDeep(_block), (err) => {
+            if(_smartContractBlock.Number != 0){
+              let newStateRoot = this.accTree.getRoot()
+              _smartContractBlock.StateRoot = this.accTree.getRoot()
+              block.StateRoot = newStateRoot
+            }
+            this.chainDB.writeTokenBlockToDB(cloneDeep(block), (err) => {
               if (err) return callback(err)
-              callback(null, _block.StateRoot)
-              this.chainLength = _block.Number + 1
+              this.chainLength = block.Number + 1
+              callback(null, block.StateRoot)
             })
           })
         })
