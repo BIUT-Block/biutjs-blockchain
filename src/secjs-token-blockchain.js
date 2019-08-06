@@ -1559,7 +1559,7 @@ class SECTokenBlockChain {
   }
 
   _checkSecSubContract(tokenName){
-    let regExp = /^SEC-[0-9a-zA-Z]{40}$/
+    let regExp = /^SEC-[0-9a-zA-Z]{36}/
     let finalTokenName = tokenName;
     if(tokenName.match(regExp)){
       finalTokenName = 'SEC'
