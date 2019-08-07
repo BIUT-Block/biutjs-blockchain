@@ -761,7 +761,9 @@ class SECTokenBlockChain {
                 "totalSupply": oInputData.totalSupply,
                 "timeLock": {},
                 "approve": {},
-                "creator": tx.TxFrom
+                "creator": tx.TxFrom,
+                "txHash": tx.TxHash,
+                "time": tx.TimeStamp
               }
               self.contractForCreate(tx, tokenInfo, (err, tokenTx) => {
                 if (err) {
@@ -810,6 +812,8 @@ class SECTokenBlockChain {
                 "timeLock": {},
                 "approve": {},
                 "creator": tx.TxFrom,
+                "txHash": tx.TxHash,
+                "time": tx.TimeStamp                
               }
               self.deleteTokenMap(tx.TxTo, (err) => {
                 if (err) {
@@ -1559,7 +1563,7 @@ class SECTokenBlockChain {
   }
 
   _checkSecSubContract(tokenName){
-    let regExp = /^SEC-[0-9a-zA-Z]{36}/
+    let regExp = /^SEC-[0-9a-zA-Z]{40}$/
     let finalTokenName = tokenName;
     if(tokenName.match(regExp)){
       finalTokenName = 'SEC'
