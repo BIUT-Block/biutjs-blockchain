@@ -1033,12 +1033,13 @@ class SECTokenBlockChain {
 
   contractForCreate(tx, tokenInfo, callback) {
     let totalSupply = tokenInfo.totalSupply
+    let newTokenName = self._checkSecSubContract(tokenInfo.tokenName)
     this.getNonce(tx.TxTo, (err, nonce) => {
       if (err) {
         callback(err, null)
       } else {
         let tokenTx = null
-        if (tokenInfo.tokenName !== this.chainName) {
+        if (newTokenName !== this.chainName) {
           tokenTx = {
             Version: '0.1',
             TxReceiptStatus: 'success',
