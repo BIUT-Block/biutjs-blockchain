@@ -692,7 +692,7 @@ class SECTokenBlockChain {
             if (tokenInfo && oInputData.callCode) {
               let sourceCode = tokenInfo.sourceCode
               let tokenName = self._checkSecSubContract(tokenInfo.tokenName)
-              let contractResult = self._runContract(oInputData.callCode, sourceCode)
+              let contractResult = self.runContract(oInputData.callCode, sourceCode)
               switch (contractResult.functionType) {
                 case 'transfer':
                   self.contractForTransfer(tx, contractResult, tokenInfo, (err, tokenTx) => {
@@ -778,7 +778,10 @@ class SECTokenBlockChain {
                   }
                 }
               })
-            } else {
+            } else if(tokenInfo && oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply) {
+              resolve([tx])
+            }
+            else {
               reject(new Error('Invalid Smart Contract Call'))
             }
           }
@@ -837,7 +840,7 @@ class SECTokenBlockChain {
             } else if (oInputData.callCode) {
               let sourceCode = tokenInfo.sourceCode
               let tokenName = self._checkSecSubContract(tokenInfo.tokenName)
-              let contractResult = self._runContract(oInputData.callCode, sourceCode)
+              let contractResult = self.runContract(oInputData.callCode, sourceCode)
               switch (contractResult.functionType) {
                 case 'transfer':
                   self.revertContractForTransfer(tx, contractResult, tokenInfo, (err, tokenTx) => {
@@ -1506,7 +1509,7 @@ class SECTokenBlockChain {
     }
   }
 
-  _runContract(callCode, sourceCode) {
+  runContract(callCode, sourceCode) {
     let runScript = new Buffer(sourceCode, 'base64').toString() +
       '; Results = ' +
       new Buffer(callCode, 'base64').toString()
