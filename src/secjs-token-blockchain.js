@@ -335,16 +335,16 @@ class SECTokenBlockChain {
                 // update token blockchain DB
                 this.accTree.updateWithBlock(_smartContractBlock, (err) => {
                   if (err) return callback(err)
-                  // if (_smartContractBlock.Number != 0) {
-                  //   let newStateRoot = this.accTree.getRoot()
-                  //   _smartContractBlock.StateRoot = newStateRoot
-                  //   block.StateRoot = newStateRoot
-                  // }
+                  if (_smartContractBlock.Number != 0) {
+                    let newStateRoot = this.accTree.getRoot()
+                    _smartContractBlock.StateRoot = newStateRoot
+                    block.StateRoot = newStateRoot
+                  }
                   this.chainDB.writeTokenBlockToDB(cloneDeep(block), (err) => {
                     if (err) return callback(err)
                     this.chainLength = block.Number + 1
-                    // callback(null, block.StateRoot)
-                    callback(null)
+                    callback(null, block.StateRoot)
+                    // callback(null)
                   })
                 })
               })
@@ -1628,16 +1628,16 @@ class SECTokenBlockChain {
           // update token blockchain DB
           this.accTree.updateWithBlock(_smartContractBlock, (err) => {
             if (err) return callback(err)
-            // if (_smartContractBlock.Number != 0) {
-            //   let newStateRoot = this.accTree.getRoot()
-            //   _smartContractBlock.StateRoot = newStateRoot
-            //   block.StateRoot = newStateRoot
-            // }
+            if (_smartContractBlock.Number != 0) {
+              let newStateRoot = this.accTree.getRoot()
+              _smartContractBlock.StateRoot = newStateRoot
+              block.StateRoot = newStateRoot
+            }
             this.chainDB.writeTokenBlockToDB(cloneDeep(block), (err) => {
               if (err) return callback(err)
               this.chainLength = block.Number + 1
-              // callback(null, block.StateRoot)
-              callback(null)
+              callback(null, block.StateRoot)
+              // callback(null)
             })
           })
         })
