@@ -70,7 +70,7 @@ class SECTokenBlockChain {
           else {
             // then write genesis block to both tokenDB and account tree DB
             let geneBlock = this._generateGenesisBlock()
-            this.putBlockToDB(geneBlock, callback)
+            this.putBlockToDB(geneBlock, false, callback)
           }
         })
       } else {
@@ -289,7 +289,7 @@ class SECTokenBlockChain {
    * @param {SECTokenBlock} block the block object in json formation
    * @param {callback} callback
    */
-  putBlockToDB(_block, callback) {
+  putBlockToDB(_block, syncFlag, callback) {
     if (this.deletingFlag) return callback(new Error('Now deleting block, can not write block into database.'))
     this._consistentCheck((err, errPosition) => {
       if (err) {
@@ -335,7 +335,7 @@ class SECTokenBlockChain {
                 // update token blockchain DB
                 this.accTree.updateWithBlock(_smartContractBlock, (err) => {
                   if (err) return callback(err)
-                  if (_smartContractBlock.Number != 0) {
+                  if (_smartContractBlock.Number != 0 && !syncFlag) {
                     let newStateRoot = this.accTree.getRoot()
                     _smartContractBlock.StateRoot = newStateRoot
                     block.StateRoot = newStateRoot
