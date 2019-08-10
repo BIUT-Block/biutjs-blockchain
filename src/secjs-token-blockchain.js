@@ -339,11 +339,15 @@ class SECTokenBlockChain {
                     let newStateRoot = this.accTree.getRoot()
                     _smartContractBlock.StateRoot = newStateRoot
                     block.StateRoot = newStateRoot
+                    block.Hash = SECTokenBlock.getHeaderHashStatic(block)
+                    block.Transactions.forEach((tx, index) => {
+                      block.Transactions[index].BlockHash = block.Hash
+                    })
                   }
                   this.chainDB.writeTokenBlockToDB(cloneDeep(block), (err) => {
                     if (err) return callback(err)
                     this.chainLength = block.Number + 1
-                    callback(null, block.StateRoot)
+                    callback(null, block.StateRoot, block.Hash)
                     // callback(null)
                   })
                 })
@@ -1632,11 +1636,15 @@ class SECTokenBlockChain {
               let newStateRoot = this.accTree.getRoot()
               _smartContractBlock.StateRoot = newStateRoot
               block.StateRoot = newStateRoot
+              block.Hash = SECTokenBlock.getHeaderHashStatic(block)
+              block.Transactions.forEach((tx, index) => {
+                block.Transactions[index].BlockHash = block.Hash
+              })
             }
             this.chainDB.writeTokenBlockToDB(cloneDeep(block), (err) => {
               if (err) return callback(err)
               this.chainLength = block.Number + 1
-              callback(null, block.StateRoot)
+              callback(null, block.StateRoot, block.Hash)
               // callback(null)
             })
           })

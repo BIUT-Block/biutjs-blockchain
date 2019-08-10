@@ -252,6 +252,26 @@ class SECTokenBlock {
     return SECUtils.rlphash(headerBuffer).toString('hex')
   }
 
+  static getHeaderHashStatic (block) {
+    let headerBuffer = [
+      SECUtils.intToBuffer(block.Number),
+      Buffer.from(block.TransactionsRoot, 'hex'),
+      Buffer.from(block.ReceiptRoot, 'hex'),
+      Buffer.from(block.LogsBloom, 'hex'),
+      Buffer.from(block.MixHash, 'hex'),
+      Buffer.from(block.StateRoot, 'hex'),
+      SECUtils.intToBuffer(block.TimeStamp),
+      Buffer.from(block.ParentHash, 'hex'),
+      Buffer.from(block.Difficulty),
+      Buffer.from(block.GasUsed),
+      Buffer.from(block.GasLimit),
+      Buffer.from(block.ExtraData),
+      Buffer.from(block.Nonce, 'hex'),
+      Buffer.from(block.Beneficiary, 'hex')
+    ]
+
+    return SECUtils.rlphash(headerBuffer).toString('hex')
+  }
   // ----------------------------------------------------------------------- //
   // -----------------------------  Block Body  ---------------------------- //
   // ----------------------------------------------------------------------- //
