@@ -167,7 +167,7 @@ class SECTokenBlockChain {
             if (err1) {
               return cb(err1)
             }
-            tokenName = this._checkSecSubContract(tokenName)
+            tokenName = this.checkSecSubContract(tokenName)
             tx.TokenName = tokenName
             count++
             if (count >= txLength) {
@@ -696,7 +696,7 @@ class SECTokenBlockChain {
           } else {
             if (tokenInfo && oInputData.callCode) {
               let sourceCode = tokenInfo.sourceCode
-              let tokenName = self._checkSecSubContract(tokenInfo.tokenName)
+              let tokenName = self.checkSecSubContract(tokenInfo.tokenName)
               let contractResult = self.runContract(oInputData.callCode, sourceCode)
               switch (contractResult.functionType) {
                 case 'transfer':
@@ -774,9 +774,9 @@ class SECTokenBlockChain {
                 if (err) {
                   reject(err)
                 } else {
-                  tx.TokenName = self._checkSecSubContract(oInputData.tokenName)
+                  tx.TokenName = self.checkSecSubContract(oInputData.tokenName)
                   if (tokenTx) {
-                    tokenTx.TokenName = self._checkSecSubContract(oInputData.tokenName)
+                    tokenTx.TokenName = self.checkSecSubContract(oInputData.tokenName)
                     resolve([tx, tokenTx])
                   } else {
                     resolve([tx])
@@ -831,9 +831,9 @@ class SECTokenBlockChain {
                     if (err) {
                       reject(err)
                     } else {
-                      tx.tokenName = self._checkSecSubContract(oInputData.tokenName)
+                      tx.tokenName = self.checkSecSubContract(oInputData.tokenName)
                       if (tokenTx) {
-                        tokenTx.tokenName = self._checkSecSubContract(oInputData.tokenName)
+                        tokenTx.tokenName = self.checkSecSubContract(oInputData.tokenName)
                         resolve([tx, tokenTx])
                       } else {
                         resolve([tx])
@@ -844,7 +844,7 @@ class SECTokenBlockChain {
               })
             } else if (oInputData.callCode) {
               let sourceCode = tokenInfo.sourceCode
-              let tokenName = self._checkSecSubContract(tokenInfo.tokenName)
+              let tokenName = self.checkSecSubContract(tokenInfo.tokenName)
               let contractResult = self.runContract(oInputData.callCode, sourceCode)
               switch (contractResult.functionType) {
                 case 'transfer':
@@ -1038,7 +1038,7 @@ class SECTokenBlockChain {
 
   contractForCreate(tx, tokenInfo, callback) {
     let totalSupply = tokenInfo.totalSupply
-    let newTokenName = this._checkSecSubContract(tokenInfo.tokenName)
+    let newTokenName = this.checkSecSubContract(tokenInfo.tokenName)
     this.getNonce(tx.TxTo, (err, nonce) => {
       if (err) {
         callback(err, null)
@@ -1571,8 +1571,8 @@ class SECTokenBlockChain {
     })
   }
 
-  _checkSecSubContract(tokenName){
-    let regExp = /^SEC-[0-9a-zA-Z]{40}$/
+  checkSecSubContract(tokenName){
+    let regExp = /^SEC-[0-9a-zA-Z]{36}/
     let finalTokenName = tokenName;
     if(tokenName.match(regExp)){
       finalTokenName = 'SEC'
