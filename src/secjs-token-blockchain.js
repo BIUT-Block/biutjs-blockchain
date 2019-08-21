@@ -598,6 +598,17 @@ class SECTokenBlockChain {
     }
   }
 
+  getLockerContract(addr, callback) {
+    if (SECUtils.isContractAddr(addr)) {
+      this.smartContractTxDB.getLockerContract(addr, (err, contractAddrArr) => {
+        if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
+        callback(null, contractAddrArr)
+      })
+    } else {
+      callback(null, [])
+    }    
+  }
+
   async updateSmartContractDB(block, callback) {
     let self = this
     let transactionsList = []
