@@ -557,7 +557,7 @@ class SECTokenBlockChain {
   getSourceCode(addr, callback) {
     if (SECUtils.isContractAddr(addr)) {
       this.smartContractTxDB.getSourceCode(addr, (err, sourceCode) => {
-        if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
+        if (err) return callback(err, null)
         callback(null, sourceCode)
       })
     } else {
@@ -568,7 +568,7 @@ class SECTokenBlockChain {
   getApprove(addr, callback) {
     if (SECUtils.isContractAddr(addr)) {
       this.smartContractTxDB.getApprove(addr, (err, approve) => {
-        if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
+        if (err) return callback(err, null)
         callback(null, approve)
       })
     } else {
@@ -579,7 +579,7 @@ class SECTokenBlockChain {
   getTimeLock(addr, callback) {
     if (SECUtils.isContractAddr(addr)) {
       this.smartContractTxDB.getTimeLock(addr, (err, timeLock) => {
-        if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
+        if (err) return callback(err, null)
         callback(null, timeLock)
       })
     } else {
@@ -590,7 +590,7 @@ class SECTokenBlockChain {
   getTokenInfo(addr, callback) {
     if (SECUtils.isContractAddr(addr)) {
       this.smartContractTxDB.getTokenInfo(addr, (err, tokenInfo) => {
-        if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
+        if (err) return callback(err, null)
         callback(null, tokenInfo)
       })
     } else {
@@ -599,15 +599,11 @@ class SECTokenBlockChain {
   }
 
   getLockerContract(addr, callback) {
-    if (SECUtils.isContractAddr(addr)) {
-      this.smartContractTxDB.getLockerContract(addr, (err, contractAddrArr) => {
-        if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
-        callback(null, contractAddrArr)
-      })
-    } else {
-      callback(null, [])
-    }    
-  }
+    this.smartContractTxDB.getLockerContract(addr, (err, contractAddrArr) => {
+      if (err) return callback(err, null)
+      callback(null, contractAddrArr)
+    })  
+}
 
   async updateSmartContractDB(block, callback) {
     let self = this
