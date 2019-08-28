@@ -395,15 +395,18 @@ class SECTokenBlockChain {
               this.chainDB.delBlock(dbBlock, (err2) => {
                 if (err2) return cb(err2)
                 // update account tree DB
-                this.accTree.revertWithBlock(dbBlock, (err3) => {
-                  if (err3) return cb(err3)
-                  dbBlock.Transactions.forEach((tx) => {
-                    tx.TxReceiptStatus = 'pending'
-                    if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
-                      revertTxArray.push(tx)
-                    }
+                this.revertSmartContractDB(dbBlock, (err, _dbBlock) => {
+                  if(err) return callback(err)
+                  this.accTree.revertWithBlock(_dbBlock, (err3) => {
+                    if (err3) return cb(err3)
+                    dbBlock.Transactions.forEach((tx) => {
+                      tx.TxReceiptStatus = 'pending'
+                      if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
+                        revertTxArray.push(tx)
+                      }
+                    })
+                    cb()
                   })
-                  cb()
                 })
               })
             })
@@ -648,7 +651,7 @@ class SECTokenBlockChain {
 
   async revertSmartContractDB(block, callback) {
     let self = this
-    let promiseList = []
+    let transactionsList = []
     // parse block.Transactions
     block.Transactions.forEach((tx, index) => {
       if (typeof tx === 'string') {
@@ -1362,12 +1365,13 @@ class SECTokenBlockChain {
 
   revertContractForCreate(tx, tokenInfo, callback) {
     let totalSupply = tokenInfo.totalSupply
+    let newTokenName = this.checkSecSubContract(tokenInfo.tokenName)
     this.getNonce(tx.TxTo, (err, nonce) => {
       if (err) {
         callback(err, null)
       } else {
         let tokenTx = null
-        if (tokenInfo.tokenName !== this.chainName) {
+        if (newTokenName !== this.chainName) {
           tokenTx = {
             Version: '0.1',
             TxReceiptStatus: 'success',
@@ -1413,13 +1417,14 @@ class SECTokenBlockChain {
         let sameUnlockTime = false
         for(let i=0; i<timeLock[senderAddress][benefitAddress].length; i++){
           let lockLog = timeLock[senderAddress][benefitAddress][i]
-          if(contractResult.Results.Time == lockLog.lockTime){
+          if(tx.TimeStamp == lockLog.lockTime && contractResult.Results.Time == lockLog.unlockTime){
             let balance = lockLog.lockAmount
             balance = new Big(balance)
             balance = balance.minus(contractResult.Results.Amount)
             balance = balance.toFixed(DEC_NUM)
             if (balance.isZero()) {
               timeLock[senderAddress][benefitAddress].splice(i, 1)
+              i--
             } else {
               lockLog.lockAmount = balance.toString()
             }
@@ -1601,7 +1606,7 @@ class SECTokenBlockChain {
         if (err) return callback(err)
         // update token chain DB
         this.chainDB.delBlock(dbBlock, (err) => {
-          if (err) return callback(err)
+          if (err) return callback(err)        
           // update account tree DB
           this.revertSmartContractDB(dbBlock, (err, _dbblock) => {
             if (err) return callback(err)
