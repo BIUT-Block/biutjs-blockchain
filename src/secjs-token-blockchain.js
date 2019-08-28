@@ -692,7 +692,7 @@ class SECTokenBlockChain {
 
   _updateSmartContractDBWithTx(tx) {
     let self = this
-    let oInputData
+    let oInputData = {}
     return new Promise(function (resolve, reject) {
       if (SECUtils.isContractAddr(tx.TxTo)) {
         try {
@@ -810,7 +810,7 @@ class SECTokenBlockChain {
 
   _revertSmartContractDBWithTx(tx) {
     let self = this
-    let oInputData
+    let oInputData = {}
     return new Promise(function (resolve, reject) {
       if (SECUtils.isContractAddr(tx.TxTo)) {
         self.getTokenInfo(tx.TxTo, (err, tokenInfo) => {
@@ -1105,7 +1105,7 @@ class SECTokenBlockChain {
       if (benefitAddress in timeLock[senderAddress]) {
         let sameUnlockTime = false
         for(let lockLog of timeLock[senderAddress][benefitAddress]){
-          if(contractResult.Results.Time == lockLog.unlockTime){
+          if(tx.TimeStamp == lockLog.lockTime && contractResult.Results.Time == lockLog.unlockTime){
             let balance = lockLog.lockAmount
             balance = new Big(balance)
             balance = balance.plus(contractResult.Results.Amount)
