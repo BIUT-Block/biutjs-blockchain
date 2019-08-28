@@ -364,6 +364,7 @@ class SECTokenBlockChain {
   delBlockFromHeight(height, callback) {
     let indexArray = []
     let revertTxArray = []
+    let createdContractsArr = []
 
     this.getHashList((err, hashList) => {
       if (err) {
@@ -379,7 +380,6 @@ class SECTokenBlockChain {
             }
           }
         }
-
         async.eachSeries(indexArray, (i, cb) => {
           // get block from db
           this.getBlock(i, (err, dbBlock) => {
@@ -390,22 +390,35 @@ class SECTokenBlockChain {
 
             // update tx DB
             this.txDB.delBlock(dbBlock, (err1) => {
-              if (err1) return cb(err1)
+              if (err1) {
+                console.log('err1', err1.stack)
+                return cb(err1)
+              }
               // update token chain DB
               this.chainDB.delBlock(dbBlock, (err2) => {
-                if (err2) return cb(err2)
-                // update account tree DB
-                this.revertSmartContractDB(dbBlock, (err, _dbBlock) => {
-                  if (err) return callback(err)
-                  this.accTree.revertWithBlock(_dbBlock, (err3) => {
-                    if (err3) return cb(err3)
-                    dbBlock.Transactions.forEach((tx) => {
-                      tx.TxReceiptStatus = 'pending'
-                      if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
-                        revertTxArray.push(tx)
-                      }
-                    })
-                    cb()
+                if (err2) {
+                  console.log('err2', err2.stack)
+                  return cb(err2)
+                } // update account tree DB
+                this.revertSmartContractDB(dbBlock, (err3, _dbBlock, createdContracts) => {
+                  if (err3) {
+                    console.log('err3', err3.stack)
+                    return cb(err3)
+                  }
+                  createdContractsArr = createdContractsArr.concat(createdContracts)
+                  this.accTree.revertWithBlock(_dbBlock, (err4) => {
+                    if (err4) {
+                      console.log('err4', err4.stack)
+                      return cb(err4)
+                    } else {
+                      dbBlock.Transactions.forEach((tx) => {
+                        tx.TxReceiptStatus = 'pending'
+                        if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
+                          revertTxArray.push(tx)
+                        }
+                      })
+                      cb()
+                    }
                   })
                 })
               })
@@ -422,15 +435,29 @@ class SECTokenBlockChain {
               this.deletingFlag = false
             }, 1000)
             this.chainLength = height
-            this._consistentCheck((err, errPosition) => {
-              if (err) {
-                // do nothing
-              }
-              if (errPosition !== -1) {
-                this.deletingFlag = true
-                this.delBlockFromHeight(errPosition, callback)
+            async.eachSeries(createdContractsArr, (obj, cb2) => {
+              this.deleteTokenMap(obj.CreatedContract, (err2) => {
+                if (err2) {
+                  cb2(err2)
+                } else {
+                  cb2()
+                }
+              })
+            }, (err3) => {
+              if (err3) {
+                callback(err3, null)
               } else {
-                callback(err, revertTxArray)
+                this._consistentCheck((err4, errPosition) => {
+                  if (err4) {
+                    // do nothing
+                  }
+                  if (errPosition !== -1) {
+                    this.deletingFlag = true
+                    this.delBlockFromHeight(errPosition, callback)
+                  } else {
+                    callback(err4, revertTxArray)
+                  }
+                })
               }
             })
           }
@@ -535,7 +562,7 @@ class SECTokenBlockChain {
   }
 
   deleteTokenMap(contractAddress, callback) {
-    this.smartContractTxDB.deleteTokenMap(tokenInfo, contractAddress, callback)
+    this.smartContractTxDB.deleteTokenMap(contractAddress, callback)
   }
 
   getContractAddress(tokenName, callback) {
@@ -683,10 +710,13 @@ class SECTokenBlockChain {
       await self._asyncForEach(txs, async (tx) => {
         transactionsList = transactionsList.concat(await self._revertSmartContractDBWithTx(tx))
       })
+      let contractsList = transactionsList.filter((obj) => 'CreatedContract' in obj)
+      transactionsList = transactionsList.filter((obj) => !('CreatedContract' in obj))
       block.Transactions = transactionsList
-      callback(null, block)
+      callback(null, block, contractsList)
+
     } catch (err) {
-      callback(err, null)
+      callback(err, null, null)
     }
   }
 
@@ -829,23 +859,21 @@ class SECTokenBlockChain {
                   "txHash": tx.TxHash,
                   "time": tx.TimeStamp
                 }
-                self.deleteTokenMap(tx.TxTo, (err) => {
+                self.revertContractForCreate(tx, tokenInfo, (err, tokenTx) => {
                   if (err) {
                     reject(err)
                   } else {
-                    self.revertContractForCreate(tx, tokenInfo, (err, tokenTx) => {
-                      if (err) {
-                        reject(err)
-                      } else {
-                        tx.tokenName = self.checkSecSubContract(oInputData.tokenName)
-                        if (tokenTx) {
-                          tokenTx.tokenName = self.checkSecSubContract(oInputData.tokenName)
-                          resolve([tx, tokenTx])
-                        } else {
-                          resolve([tx])
-                        }
-                      }
-                    })
+                    tx.TokenName = self.checkSecSubContract(oInputData.tokenName)
+                    if (tokenTx) {
+                      tokenTx.TokenName = self.checkSecSubContract(oInputData.tokenName)
+                      resolve([tx, tokenTx, {
+                        'CreatedContract': tx.TxTo
+                      }])
+                    } else {
+                      resolve([tx, {
+                        'CreatedContract': tx.TxTo
+                      }])
+                    }
                   }
                 })
               } else if (oInputData.callCode) {
@@ -918,7 +946,7 @@ class SECTokenBlockChain {
           }
         })
       } else {
-        tx.TokenName = this.chainName
+        tx.TokenName = self.chainName
         resolve([tx])
       }
     })
@@ -1415,14 +1443,14 @@ class SECTokenBlockChain {
         for (let i = 0; i < timeLock[senderAddress][benefitAddress].length; i++) {
           let lockLog = timeLock[senderAddress][benefitAddress][i]
           if (tx.TimeStamp == lockLog.lockTime && contractResult.Results.Time == lockLog.unlockTime) {
-            let balance = lockLog.lockAmount
-            balance = new Big(balance)
+            let lockAmount = lockLog.lockAmount
+            let balance = new Big(lockAmount)
             balance = balance.minus(contractResult.Results.Amount)
-            balance = balance.toFixed(DEC_NUM)
             if (balance.isZero()) {
               timeLock[senderAddress][benefitAddress].splice(i, 1)
               i--
             } else {
+              balance = balance.toFixed(DEC_NUM)
               lockLog.lockAmount = balance.toString()
             }
             sameUnlockTime = true
