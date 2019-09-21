@@ -10,7 +10,7 @@ const vm = require('vm')
 const cloneDeep = require('clone-deep')
 const Big = require('bignumber.js')
 
-const DEC_NUM = 8
+const DEC_NUM = 16
 Big.config({
   ROUNDING_MODE: 0
 })
@@ -104,6 +104,7 @@ class SECTokenBlockChain {
       if (err) callback(err)
       else {
         let root = block.StateRoot
+        console.log('StateRoot: ' + root)
         // check if the given root exists
         this.accTree.checkRoot(root, (err, result) => {
           // if it doesnt exist or error occurs:
@@ -121,6 +122,7 @@ class SECTokenBlockChain {
 
   rebuildAccTree (callback) {
     console.log('Rebuilding Acctree...')
+    console.time('Rebuild Acctree ' + this.chainName)
     // clear DB
     this.accTree.clearDB((err) => {
       if (err) callback(err)
@@ -135,6 +137,7 @@ class SECTokenBlockChain {
                 callback(err)
               } else {
                 this.accTree.updateWithBlockChain(chain, (err1) => {
+                  console.timeEnd('Rebuild Acctree ' + this.chainName)
                   if (err1) {
                     callback(err1)
                   } else {
@@ -291,7 +294,9 @@ class SECTokenBlockChain {
    */
   putBlockToDB (_block, syncFlag, callback) {
     if (this.deletingFlag) return callback(new Error('Now deleting block, can not write block into database.'))
+    console.time('_consistentCheck')
     this._consistentCheck((err, errPosition) => {
+      console.timeEnd('_consistentCheck')
       if (err) {
         console.error(err)
         return callback(new Error('Put Block to DB, Consistent check error.'))
@@ -315,7 +320,9 @@ class SECTokenBlockChain {
         }
 
         // verify parent hash
+        console.time('verifyParentHash')
         this.verifyParentHash(block, (err, result) => {
+          console.timeEnd('verifyParentHash')
           if (err) return callback(err)
           if (this.deletingFlag) return callback(new Error('Now deleting block, can not write block into database.'))
           // this.verifyDifficulty(block, (err) => {
@@ -325,13 +332,19 @@ class SECTokenBlockChain {
             callback(new Error('Failed to verify parent hash'))
           } else if (block.Number === this.chainLength) {
             // new block received, update tokenTxDB
+            console.time('writeBlock')
             this.txDB.writeBlock(block, (err) => {
+              console.timeEnd('writeBlock')
               if (err) return callback(err)
               let smartContractBlock = cloneDeep(block)
+              console.time('updateSmartContractDB')
               this.updateSmartContractDB(smartContractBlock, (err, _smartContractBlock) => {
+                console.timeEnd('updateSmartContractDB')
                 if (err) return callback(err)
                 // update token blockchain DB
+                console.time('updateWithBlock')
                 this.accTree.updateWithBlock(_smartContractBlock, (err) => {
+                  console.timeEnd('updateWithBlock')
                   if (err) return callback(err)
                   if (_smartContractBlock.Number !== 0 && !syncFlag) {
                     let newStateRoot = this.accTree.getRoot()
@@ -342,7 +355,9 @@ class SECTokenBlockChain {
                       block.Transactions[index].BlockHash = block.Hash
                     })
                   }
+                  console.time('writeTokenBlockToDB')
                   this.chainDB.writeTokenBlockToDB(cloneDeep(block), (err) => {
+                    console.timeEnd('writeTokenBlockToDB')
                     if (err) return callback(err)
                     this.chainLength = block.Number + 1
                     callback(null, block.StateRoot, block.Hash)

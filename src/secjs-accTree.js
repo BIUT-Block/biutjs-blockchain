@@ -11,6 +11,8 @@ class SECAccTree {
   constructor (config) {
     try {
       this.accTree = new SECDatahandler.AccTreeDB(config)
+      this.accDB = new SECDatahandler.AccDB(config)
+      this.accTree.setAccDB(this.accDB)
     } catch (e) {
       throw e
     }
