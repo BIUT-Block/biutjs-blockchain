@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@biut-block/biutjs-merkle-tree": "^1.0.0",
-    "@biut-block/biutjs-util": "git+ssh://git@gitlab.com/MongoX-BIUT/biutjs-util.git#SenSmartContractTimeLock",
+    "@biut-block/biutjs-util": "^1.0.2",
     "async": "^2.6.3",
     "chai": "^4.1.2",
     "describe": "^1.2.0",
