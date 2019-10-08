@@ -1,10 +1,22 @@
 const async = require('async')
+const Promise = require('promise')
 const AccTreeDB = require('./secjs-accTree.js')
 const geneData = require('./genesisBlock.js')
 const SECUtils = require('@biut-block/biutjs-util')
 const SECTokenBlock = require('./secjs-token-block')
 const SECDatahandler = require('@biut-block/biutjs-datahandler')
 const SECMerkleTree = require('@biut-block/biutjs-merkle-tree')
+const vm = require('vm')
+const cloneDeep = require('clone-deep')
+const Big = require('bignumber.js')
+
+const DEC_NUM = 16
+Big.config({
+  ROUNDING_MODE: 0
+})
+Big.set({
+  ROUNDING_MODE: Big.ROUND_DOWN
+})
 
 class SECTokenBlockChain {
   /**
@@ -13,15 +25,18 @@ class SECTokenBlockChain {
    *
    */
 
-  constructor (config) {
+  constructor (config, pool) {
     this.deletingFlag = false
     this.chainName = config.chainName
     this.chainDB = new SECDatahandler.TokenBlockChainDB(config.dbconfig)
     this.txDB = new SECDatahandler.TokenTxDB(config.dbconfig)
-    this.accTree = new AccTreeDB(config.dbconfig)
+    this.smartContractTxDB = new SECDatahandler.SmartContractTxDB(config.dbconfig)
+    this.accTree = new AccTreeDB(Object.assign(config.dbconfig, {
+      'chainName': this.chainName
+    }))
     this.chainLength = 0
+    this.pool = pool
   }
-
   /**
    * generate genesis token block
    */
@@ -55,7 +70,7 @@ class SECTokenBlockChain {
           else {
             // then write genesis block to both tokenDB and account tree DB
             let geneBlock = this._generateGenesisBlock()
-            this.putBlockToDB(geneBlock, callback)
+            this.putBlockToDB(geneBlock, false, callback)
           }
         })
       } else {
@@ -69,8 +84,9 @@ class SECTokenBlockChain {
             if (errPosition !== -1) {
               this.deletingFlag = true
               this.delBlockFromHeight(errPosition, (err) => {
-                if (err) callback(err)
-                else {
+                if (err) {
+                  return callback(err)
+                } else {
                   this.verifyStateRoot(callback)
                 }
               })
@@ -88,6 +104,7 @@ class SECTokenBlockChain {
       if (err) callback(err)
       else {
         let root = block.StateRoot
+        console.log('StateRoot: ' + root)
         // check if the given root exists
         this.accTree.checkRoot(root, (err, result) => {
           // if it doesnt exist or error occurs:
@@ -105,6 +122,7 @@ class SECTokenBlockChain {
 
   rebuildAccTree (callback) {
     console.log('Rebuilding Acctree...')
+    console.time('Rebuild Acctree ' + this.chainName)
     // clear DB
     this.accTree.clearDB((err) => {
       if (err) callback(err)
@@ -114,16 +132,55 @@ class SECTokenBlockChain {
           if (err) {
             callback(err)
           } else {
-            this.accTree.updateWithBlockChain(chain, (err) => {
+            this._initAccTree(chain, (err) => {
               if (err) {
                 callback(err)
               } else {
-                callback()
+                this.accTree.updateWithBlockChain(chain, (err1) => {
+                  console.timeEnd('Rebuild Acctree ' + this.chainName)
+                  if (err1) {
+                    callback(err1)
+                  } else {
+                    callback()
+                  }
+                })
               }
             })
           }
         })
       }
+    })
+  }
+
+  _initAccTree (chain, callback) {
+    async.eachSeries(chain, (block, cb) => {
+      let count = 0
+      let txLength = block.Transactions.length
+      if (txLength === 0) {
+        cb()
+      } else {
+        block.Transactions.forEach((tx) => {
+          let contractAddr = ''
+          if (SECUtils.isContractAddr(tx.TxTo)) {
+            contractAddr = tx.TxTo
+          } else {
+            contractAddr = tx.TxFrom
+          }
+          this.getTokenName(contractAddr, (err1, tokenName) => {
+            if (err1) {
+              return cb(err1)
+            }
+            tokenName = this.checkSecSubContract(tokenName)
+            tx.TokenName = tokenName
+            count++
+            if (count >= txLength) {
+              return cb()
+            }
+          })
+        })
+      }
+    }, (err2) => {
+      callback(err2)
     })
   }
 
@@ -235,9 +292,11 @@ class SECTokenBlockChain {
    * @param {SECTokenBlock} block the block object in json formation
    * @param {callback} callback
    */
-  putBlockToDB (_block, callback) {
+  putBlockToDB (_block, syncFlag, callback) {
     if (this.deletingFlag) return callback(new Error('Now deleting block, can not write block into database.'))
+    console.time('_consistentCheck')
     this._consistentCheck((err, errPosition) => {
+      console.timeEnd('_consistentCheck')
       if (err) {
         console.error(err)
         return callback(new Error('Put Block to DB, Consistent check error.'))
@@ -256,13 +315,14 @@ class SECTokenBlockChain {
             block.Transactions[index].BlockHash = block.Hash
           }
         })
-
         if (!this.verifyTxRoot(block)) {
           return callback(new Error('Failed to verify transaction root'))
         }
 
         // verify parent hash
+        console.time('verifyParentHash')
         this.verifyParentHash(block, (err, result) => {
+          console.timeEnd('verifyParentHash')
           if (err) return callback(err)
           if (this.deletingFlag) return callback(new Error('Now deleting block, can not write block into database.'))
           // this.verifyDifficulty(block, (err) => {
@@ -272,22 +332,43 @@ class SECTokenBlockChain {
             callback(new Error('Failed to verify parent hash'))
           } else if (block.Number === this.chainLength) {
             // new block received, update tokenTxDB
+            console.time('writeBlock')
             this.txDB.writeBlock(block, (err) => {
+              console.timeEnd('writeBlock')
               if (err) return callback(err)
-              // update token blockchain DB
-              this.chainDB.writeTokenBlockToDB(block, (err) => {
+              let smartContractBlock = cloneDeep(block)
+              console.time('updateSmartContractDB')
+              this.updateSmartContractDB(smartContractBlock, (err, _smartContractBlock) => {
+                console.timeEnd('updateSmartContractDB')
                 if (err) return callback(err)
-                this.chainLength = block.Number + 1
-                this.accTree.updateWithBlock(block, (err) => {
+                // update token blockchain DB
+                console.time('updateWithBlock')
+                this.accTree.updateWithBlock(_smartContractBlock, (err) => {
+                  console.timeEnd('updateWithBlock')
                   if (err) return callback(err)
-                  callback()
+                  if (_smartContractBlock.Number !== 0 && !syncFlag) {
+                    let newStateRoot = this.accTree.getRoot()
+                    _smartContractBlock.StateRoot = newStateRoot
+                    block.StateRoot = newStateRoot
+                    block.Hash = SECTokenBlock.getHeaderHashStatic(block)
+                    block.Transactions.forEach((tx, index) => {
+                      block.Transactions[index].BlockHash = block.Hash
+                    })
+                  }
+                  console.time('writeTokenBlockToDB')
+                  this.chainDB.writeTokenBlockToDB(cloneDeep(block), (err) => {
+                    console.timeEnd('writeTokenBlockToDB')
+                    if (err) return callback(err)
+                    this.chainLength = block.Number + 1
+                    callback(null, block.StateRoot, block.Hash)
+                    // callback(null)
+                  })
                 })
               })
             })
           } else {
             callback(new Error(`Can not add token Block, token Block Number is false, block.Number: ${block.Number}, this.chainLength: ${this.chainLength}`))
           }
-          // })
         })
       }
     })
@@ -296,7 +377,8 @@ class SECTokenBlockChain {
   delBlockFromHeight (height, callback) {
     let indexArray = []
     let revertTxArray = []
-
+    let createdContractsArr = []
+    this.deletingFlag = true
     this.getHashList((err, hashList) => {
       if (err) {
         setTimeout(() => {
@@ -311,7 +393,6 @@ class SECTokenBlockChain {
             }
           }
         }
-
         async.eachSeries(indexArray, (i, cb) => {
           // get block from db
           this.getBlock(i, (err, dbBlock) => {
@@ -319,23 +400,38 @@ class SECTokenBlockChain {
               console.error(`delBlockFromHeight function: Error occurs when try to get block, block number is ${i}`)
               return cb()
             }
-
             // update tx DB
             this.txDB.delBlock(dbBlock, (err1) => {
-              if (err1) return cb(err1)
+              if (err1) {
+                console.log('err1', err1.stack)
+                return cb(err1)
+              }
               // update token chain DB
               this.chainDB.delBlock(dbBlock, (err2) => {
-                if (err2) return cb(err2)
-                // update account tree DB
-                this.accTree.revertWithBlock(dbBlock, (err3) => {
-                  if (err3) return cb(err3)
-                  dbBlock.Transactions.forEach((tx) => {
-                    tx.TxReceiptStatus = 'pending'
-                    if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
-                      revertTxArray.push(tx)
+                if (err2) {
+                  console.log('err2', err2.stack)
+                  return cb(err2)
+                } // update account tree DB
+                this.revertSmartContractDB(dbBlock, (err3, _dbBlock, createdContracts) => {
+                  if (err3) {
+                    console.log('err3', err3.stack)
+                    return cb(err3)
+                  }
+                  createdContractsArr = createdContractsArr.concat(createdContracts)
+                  this.accTree.revertWithBlock(_dbBlock, (err4) => {
+                    if (err4) {
+                      console.log('err4', err4.stack)
+                      return cb(err4)
+                    } else {
+                      dbBlock.Transactions.forEach((tx) => {
+                        tx.TxReceiptStatus = 'pending'
+                        if (tx.TxFrom !== '0000000000000000000000000000000000000000') {
+                          revertTxArray.push(tx)
+                        }
+                      })
+                      cb()
                     }
                   })
-                  cb()
                 })
               })
             })
@@ -351,15 +447,29 @@ class SECTokenBlockChain {
               this.deletingFlag = false
             }, 1000)
             this.chainLength = height
-            this._consistentCheck((err, errPosition) => {
-              if (err) {
-                // do nothing
-              }
-              if (errPosition !== -1) {
-                this.deletingFlag = true
-                this.delBlockFromHeight(errPosition, callback)
+            async.eachSeries(createdContractsArr, (obj, cb2) => {
+              this.deleteTokenMap(obj.CreatedContract, (err2) => {
+                if (err2) {
+                  cb2(err2)
+                } else {
+                  cb2()
+                }
+              })
+            }, (err3) => {
+              if (err3) {
+                callback(err3, null)
               } else {
-                callback(err, revertTxArray)
+                this._consistentCheck((err4, errPosition) => {
+                  if (err4) {
+                    // do nothing
+                  }
+                  if (errPosition !== -1) {
+                    this.deletingFlag = true
+                    this.delBlockFromHeight(errPosition, callback)
+                  } else {
+                    callback(err4, revertTxArray)
+                  }
+                })
               }
             })
           }
@@ -401,6 +511,9 @@ class SECTokenBlockChain {
   getBlocksFromDB (minHeight, maxHeight = this.getCurrentHeight(), callback) {
     if (maxHeight > this.getCurrentHeight()) {
       maxHeight = this.getCurrentHeight()
+    }
+    if (minHeight > maxHeight) {
+      minHeight = maxHeight
     }
     this.chainDB.getTokenChain(minHeight, maxHeight, callback)
   }
@@ -458,6 +571,1062 @@ class SECTokenBlockChain {
     this.chainDB.getHashList(callback)
   }
 
+  // -------------------------  SMART CONTRACT TX DB FUNCTIONS  ------------------------
+  addTokenMap (tokenInfo, contractAddress, callback) {
+    this.smartContractTxDB.addTokenMap(tokenInfo, contractAddress, callback)
+  }
+
+  deleteTokenMap (contractAddress, callback) {
+    this.smartContractTxDB.deleteTokenMap(contractAddress, callback)
+  }
+
+  getContractAddress (tokenName, callback) {
+    this.smartContractTxDB.getContractAddress(tokenName, callback)
+  }
+
+  getTokenName (addr, callback) {
+    if (SECUtils.isContractAddr(addr)) {
+      this.smartContractTxDB.getTokenName(addr, (err, tokenName) => {
+        if (err) return callback(new Error(`Token name of address ${addr} cannot be found in database`), null)
+        callback(null, tokenName)
+      })
+    } else {
+      callback(null, this.chainName)
+    }
+  }
+
+  getCreatorContract (creatorAddress, callback) {
+    this.smartContractTxDB.getCreatorContract(creatorAddress, callback)
+  }
+
+  getSourceCode (addr, callback) {
+    if (SECUtils.isContractAddr(addr)) {
+      this.smartContractTxDB.getSourceCode(addr, (err, sourceCode) => {
+        if (err) return callback(err, null)
+        callback(null, sourceCode)
+      })
+    } else {
+      callback(null, '')
+    }
+  }
+
+  getApprove (addr, callback) {
+    if (SECUtils.isContractAddr(addr)) {
+      this.smartContractTxDB.getApprove(addr, (err, approve) => {
+        if (err) return callback(err, null)
+        callback(null, approve)
+      })
+    } else {
+      callback(null, {})
+    }
+  }
+
+  getTimeLock (addr, callback) {
+    if (SECUtils.isContractAddr(addr)) {
+      this.smartContractTxDB.getTimeLock(addr, (err, timeLock) => {
+        if (err) return callback(err, null)
+        callback(null, timeLock)
+      })
+    } else {
+      callback(null, {})
+    }
+  }
+
+  getTokenInfo (addr, callback) {
+    if (SECUtils.isContractAddr(addr)) {
+      this.smartContractTxDB.getTokenInfo(addr, (err, tokenInfo) => {
+        if (err) return callback(err, null)
+        callback(null, tokenInfo)
+      })
+    } else {
+      callback(null, {})
+    }
+  }
+
+  getLockerContract (addr, callback) {
+    this.smartContractTxDB.getLockerContract(addr, (err, contractAddrArr) => {
+      if (err) return callback(err, null)
+      callback(null, contractAddrArr)
+    })
+  }
+
+  async updateSmartContractDB (block, callback) {
+    let self = this
+    let transactionsList = []
+    // parse block.Transactions
+    block.Transactions.forEach((tx, index) => {
+      if (typeof tx === 'string') {
+        block.Transactions[index] = JSON.parse(tx)
+      }
+      if (!this._typeCheck(block.Transactions[index].Value)) {
+        block.Transactions[index].Value = '0'
+      }
+      if (!this._typeCheck(block.Transactions[index].TxFee)) {
+        block.Transactions[index].TxFee = '0'
+      }
+    })
+
+    let txs = block.Transactions
+    // txs.forEach((tx) => {
+    //   promiseList.push(self._updateSmartContractDBWithTx(tx))
+    // })
+
+    // Promise.all(promiseList).then((transactionsList) => {
+    //   if (transactionsList.length > 0) {
+    //     transactionsList = transactionsList.reduce((a, b) => [...a, ...b])
+    //   }
+    //   block.Transactions = transactionsList
+    //   callback(null, block)
+    // }).catch((err) => {
+    //   callback(err, null)
+    // })
+    try {
+      await self._asyncForEach(txs, async (tx) => {
+        transactionsList = transactionsList.concat(await self._updateSmartContractDBWithTx(tx))
+      })
+      block.Transactions = transactionsList
+      callback(null, block)
+    } catch (err) {
+      callback(err, null)
+    }
+  }
+
+  async revertSmartContractDB (block, callback) {
+    let self = this
+    let transactionsList = []
+    // parse block.Transactions
+    block.Transactions.forEach((tx, index) => {
+      if (typeof tx === 'string') {
+        block.Transactions[index] = JSON.parse(tx)
+      }
+      if (!this._typeCheck(block.Transactions[index].Value)) {
+        block.Transactions[index].Value = '0'
+      }
+      if (!this._typeCheck(block.Transactions[index].TxFee)) {
+        block.Transactions[index].TxFee = '0'
+      }
+    })
+
+    let txs = block.Transactions
+    // txs.forEach((tx) => {
+    //   promiseList.push(self._revertSmartContractDBWithTx(tx))
+    // })
+
+    // Promise.all(promiseList).then((transactionsList) => {
+    //   if (transactionsList.length > 0) {
+    //     transactionsList = transactionsList.reduce((a, b) => [...a, ...b])
+    //   }
+    //   block.Transactions = transactionsList
+    //   callback(null, block)
+    // }).catch((err) => {
+    //   callback(err, null)
+    // })
+    try {
+      await self._asyncForEach(txs, async (tx) => {
+        transactionsList = transactionsList.concat(await self._revertSmartContractDBWithTx(tx))
+      })
+      let contractsList = transactionsList.filter((obj) => 'CreatedContract' in obj)
+      transactionsList = transactionsList.filter((obj) => !('CreatedContract' in obj))
+      block.Transactions = transactionsList
+      callback(null, block, contractsList)
+    } catch (err) {
+      callback(err, null, null)
+    }
+  }
+
+  _updateSmartContractDBWithTx (tx) {
+    let self = this
+    let oInputData = {}
+    return new Promise(function (resolve, reject) {
+      if (SECUtils.isContractAddr(tx.TxTo)) {
+        try {
+          oInputData = JSON.parse(tx.InputData)
+          self.getTokenInfo(tx.TxTo, (err, tokenInfo) => {
+            if (err) {
+              reject(err)
+            } else {
+              if (tokenInfo && oInputData.callCode) {
+                let sourceCode = tokenInfo.sourceCode
+                let tokenName = self.checkSecSubContract(tokenInfo.tokenName)
+                let contractResult = self.runContract(oInputData.callCode, sourceCode)
+                switch (contractResult.functionType) {
+                  case 'transfer':
+                    self.contractForTransfer(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                      if (err) {
+                        reject(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        tokenTx.TokenName = tokenName
+                        resolve([tx, tokenTx])
+                      }
+                    })
+                    break
+                  case 'deposit':
+                    self.contractForDeposit(tx, contractResult, tokenInfo, (err) => {
+                      if (err) {
+                        reject(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        resolve([tx])
+                      }
+                    })
+                    break
+                  case 'withdraw':
+                    self.contractForWithdraw(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                      if (err) {
+                        reject(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        tokenTx.TokenName = tokenName
+                        resolve([tx, tokenTx])
+                      }
+                    })
+                    break
+                  case 'lock':
+                    self.contractForLock(tx, contractResult, tokenInfo, (err) => {
+                      if (err) {
+                        reject(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        resolve([tx])
+                      }
+                    })
+                    break
+                  case 'releaseLock':
+                    self.contractForReleaseLock(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                      if (err) {
+                        reject(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        if (tokenTx) {
+                          tokenTx.TokenName = tokenName
+                          resolve([tx, tokenTx])
+                        } else {
+                          resolve([tx])
+                        }
+                      }
+                    })
+                    break
+                  default:
+                    resolve()
+                }
+              } else if ((!tokenInfo) && oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply) {
+                tokenInfo = {
+                  'tokenName': oInputData.tokenName,
+                  'sourceCode': oInputData.sourceCode,
+                  'totalSupply': oInputData.totalSupply,
+                  'timeLock': {},
+                  'approve': {},
+                  'creator': tx.TxFrom,
+                  'txHash': tx.TxHash,
+                  'time': tx.TimeStamp
+                }
+                self.contractForCreate(tx, tokenInfo, (err, tokenTx) => {
+                  if (err) {
+                    reject(err)
+                  } else {
+                    tx.TokenName = self.checkSecSubContract(oInputData.tokenName)
+                    if (tokenTx) {
+                      tokenTx.TokenName = self.checkSecSubContract(oInputData.tokenName)
+                      resolve([tx, tokenTx])
+                    } else {
+                      resolve([tx])
+                    }
+                  }
+                })
+              } else if (tokenInfo && oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply) {
+                resolve([tx])
+              } else {
+                reject(new Error('Invalid Smart Contract Call'))
+              }
+            }
+          })
+        } catch (error) {
+          reject(new Error('Invalid Smart Contract Call'))
+        }
+      } else {
+        tx.TokenName = self.chainName
+        resolve([tx])
+      }
+    })
+  }
+
+  _revertSmartContractDBWithTx (tx) {
+    let self = this
+    let oInputData = {}
+    return new Promise(function (resolve, reject) {
+      if (SECUtils.isContractAddr(tx.TxTo)) {
+        self.getTokenInfo(tx.TxTo, (err, tokenInfo) => {
+          if (err) {
+            reject(err)
+          } else {
+            try {
+              oInputData = JSON.parse(tx.InputData)
+              if (oInputData.tokenName && oInputData.sourceCode && oInputData.totalSupply) {
+                tokenInfo = {
+                  'tokenName': oInputData.tokenName,
+                  'sourceCode': oInputData.sourceCode,
+                  'totalSupply': oInputData.totalSupply,
+                  'timeLock': {},
+                  'approve': {},
+                  'creator': tx.TxFrom,
+                  'txHash': tx.TxHash,
+                  'time': tx.TimeStamp
+                }
+                self.revertContractForCreate(tx, tokenInfo, (err, tokenTx) => {
+                  if (err) {
+                    reject(err)
+                  } else {
+                    tx.TokenName = self.checkSecSubContract(oInputData.tokenName)
+                    if (tokenTx) {
+                      tokenTx.TokenName = self.checkSecSubContract(oInputData.tokenName)
+                      resolve([tx, tokenTx, {
+                        'CreatedContract': tx.TxTo
+                      }])
+                    } else {
+                      resolve([tx, {
+                        'CreatedContract': tx.TxTo
+                      }])
+                    }
+                  }
+                })
+              } else if (oInputData.callCode) {
+                let sourceCode = tokenInfo.sourceCode
+                let tokenName = self.checkSecSubContract(tokenInfo.tokenName)
+                let contractResult = self.runContract(oInputData.callCode, sourceCode)
+                switch (contractResult.functionType) {
+                  case 'transfer':
+                    self.revertContractForTransfer(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                      if (err) {
+                        reject(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        tokenTx.TokenName = tokenName
+                        resolve([tx, tokenTx])
+                      }
+                    })
+                    break
+                  case 'deposit':
+                    self.revertContractForDeposit(tx, contractResult, tokenInfo, (err) => {
+                      if (err) {
+                        reject(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        resolve([tx])
+                      }
+                    })
+                    break
+                  case 'withdraw':
+                    self.revertContractForWithdraw(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                      if (err) {
+                        reject(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        tokenTx.TokenName = tokenName
+                        resolve([tx, tokenTx])
+                      }
+                    })
+                    break
+                  case 'lock':
+                    self.revertContractForLock(tx, contractResult, tokenInfo, (err) => {
+                      if (err) {
+                        reject(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        resolve([tx])
+                      }
+                    })
+                    break
+                  case 'releaseLock':
+                    self.revertContractForReleaseLock(tx, contractResult, tokenInfo, (err, tokenTx) => {
+                      if (err) {
+                        reject(err)
+                      } else {
+                        tx.TokenName = tokenName
+                        tokenTx.TokenName = tokenName
+                        resolve([tx, tokenTx])
+                      }
+                    })
+                    break
+                  default:
+                    resolve()
+                }
+              } else {
+                reject(new Error('Invalid Smart Contract Call'))
+              }
+            } catch (e) {
+              reject(new Error('Invalid Smart Contract Call'))
+            }
+          }
+        })
+      } else {
+        tx.TokenName = self.chainName
+        resolve([tx])
+      }
+    })
+  }
+
+  contractForTransfer (tx, contractResult, tokenInfo, callback) {
+    this.getNonce(tx.TxTo, (err, nonce) => {
+      if (err) {
+        callback(err, null)
+      } else {
+        let tokenTx = {
+          Version: '0.1',
+          TxReceiptStatus: 'success',
+          TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+          TxFrom: tx.TxTo,
+          TxTo: contractResult.Results.Address,
+          Value: contractResult.Results.Amount.toString(),
+          GasLimit: '0',
+          GasUsedByTxn: '0',
+          GasPrice: '0',
+          TxFee: '0',
+          Nonce: nonce,
+          InputData: `Smart Contract Transaction`
+        }
+        let txHashBuffer = [
+          Buffer.from(tokenTx.Version),
+          SECUtils.intToBuffer(tokenTx.TimeStamp),
+          Buffer.from(tokenTx.TxFrom, 'hex'),
+          Buffer.from(tokenTx.TxTo, 'hex'),
+          Buffer.from(tokenTx.Value),
+          Buffer.from(tokenTx.GasLimit),
+          Buffer.from(tokenTx.GasUsedByTxn),
+          Buffer.from(tokenTx.GasPrice),
+          Buffer.from(tokenTx.TxFee),
+          Buffer.from(tokenTx.Nonce),
+          Buffer.from(tokenTx.InputData)
+        ]
+
+        tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+        callback(null, tokenTx)
+      }
+    })
+  }
+
+  contractForDeposit (tx, contractResult, tokenInfo, callback) {
+    let approve = tokenInfo.approve
+    let walletAddress = tx.TxFrom
+    if (walletAddress in approve) {
+      let balance = approve[walletAddress]
+      balance = new Big(balance)
+      balance = balance.plus(contractResult.Results.Amount)
+      balance = balance.toFixed(DEC_NUM)
+      tokenInfo.approve[walletAddress] = balance.toString()
+    } else {
+      tokenInfo.approve[walletAddress] = contractResult.Results.Amount.toString()
+    }
+    this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+      if (err) {
+        return callback(err)
+      } else {
+        return callback(null)
+      }
+    })
+  }
+
+  contractForWithdraw (tx, contractResult, tokenInfo, callback) {
+    let approve = tokenInfo.approve
+    let walletAddress = tx.TxFrom
+    if (walletAddress in approve) {
+      let balance = approve[walletAddress]
+      balance = new Big(balance)
+      if (balance.gte(contractResult.Results.Amount)) {
+        this.getNonce(tx.TxTo, (err, nonce) => {
+          if (err) {
+            return callback(err, null)
+          } else {
+            let tokenTx = {
+              Version: '0.1',
+              TxReceiptStatus: 'success',
+              TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+              TxFrom: tx.TxTo,
+              TxTo: contractResult.Results.Address,
+              Value: contractResult.Results.Amount.toString(),
+              GasLimit: '0',
+              GasUsedByTxn: '0',
+              GasPrice: '0',
+              TxFee: '0',
+              Nonce: nonce,
+              InputData: `Smart Contract Transaction`
+            }
+            let txHashBuffer = [
+              Buffer.from(tokenTx.Version),
+              SECUtils.intToBuffer(tokenTx.TimeStamp),
+              Buffer.from(tokenTx.TxFrom, 'hex'),
+              Buffer.from(tokenTx.TxTo, 'hex'),
+              Buffer.from(tokenTx.Value),
+              Buffer.from(tokenTx.GasLimit),
+              Buffer.from(tokenTx.GasUsedByTxn),
+              Buffer.from(tokenTx.GasPrice),
+              Buffer.from(tokenTx.TxFee),
+              Buffer.from(tokenTx.Nonce),
+              Buffer.from(tokenTx.InputData)
+            ]
+
+            tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+
+            balance = balance.minus(contractResult.Results.Amount)
+            balance = balance.toFixed(DEC_NUM)
+            tokenInfo.approve[walletAddress] = balance
+            this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+              if (err) {
+                callback(err, null)
+              } else {
+                callback(null, tokenTx)
+              }
+            })
+          }
+        })
+      } else {
+        callback(new Error('Deposit is not enough'), null)
+      }
+    } else {
+      callback(new Error('No Available Deposit Before'), null)
+    }
+  }
+
+  contractForCreate (tx, tokenInfo, callback) {
+    let totalSupply = tokenInfo.totalSupply
+    let newTokenName = this.checkSecSubContract(tokenInfo.tokenName)
+    this.getNonce(tx.TxTo, (err, nonce) => {
+      if (err) {
+        callback(err, null)
+      } else {
+        let tokenTx = null
+        if (newTokenName !== this.chainName) {
+          tokenTx = {
+            Version: '0.1',
+            TxReceiptStatus: 'success',
+            TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+            TxFrom: '0000000000000000000000000000000000000000',
+            TxTo: tx.TxFrom,
+            Value: totalSupply.toString(),
+            GasLimit: '0',
+            GasUsedByTxn: '0',
+            GasPrice: '0',
+            TxFee: '0',
+            Nonce: nonce,
+            InputData: `Smart Contract Initialization`
+          }
+
+          let txHashBuffer = [
+            Buffer.from(tokenTx.Version),
+            SECUtils.intToBuffer(tokenTx.TimeStamp),
+            Buffer.from(tokenTx.TxFrom, 'hex'),
+            Buffer.from(tokenTx.TxTo, 'hex'),
+            Buffer.from(tokenTx.Value),
+            Buffer.from(tokenTx.GasLimit),
+            Buffer.from(tokenTx.GasUsedByTxn),
+            Buffer.from(tokenTx.GasPrice),
+            Buffer.from(tokenTx.TxFee),
+            Buffer.from(tokenTx.Nonce),
+            Buffer.from(tokenTx.InputData)
+          ]
+
+          tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+        }
+        this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+          if (err) {
+            callback(err, null)
+          } else {
+            callback(null, tokenTx)
+          }
+        })
+      }
+    })
+  }
+
+  contractForLock (tx, contractResult, tokenInfo, callback) {
+    let timeLock = tokenInfo.timeLock
+    let senderAddress = tx.TxFrom
+    let benefitAddress = contractResult.Results.Address
+    if (senderAddress in timeLock) {
+      if (benefitAddress in timeLock[senderAddress]) {
+        let sameUnlockTime = false
+        for (let lockLog of timeLock[senderAddress][benefitAddress]) {
+          if (tx.TimeStamp === lockLog.lockTime && contractResult.Results.Time === lockLog.unlockTime) {
+            let balance = lockLog.lockAmount
+            balance = new Big(balance)
+            balance = balance.plus(contractResult.Results.Amount)
+            balance = balance.toFixed(DEC_NUM)
+            lockLog.lockAmount = balance.toString()
+            sameUnlockTime = true
+            break
+          }
+        }
+        if (!sameUnlockTime) {
+          timeLock[senderAddress][benefitAddress].push({
+            lockTime: tx.TimeStamp,
+            lockAmount: contractResult.Results.Amount.toString(),
+            unlockTime: contractResult.Results.Time
+          })
+        }
+      } else {
+        timeLock[senderAddress][benefitAddress] = [{
+          lockTime: tx.TimeStamp,
+          lockAmount: contractResult.Results.Amount.toString(),
+          unlockTime: contractResult.Results.Time
+        }]
+      }
+    } else {
+      timeLock[senderAddress] = {
+        [benefitAddress]: [{
+          lockTime: tx.TimeStamp,
+          lockAmount: contractResult.Results.Amount.toString(),
+          unlockTime: contractResult.Results.Time
+        }]
+      }
+    }
+    this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+      if (err) {
+        return callback(err)
+      } else {
+        return callback(null)
+      }
+    })
+  }
+
+  contractForReleaseLock (tx, contractResult, tokenInfo, callback) {
+    let timeLock = tokenInfo.timeLock
+    let timeStamp = tx.TimeStamp
+    let senderAddress = tx.TxFrom
+    let benefitAddress = contractResult.Results.Address
+    let amountToRelease = new Big(contractResult.Results.Amount)
+    if (senderAddress in timeLock) {
+      if (benefitAddress in timeLock[senderAddress]) {
+        let benefitTimeLock = timeLock[senderAddress][benefitAddress]
+        benefitTimeLock = benefitTimeLock.sort((a, b) => {
+          return a.unlockTime - b.unlockTime
+        })
+        for (let i = 0; i < benefitTimeLock.length; i++) {
+          let lockLog = benefitTimeLock[i]
+          if (lockLog.unlockTime <= timeStamp) {
+            let lockedAmount = new Big(lockLog.lockAmount)
+            if (!amountToRelease.isZero() && amountToRelease.gte(lockedAmount)) {
+              amountToRelease = amountToRelease.minus(lockedAmount)
+              benefitTimeLock.splice(i, 1)
+              i--
+            } else {
+              lockedAmount = lockedAmount.minus(amountToRelease)
+              lockedAmount = lockedAmount.toFixed(DEC_NUM)
+              lockLog.lockAmount = lockedAmount.toString
+              amountToRelease = new Big(0)
+              break
+            }
+          } else {
+            continue
+          }
+        }
+        if (amountToRelease > 0) {
+          console.log(new Error('No enough unlocked Token'))
+          // return callback(new Error('No enough unlocked Token'), null)
+          return callback(null, null)
+        } else {
+          this.getNonce(tx.TxTo, (err, nonce) => {
+            if (err) {
+              return callback(err, null)
+            } else {
+              let tokenTx = {
+                Version: '0.1',
+                TxReceiptStatus: 'success',
+                TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+                TxFrom: tx.TxTo,
+                TxTo: contractResult.Results.Address,
+                Value: contractResult.Results.Amount.toString(),
+                GasLimit: '0',
+                GasUsedByTxn: '0',
+                GasPrice: '0',
+                TxFee: '0',
+                Nonce: nonce,
+                InputData: `Smart Contract Transaction`
+              }
+              let txHashBuffer = [
+                Buffer.from(tokenTx.Version),
+                SECUtils.intToBuffer(tokenTx.TimeStamp),
+                Buffer.from(tokenTx.TxFrom, 'hex'),
+                Buffer.from(tokenTx.TxTo, 'hex'),
+                Buffer.from(tokenTx.Value),
+                Buffer.from(tokenTx.GasLimit),
+                Buffer.from(tokenTx.GasUsedByTxn),
+                Buffer.from(tokenTx.GasPrice),
+                Buffer.from(tokenTx.TxFee),
+                Buffer.from(tokenTx.Nonce),
+                Buffer.from(tokenTx.InputData)
+              ]
+
+              tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+
+              this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+                if (err) {
+                  return callback(err, null)
+                } else {
+                  return callback(null, tokenTx)
+                }
+              })
+            }
+          })
+        }
+      } else {
+        return callback(new Error(`Lock Log of Benefiter ${benefitAddress} From sender ${senderAddress} not Found`), null)
+      }
+    } else {
+      return callback(new Error(`Lock Log of Sender ${senderAddress} not Found`), null)
+    }
+  }
+
+  revertContractForTransfer (tx, contractResult, callback) {
+    this.getNonce(tx.TxTo, (err, nonce) => {
+      if (err) {
+        callback(err, null)
+      } else {
+        this.getNonce(tx.TxTo, (err, nonce) => {
+          if (err) {
+            return callback(err, null)
+          } else {
+            let tokenTx = {
+              Version: '0.1',
+              TxReceiptStatus: 'success',
+              TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+              TxFrom: tx.TxTo,
+              TxTo: contractResult.Results.Address,
+              Value: contractResult.Results.Amount.toString(),
+              GasLimit: '0',
+              GasUsedByTxn: '0',
+              GasPrice: '0',
+              TxFee: '0',
+              Nonce: nonce,
+              InputData: `Smart Contract Transaction`
+            }
+            let txHashBuffer = [
+              Buffer.from(tokenTx.Version),
+              SECUtils.intToBuffer(tokenTx.TimeStamp),
+              Buffer.from(tokenTx.TxFrom, 'hex'),
+              Buffer.from(tokenTx.TxTo, 'hex'),
+              Buffer.from(tokenTx.Value),
+              Buffer.from(tokenTx.GasLimit),
+              Buffer.from(tokenTx.GasUsedByTxn),
+              Buffer.from(tokenTx.GasPrice),
+              Buffer.from(tokenTx.TxFee),
+              Buffer.from(tokenTx.Nonce),
+              Buffer.from(tokenTx.InputData)
+            ]
+
+            tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+            callback(null, tokenTx)
+          }
+        })
+      }
+    })
+  }
+
+  revertContractForDeposit (tx, contractResult, tokenInfo, callback) {
+    let approve = tokenInfo.approve
+    let walletAddress = tx.TxFrom
+    if (walletAddress in approve) {
+      let balance = approve[walletAddress]
+      balance = new Big(balance)
+      balance = balance.minus(contractResult.Results.Amount)
+      balance = balance.toFixed(DEC_NUM)
+      tokenInfo.approve[walletAddress] = balance.toString()
+    } else {
+      tokenInfo.approve[walletAddress] = contractResult.Results.Amount.toString()
+    }
+    this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+      if (err) {
+        return callback(err)
+      }
+    })
+  }
+
+  revertContractForWithdraw (tx, contractResult, tokenInfo, callback) {
+    let approve = tokenInfo.approve
+    let walletAddress = tx.TxFrom
+    if (walletAddress in approve) {
+      let balance = approve[walletAddress]
+      balance = new Big(balance)
+      balance = balance.plus(contractResult.Results.Amount)
+      balance = balance.toFixed(DEC_NUM)
+      tokenInfo.approve[walletAddress] = balance
+      if (balance.gte(contractResult.Results.Amount)) {
+        this.getNonce(tx.TxTo, (err, nonce) => {
+          if (err) {
+            return callback(err, null)
+          } else {
+            let tokenTx = {
+              Version: '0.1',
+              TxReceiptStatus: 'success',
+              TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+              TxFrom: tx.TxTo,
+              TxTo: contractResult.Results.Address,
+              Value: contractResult.Results.Amount.toString(),
+              GasLimit: '0',
+              GasUsedByTxn: '0',
+              GasPrice: '0',
+              TxFee: '0',
+              Nonce: nonce,
+              InputData: `Smart Contract Transaction`
+            }
+            let txHashBuffer = [
+              Buffer.from(tokenTx.Version),
+              SECUtils.intToBuffer(tokenTx.TimeStamp),
+              Buffer.from(tokenTx.TxFrom, 'hex'),
+              Buffer.from(tokenTx.TxTo, 'hex'),
+              Buffer.from(tokenTx.Value),
+              Buffer.from(tokenTx.GasLimit),
+              Buffer.from(tokenTx.GasUsedByTxn),
+              Buffer.from(tokenTx.GasPrice),
+              Buffer.from(tokenTx.TxFee),
+              Buffer.from(tokenTx.Nonce),
+              Buffer.from(tokenTx.InputData)
+            ]
+
+            tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+
+            this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+              if (err) {
+                callback(err, null)
+              } else {
+                callback(null, tokenTx)
+              }
+            })
+          }
+        })
+      } else {
+        callback(new Error('Deposit is not enough'), null)
+      }
+    } else {
+      callback(new Error('No Available Deposit Before'), null)
+    }
+  }
+
+  revertContractForCreate (tx, tokenInfo, callback) {
+    let totalSupply = tokenInfo.totalSupply
+    let newTokenName = this.checkSecSubContract(tokenInfo.tokenName)
+    this.getNonce(tx.TxTo, (err, nonce) => {
+      if (err) {
+        callback(err, null)
+      } else {
+        let tokenTx = null
+        if (newTokenName !== this.chainName) {
+          tokenTx = {
+            Version: '0.1',
+            TxReceiptStatus: 'success',
+            TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+            TxFrom: '0000000000000000000000000000000000000000',
+            TxTo: tx.TxFrom,
+            Value: totalSupply.toString(),
+            GasLimit: '0',
+            GasUsedByTxn: '0',
+            GasPrice: '0',
+            TxFee: '0',
+            Nonce: nonce,
+            InputData: `Smart Contract Initialization`
+          }
+
+          let txHashBuffer = [
+            Buffer.from(tokenTx.Version),
+            SECUtils.intToBuffer(tokenTx.TimeStamp),
+            Buffer.from(tokenTx.TxFrom, 'hex'),
+            Buffer.from(tokenTx.TxTo, 'hex'),
+            Buffer.from(tokenTx.Value),
+            Buffer.from(tokenTx.GasLimit),
+            Buffer.from(tokenTx.GasUsedByTxn),
+            Buffer.from(tokenTx.GasPrice),
+            Buffer.from(tokenTx.TxFee),
+            Buffer.from(tokenTx.Nonce),
+            Buffer.from(tokenTx.InputData)
+          ]
+
+          tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+        }
+        callback(null, tokenTx)
+      }
+    })
+  }
+
+  revertContractForLock (tx, contractResult, tokenInfo, callback) {
+    let timeLock = tokenInfo.timeLock
+    let senderAddress = tx.TxFrom
+    let benefitAddress = contractResult.Results.Address
+    if (senderAddress in timeLock) {
+      if (benefitAddress in timeLock[senderAddress]) {
+        let sameUnlockTime = false
+        for (let i = 0; i < timeLock[senderAddress][benefitAddress].length; i++) {
+          let lockLog = timeLock[senderAddress][benefitAddress][i]
+          if (tx.TimeStamp === lockLog.lockTime && contractResult.Results.Time === lockLog.unlockTime) {
+            let lockAmount = lockLog.lockAmount
+            let balance = new Big(lockAmount)
+            balance = balance.minus(contractResult.Results.Amount)
+            if (balance.isZero()) {
+              timeLock[senderAddress][benefitAddress].splice(i, 1)
+              i--
+            } else {
+              balance = balance.toFixed(DEC_NUM)
+              lockLog.lockAmount = balance.toString()
+            }
+            sameUnlockTime = true
+            break
+          }
+        }
+        if (!sameUnlockTime) {
+          return callback(new Error('No Log to revert'))
+        } else {
+          this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+            if (err) {
+              return callback(err)
+            } else {
+              return callback(null)
+            }
+          })
+        }
+      } else {
+        return callback(new Error('No Log to revert'))
+      }
+    } else {
+      return callback(new Error('No Log to revert'))
+    }
+  }
+
+  revertContractForReleaseLock (tx, contractResult, tokenInfo, callback) {
+    let timeLock = tokenInfo.timeLock
+    let timeStamp = tx.TimeStamp
+    let senderAddress = tx.TxFrom
+    let benefitAddress = contractResult.Results.Address
+    let amountToRelease = new Big(contractResult.Results.Amount)
+    if (senderAddress in timeLock) {
+      if (benefitAddress in timeLock[senderAddress]) {
+        let benefitTimeLock = timeLock[senderAddress][benefitAddress]
+        benefitTimeLock = benefitTimeLock.filter(ts => ts <= timeStamp).sort((a, b) => {
+          return a.unlockTime - b.unlockTime
+        })
+        if (benefitTimeLock.length > 0) {
+          let lockLog = benefitTimeLock[0]
+          let lockedAmount = new Big(lockLog.lockAmount)
+          lockedAmount = lockedAmount.plus(amountToRelease)
+          lockedAmount = lockedAmount.toFixed(DEC_NUM)
+          lockLog.lockAmount = lockedAmount.toString()
+        } else {
+          benefitTimeLock = [{
+            lockTime: timeStamp,
+            lockAmount: amountToRelease.toString(),
+            unlockTime: timeStamp
+          }]
+        }
+        this.getNonce(tx.TxTo, (err, nonce) => {
+          if (err) {
+            return callback(err, null)
+          } else {
+            let tokenTx = {
+              Version: '0.1',
+              TxReceiptStatus: 'success',
+              TimeStamp: SECUtils.currentUnixTimeInMillisecond(),
+              TxFrom: tx.TxTo,
+              TxTo: contractResult.Results.Address,
+              Value: contractResult.Results.Amount.toString(),
+              GasLimit: '0',
+              GasUsedByTxn: '0',
+              GasPrice: '0',
+              TxFee: '0',
+              Nonce: nonce,
+              InputData: `Smart Contract Transaction`
+            }
+            let txHashBuffer = [
+              Buffer.from(tokenTx.Version),
+              SECUtils.intToBuffer(tokenTx.TimeStamp),
+              Buffer.from(tokenTx.TxFrom, 'hex'),
+              Buffer.from(tokenTx.TxTo, 'hex'),
+              Buffer.from(tokenTx.Value),
+              Buffer.from(tokenTx.GasLimit),
+              Buffer.from(tokenTx.GasUsedByTxn),
+              Buffer.from(tokenTx.GasPrice),
+              Buffer.from(tokenTx.TxFee),
+              Buffer.from(tokenTx.Nonce),
+              Buffer.from(tokenTx.InputData)
+            ]
+
+            tokenTx.TxHash = SECUtils.rlphash(txHashBuffer).toString('hex')
+
+            this.addTokenMap(tokenInfo, tx.TxTo, (err) => {
+              if (err) {
+                return callback(err, null)
+              } else {
+                return callback(null, tokenTx)
+              }
+            })
+          }
+        })
+      } else {
+        return callback(new Error(`Lock Log of Benefiter ${benefitAddress} From sender ${senderAddress} not Found`), null)
+      }
+    } else {
+      return callback(new Error(`Lock Log of Sender ${senderAddress} not Found`), null)
+    }
+  }
+
+  runContract (callCode, sourceCode) {
+    let runScript = Buffer.from(sourceCode, 'base64').toString() + '; Results = ' + Buffer.from(callCode, 'base64').toString()
+    let sandbox = {
+      Results: {}
+    }
+    let response = {}
+    try {
+      vm.createContext(sandbox)
+      vm.runInContext(runScript, sandbox)
+      if (sandbox.Results.TransferFlag) {
+        response.functionType = 'transfer'
+      } else if (sandbox.Results.DepositFlag) {
+        response.functionType = 'deposit'
+      } else if (sandbox.Results.WithdrawFlag) {
+        response.functionType = 'withdraw'
+      } else if (sandbox.Results.LockFlag) {
+        response.functionType = 'lock'
+      } else if (sandbox.Results.ReleaseLockFlag) {
+        response.functionType = 'releaseLock'
+      } else {
+        response.functionType = 'others'
+      }
+      response.Results = sandbox.Results
+      return response
+    } catch (err) {
+      throw new Error(err)
+    }
+  }
+
+  _typeCheck (variable) {
+    if (typeof variable !== 'string') return false
+    if (isNaN(parseInt(variable))) return false
+    return true
+  }
+
+  async _asyncForEach (array, callback) {
+    for (let index = 0; index < array.length; index++) {
+      await callback(array[index], index, array)
+    }
+  }
+
+  getNonce (userAddress, callback) {
+    this.accTree.getNonce(userAddress, (err, nonce) => {
+      if (err) callback(err, null)
+      else {
+        nonce = parseInt(nonce)
+        let txArray = this.pool.getAllTxFromPool().filter(tx => (tx.TxFrom === userAddress || tx.TxTo === userAddress))
+        nonce = nonce + txArray.length
+        nonce = nonce.toString()
+        callback(null, nonce)
+      }
+    })
+  }
+
+  checkSecSubContract (tokenName) {
+    let regExp = /^SEC-[0-9a-zA-Z]{36}/
+    let finalTokenName = tokenName
+    if (tokenName.match(regExp)) {
+      finalTokenName = 'SEC'
+    }
+    return finalTokenName
+  }
   // -------------------------  FUNCTIONS FOR SPECIAL PURPOSES  ------------------------
   // ---------------------------------  DON'T USE THEM  --------------------------------
   delBlock (height, callback) {
@@ -475,10 +1644,13 @@ class SECTokenBlockChain {
         this.chainDB.delBlock(dbBlock, (err) => {
           if (err) return callback(err)
           // update account tree DB
-          this.accTree.revertWithBlock(dbBlock, (err) => {
+          this.revertSmartContractDB(dbBlock, (err, _dbblock) => {
             if (err) return callback(err)
+            this.accTree.revertWithBlock(_dbblock, (err) => {
+              if (err) return callback(err)
+            })
+            callback()
           })
-          callback()
         })
       })
     })
@@ -501,12 +1673,28 @@ class SECTokenBlockChain {
       if (err) return callback(err)
       this.txDB.writeBlock(block, (err) => {
         if (err) return callback(err)
-        // update token blockchain DB
-        this.chainDB.writeTokenBlockToDB(block, (err) => {
+        // update accTree BD
+        let smartContractBlock = cloneDeep(block)
+        this.updateSmartContractDB(smartContractBlock, (err, _smartContractBlock) => {
           if (err) return callback(err)
-          this.accTree.updateWithBlock(block, (err) => {
-            this.chainLength = block.Number + 1
-            callback(err)
+          // update token blockchain DB
+          this.accTree.updateWithBlock(_smartContractBlock, (err) => {
+            if (err) return callback(err)
+            if (_smartContractBlock.Number !== 0) {
+              let newStateRoot = this.accTree.getRoot()
+              _smartContractBlock.StateRoot = newStateRoot
+              block.StateRoot = newStateRoot
+              block.Hash = SECTokenBlock.getHeaderHashStatic(block)
+              block.Transactions.forEach((tx, index) => {
+                block.Transactions[index].BlockHash = block.Hash
+              })
+            }
+            this.chainDB.writeTokenBlockToDB(cloneDeep(block), (err) => {
+              if (err) return callback(err)
+              this.chainLength = block.Number + 1
+              callback(null, block.StateRoot, block.Hash)
+              // callback(null)
+            })
           })
         })
       })
@@ -514,7 +1702,7 @@ class SECTokenBlockChain {
   }
 
   getTxForUser (addr, callback) {
-    this.accTree.getAccInfo(addr, (err, info) => {
+    this.accTree.getAccInfo(addr, 'All', (err, info) => {
       if (err) return callback(err, null)
       else {
         let txList = []
@@ -544,7 +1732,7 @@ class SECTokenBlockChain {
 
   // -------------------------  TEST FUNCTIONS  ------------------------
   getFromAccTree (accAddr, callback) {
-    this.accTree.getAccInfo(accAddr, callback)
+    this.accTree.getAccInfo(accAddr, 'All', callback)
   }
 }
 
